@@ -1,0 +1,6 @@
+.nextflow*
+work/
+output/
+prev/
+conda_env/
+reddog
