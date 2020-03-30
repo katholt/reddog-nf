@@ -1,4 +1,4 @@
-#!/bin/awk
+#!/bin/awk -f
 BEGIN {
     OFS="\t"
     snps = indels = 0

@@ -2,6 +2,8 @@
 // TODO: pre-flight checks
 // TODO: decide approach for merge runs
 // TODO: provide config and allow options set from commandline
+// TODO: python script get check replicon names then output to stdout
+// TODO: provide input reference name to final output files for naming (aggregate_replicon_statistics)
 
 
 // File I/O
@@ -67,7 +69,6 @@ process index_reference_samtools {
 
 
 // Get replicons from FASTA reference we'll be mapping to
-// TODO: python script get check replicon names then output to stdout
 process collect_replicon_names {
   input:
   file reference_fp from ch_collect_replicon_names
@@ -91,50 +92,45 @@ process align_reads_to_reference {
   file reference_indices from ch_reference_bt2_index
 
   output:
-  file "${sample_id}.bam" into ch_bams
+  tuple val(sample_id), file("${sample_id}.bam") into ch_raw_bams
 
   script:
   """
   bowtie2 --sensitive-local -x ${reference_fp} -1 ${reads_fwd} -2 ${reads_rev} -X 2000 | samtools view -ubS - | samtools sort - -o ${sample_id}.bam
   """
 }
-ch_bams.into { ch_sam_stats; ch_filter_unmapped }
+ch_raw_bams.into { ch_filter_unmapped; ch_replicon_stats_bams }
 
 
 // Filter unmapped reads from bam
 process filter_unmapped_reads {
   input:
-  file bam_fp from ch_filter_unmapped
+  tuple sample_id, file(bam_fp) from ch_filter_unmapped
 
   output:
-  file '*_filtered.bam' into _ch_bams_filtered
+  tuple val(sample_id), file('*_filtered.bam') into ch_bams_filtered
 
   script:
-  sample_id = bam_fp.simpleName
   """
   samtools view -hub -F 4 ${bam_fp} | samtools sort - -o ${sample_id}_filtered.bam
   """
 }
-_ch_bams_filtered.into { ch_bams_filtered; ch_index_filtered_bams }
 
 
 // Index filtered bams
 process index_filtered_bams {
   input:
-  file bam_fp from ch_index_filtered_bams
+  tuple sample_id, file(bam_fp) from ch_bams_filtered
 
   output:
-  file '*bam.bai' into ch_bams_filtered_indices
+  tuple val(sample_id), file(bam_fp), file('*bam.bai') into ch_bams_and_indices
 
   script:
   """
   samtools index ${bam_fp}
   """
 }
-
-
-// Create channel to emit bams with the respective index
-ch_bams_filtered.merge(ch_bams_filtered_indices).into {
+ch_bams_and_indices.into {
     ch_call_snps_bams_and_indices;
     ch_consensus_bams_and_indices;
     ch_depth_coverage_bams_and_indices;
@@ -146,17 +142,16 @@ ch_bams_filtered.merge(ch_bams_filtered_indices).into {
 ch_call_snps_replicons.combine(ch_call_snps_bams_and_indices).set { ch_call_snps }
 process call_snps {
   input:
-  tuple val(replicon), file(bam_fp), file(index_fp) from ch_call_snps
+  tuple replicon_id, sample_id, file(bam_fp), file(index_fp) from ch_call_snps
   file reference_fp from ch_snps_call_reference
   file fasta_index from ch_reference_samtools_index
 
   output:
-  file '*_raw.bcf' into ch_raw_bcfs
+  tuple val(sample_id), val(replicon_id), file('*_raw.bcf') into ch_raw_bcfs
 
   script:
-  sample_id = bam_fp.simpleName
   """
-  samtools mpileup -u -t DP -f ${reference_fp} ${bam_fp} -r ${replicon} | bcftools call -O b -cv - > ${sample_id}_${replicon}_raw.bcf
+  samtools mpileup -u -t DP -f ${reference_fp} ${bam_fp} -r ${replicon_id} | bcftools call -O b -cv - > ${sample_id}_${replicon_id}_raw.bcf
   """
 }
 
@@ -164,15 +159,14 @@ process call_snps {
 // Filter SNPs using vcfutils
 process filter_snps_vcfutils {
   input:
-  file bcf_fp from ch_raw_bcfs
+  tuple sample_id, replicon_id, file(bcf_fp) from ch_raw_bcfs
 
   output:
-  file '*_filtered.vcf' into ch_filter_snps_q30_hets
+  tuple val(sample_id), val(replicon_id), file('*_filtered.vcf') into ch_filter_snps_q30_hets
 
   script:
-  sample_replicon_id = "${bcf_fp}".replaceFirst(/_raw.bcf/, '')
   """
-  bcftools view ${bcf_fp} | vcfutils.pl varFilter -d 5 -D 23 -Q 30 > ${sample_replicon_id}_filtered.vcf
+  bcftools view ${bcf_fp} | vcfutils.pl varFilter -d 5 -D 23 -Q 30 > ${sample_id}_${replicon_id}_filtered.vcf
   """
 }
 
@@ -180,57 +174,66 @@ process filter_snps_vcfutils {
 // Filter SNPs with less than Q30 and separate heterozygous SNPs
 process filter_snps_q30_hets {
   input:
-  file vcf_fp from ch_filter_snps_q30_hets
+  tuple sample_id, replicon_id, file(vcf_fp) from ch_filter_snps_q30_hets
 
   output:
-  file '*_q30.vcf' into ch_filtered_vcfs
+  tuple val(sample_id), val(replicon_id), file('*_q30.vcf'), file('*hets.vcf') into ch_filtered_vcfs
 
   script:
-  sample_replicon_id = "${vcf_fp}".replaceFirst(/_filtered.vcf/, '')
   """
-  filter_snp_calls.py --input_vcf_fp ${vcf_fp} --output_q30_vcf_fp ${sample_replicon_id}_q30.vcf --output_hets_vcf_fp ${sample_replicon_id}_hets.vcf
+  filter_snp_calls.py --input_vcf_fp ${vcf_fp} --output_q30_vcf_fp ${sample_id}_${replicon_id}_q30.vcf --output_hets_vcf_fp ${sample_id}_${replicon_id}_hets.vcf
   """
 }
 
 
-/*
-// TODO: replicate pass/fail logic from deriveRepStats.py
-
 // Calculate replicon statistics
-// TODO: channel aggregating sample's vcfs
-// A list of sample names might make this easier otherwise will need
-// to find a robust approach to get sample ids from filenames
-ch_filtered_vcfs.groupBy { String filename -> filename.replace }
-
+// Create channel containing replicon VCFs grouped by sample with respecitve bam and identifiers
+// NOTE: replicon ordering is required here so that the calculate_replicon_statistics process output glob
+// matches input. This also means that sort order resulting from toSortedList MUST match glob sort order.
+// An assertion is provided in the aggregation process
+ch_filtered_vcfs.toSortedList { items -> items[1] }.flatMap().groupTuple().set { ch_replicon_stats_vcfs }
+ch_replicon_stats_vcfs.join(ch_replicon_stats_bams).set { ch_replicon_stats }
 process calculate_replicon_statistics {
   input:
-  // bam_fp; unfiltered
-  // sample q30 and het vcfs
+  tuple sample_id, replicons, file(vcf_q30_fps), file(vcf_hets_fps), file(bam_fp) from ch_replicon_stats
 
   output:
-  // sample replicon statistic files (one for each replicon)
+  tuple replicons, "*${replicons}_RepStats.txt" into ch_replicon_stats_per_sample
 
   script:
   """
-  #parallel '../bin/calculate_replicon_stats.py --raw_bam_fp {} --vcf_q30_fps data/{/.}_*q30.vcf --vcf_hets_fps data/{/.}_*het.vcf --output_dir output/' ::: data/*bam
+  calculate_replicon_stats.py --raw_bam_fp ${bam_fp} --vcf_q30_fps ${vcf_q30_fps} --vcf_hets_fps ${vcf_hets_fps} --output_dir ./
   """
 }
 
 
 // Aggregate replicon statistics
+ch_replicon_stats_per_sample.transpose().groupTuple().set { ch_replicon_stats_aggregate }
 process aggregate_replicon_statistics {
+  publishDir "${params.output_dir}"
+
   input:
-  // replicon
+  tuple replicon_id, file(replicon_stats_fps) from ch_replicon_stats_aggregate
 
   output:
-  // replicon statistics file
+  file '*RepStats.txt'
 
   script:
   """
-  # sed '1!{/^Isolate/d}' *${replicon}*
+  # First check we have the corret replicons
+  replicon_id_found=\$(head -n1 -q ${replicon_stats_fps} | sed 's/^#//' | sort | uniq)
+  replicon_id_counts=\$(echo "\${replicon_id_found}" | wc -l)
+  if [[ "\${replicon_id_counts}" -gt 1 ]]; then
+    echo 'error: got more than one replicon during aggregation' 2>&1
+    exit 1;
+  elif [[ "\${replicon_id_found}" != "${replicon_id}" ]]; then
+    echo 'error: the wrong replicon during aggregation - expected ${replicon_id}, got \${replicon_id_found}' 2>&1
+    exit 1;
+  fi;
+
+  sed -e '/^#/d' -e '2!{/^Isolate/d}' ${replicon_stats_fps} > ${replicon_id}_RepStats.txt
   """
 }
-*/
 
 
 /*
@@ -247,89 +250,6 @@ process get_consensus {
   sample_id = bam_fp.simpleName
   """
   samtools mpileup -q 20 -ugB -f ${reference_fp} ${bam_fp} | bcftools call -c - | vcfutils.pl vcf2fq > ${sample_id}_cns.fq
-  """
-}
-*/
-
-
-/*
-// Get mapping depth and coverage
-// TODO: remove this - we'll to it live (in python)
-process get_mapping_depth_coverage {
-  input:
-  tuple file(bam_fp), file(index_fp) from ch_depth_coverage_bams_and_indices
-
-  output:
-  file '*depth_coverage.tsv' into ch_depth_coverage
-
-  script:
-  sample_id = bam_fp.simpleName
-  """
-  samtools mpileup -aa NCTC13753_*.bam | cut -f1,4 -d\$'\t' | \
-    awk 'BEGIN {
-           OFS="\t"
-         }
-         {
-           sums[\$1] += \$2
-           size[\$1] += 1
-           if (\$2 > 0) {
-             bases[\$1] += 1
-           }
-         } END {
-           print "replicon", "replicon_size", "average_depth", "coverage"
-           for (replicon in sums) {
-             if (bases[replicon] == 0) {
-               average_depth = 0.0
-             } else {
-               average_depth = sums[replicon] / bases[replicon]
-             }
-             print replicon, size[replicon], average_depth, bases[replicon] / size[replicon] * 100
-           }
-         }' > ${sample_id}_depth_coverage.tsv
-  """
-}
-*/
-
-
-/*
-process get_vcf_stats {
-  script:
-  """
-  awk 'BEGIN {
-    OFS="\t"
-    snps = twoalts = indels = 0
-  } $1 !~ /^#/ {
-    if ($8 ~ /^I/) {
-      indels += 1
-    } else {
-      snps += 1
-      if ($4 ~ /,/) {
-        twoalts += 1
-      }
-    }
-  } END {
-    print "snps", "twoalts", "indels"
-    print snps, twoalts, indels
-  }' ${vcf_fp} > ${sample_id}_vcf_stats.tsv
-  """
-}
-*/
-
-
-/*
-// Get sam stats
-// TODO: remove this and associated dependency - we'll to it live (in python)
-process calculate_sam_stats {
-  input:
-  file bam_fp from ch_sam_stats
-
-  output:
-  file '*_sam_stats.txt'
-
-  script:
-  sample_id = bam_fp.simpleName
-  """
-  sam-stats -A -B ${bam_fp} > ${sample_id}_sam_stats.txt
   """
 }
 */
