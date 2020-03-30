@@ -194,6 +194,8 @@ process filter_snps_q30_hets {
 
 
 /*
+// TODO: replicate pass/fail logic from deriveRepStats.py
+
 // Calculate replicon statistics
 // TODO: channel aggregating sample's vcfs
 // A list of sample names might make this easier otherwise will need
