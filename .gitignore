@@ -1,6 +1,8 @@
+NOTES
 .nextflow*
 work/
 output/
 prev/
 conda_env/
-reddog
+reddog/
+testing/
