@@ -209,6 +209,37 @@ process get_consensus {
 }
 
 
+// Calculate replicon statistics
+process calculate_replicon_statistics {
+  input:
+  // bam_fp; unfiltered
+  // sample q30 and het vcfs
+
+  output:
+  // sample replicon statistic files (one for each replicon)
+
+  script:
+  """
+  #parallel '../bin/calculate_replicon_stats.py --raw_bam_fp {} --vcf_q30_fps data/{/.}_*q30.vcf --vcf_hets_fps data/{/.}_*het.vcf --output_dir output/' ::: data/*bam
+  """
+}
+
+
+// Aggregate replicon statistics
+process aggregate_replicon_statistics {
+  input:
+  // replicon
+
+  output:
+  // replicon statistics file
+
+  script:
+  """
+  # sed '1!{/^Isolate/d}' *${replicon}*
+  """
+}
+
+
 /*
 // Get mapping depth and coverage
 // TODO: remove this - we'll to it live (in python)
