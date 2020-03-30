@@ -156,7 +156,7 @@ process call_snps {
   script:
   sample_id = bam_fp.simpleName
   """
-  samtools mpileup -u -t DP -f ${reference_fp} ${bam_fp} -r ${replicon} | bcftools call -O b -cv - > ${sample_id}_raw.bcf
+  samtools mpileup -u -t DP -f ${reference_fp} ${bam_fp} -r ${replicon} | bcftools call -O b -cv - > ${sample_id}_${replicon}_raw.bcf
   """
 }
 
@@ -167,12 +167,12 @@ process filter_snps_vcfutils {
   file bcf_fp from ch_raw_bcfs
 
   output:
-  file '*_q30.vcf' into ch_filter_snps_q30_hets
+  file '*_filtered.vcf' into ch_filter_snps_q30_hets
 
   script:
-  sample_id = bcf_fp.simpleName
+  sample_replicon_id = "${bcf_fp}".replaceFirst(/_raw.bcf/, '')
   """
-  bcftools view ${bcf_fp} | vcfutils.pl varFilter -d 5 -D 23 -Q 30 > ${sample_id}_q30.vcf
+  bcftools view ${bcf_fp} | vcfutils.pl varFilter -d 5 -D 23 -Q 30 > ${sample_replicon_id}_filtered.vcf
   """
 }
 
@@ -186,30 +186,20 @@ process filter_snps_q30_hets {
   file '*_q30.vcf' into ch_filtered_vcfs
 
   script:
+  sample_replicon_id = "${vcf_fp}".replaceFirst(/_filtered.vcf/, '')
   """
-  filter_snp_calls.py --input_vcf_fp ${vcf_fp} --output_q30_vcf_fp ${sample_id}_q30.vcf --output_hets_vcf_fp ${sample_id}_hets.vcf
-  """
-}
-
-
-// Get consensus sequences
-process get_consensus {
-  input:
-  file reference_fp from ch_consensus_reference
-  tuple file(bam_fp), file(index_fp) from ch_consensus_bams_and_indices
-
-  output:
-  file '*cns.fq' into ch_consensus_sequences
-
-  script:
-  sample_id = bam_fp.simpleName
-  """
-  samtools mpileup -q 20 -ugB -f ${reference_fp} ${bam_fp} | bcftools call -c - | vcfutils.pl vcf2fq > ${sample_id}_cns.fq
+  filter_snp_calls.py --input_vcf_fp ${vcf_fp} --output_q30_vcf_fp ${sample_replicon_id}_q30.vcf --output_hets_vcf_fp ${sample_replicon_id}_hets.vcf
   """
 }
 
 
+/*
 // Calculate replicon statistics
+// TODO: channel aggregating sample's vcfs
+// A list of sample names might make this easier otherwise will need
+// to find a robust approach to get sample ids from filenames
+ch_filtered_vcfs.groupBy { String filename -> filename.replace }
+
 process calculate_replicon_statistics {
   input:
   // bam_fp; unfiltered
@@ -238,6 +228,26 @@ process aggregate_replicon_statistics {
   # sed '1!{/^Isolate/d}' *${replicon}*
   """
 }
+*/
+
+
+/*
+// Get consensus sequences
+process get_consensus {
+  input:
+  file reference_fp from ch_consensus_reference
+  tuple file(bam_fp), file(index_fp) from ch_consensus_bams_and_indices
+
+  output:
+  file '*cns.fq' into ch_consensus_sequences
+
+  script:
+  sample_id = bam_fp.simpleName
+  """
+  samtools mpileup -q 20 -ugB -f ${reference_fp} ${bam_fp} | bcftools call -c - | vcfutils.pl vcf2fq > ${sample_id}_cns.fq
+  """
+}
+*/
 
 
 /*
