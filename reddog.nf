@@ -5,12 +5,13 @@
 
 // TODO: python script get check replicon names then output to stdout
 // TODO: provide input reference name to final output files for naming (aggregate_replicon_statistics, create_allele_matrix)
-// TODO: add pass/fail checks to calculate_replicon_stats.py
+
+// TODO: sort inputs by size so the slowest jobs start first - this can provide small speed improvement
 
 
 // File I/O
-//params.reads = 'data/reads/*_{1,2}.fastq.gz'
-params.reads = 'data/subset_reads/*_{1,2}_sub.fastq.gz'
+params.reads = 'data/reads/*_{1,2}.fastq.gz'
+//params.reads = 'data/subset_reads/*_{1,2}_sub.fastq.gz'
 params.reference = file('data/NCTC13753.gbk')
 params.output_dir = file('output')
 
@@ -106,6 +107,8 @@ ch_raw_bams.into { ch_filter_unmapped; ch_replicon_stats_bams }
 
 // Filter unmapped reads from bam
 process filter_unmapped_reads {
+  publishDir "${params.output_dir}/bams/"
+
   input:
   tuple sample_id, file(bam_fp) from ch_filter_unmapped
 
@@ -175,6 +178,8 @@ process filter_snps_vcfutils {
 
 // Filter SNPs with less than Q30 and separate heterozygous SNPs
 process filter_snps_q30_hets {
+  publishDir "${params.output_dir}/vcfs/"
+
   input:
   tuple sample_id, replicon_id, file(vcf_fp) from ch_filter_snps_q30_hets
 
@@ -225,7 +230,7 @@ process aggregate_replicon_statistics {
 
   script:
   """
-  # First check we have the corret replicons
+  # First check we have the corret replicon stats file
   replicon_id_found=\$(head -n1 -q ${replicon_stats_fps} | sed 's/^#//' | sort | uniq)
   replicon_id_counts=\$(echo "\${replicon_id_found}" | wc -l)
   if [[ "\${replicon_id_counts}" -gt 1 ]]; then
@@ -236,7 +241,8 @@ process aggregate_replicon_statistics {
     exit 1;
   fi;
 
-  sed -e '/^#/d' -e '2!{/^Isolate/d}' ${replicon_stats_fps} > ${replicon_id}_RepStats.txt
+  sed -n '2p' ${replicon_stats_fps} > ${replicon_id}_RepStats.txt
+  sed -e '/^#/d' -e '/^Isolate/d' | get_ingroup_outgroup.awk >> ${replicon_id}_RepStats.txt
   """
 }
 

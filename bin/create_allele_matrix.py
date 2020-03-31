@@ -74,7 +74,7 @@ def main():
 
             # Check if there is any data to process
             if fh.readline():
-                seek(position, 0)
+                fh.seek(position, 0)
             else:
                 break
 
