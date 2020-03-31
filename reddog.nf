@@ -2,8 +2,10 @@
 // TODO: pre-flight checks
 // TODO: decide approach for merge runs
 // TODO: provide config and allow options set from commandline
+
 // TODO: python script get check replicon names then output to stdout
-// TODO: provide input reference name to final output files for naming (aggregate_replicon_statistics)
+// TODO: provide input reference name to final output files for naming (aggregate_replicon_statistics, create_allele_matrix)
+// TODO: add pass/fail checks to calculate_replicon_stats.py
 
 
 // File I/O
@@ -184,15 +186,17 @@ process filter_snps_q30_hets {
   filter_snp_calls.py --input_vcf_fp ${vcf_fp} --output_q30_vcf_fp ${sample_id}_${replicon_id}_q30.vcf --output_hets_vcf_fp ${sample_id}_${replicon_id}_hets.vcf
   """
 }
-
-
-// Calculate replicon statistics
-// Create channel containing replicon VCFs grouped by sample with respecitve bam and identifiers
+// Create channels emit sample_id, replicon_id, q30_vcf_fp, hets_vcf_fp (ordered by replicon_id)
 // NOTE: replicon ordering is required here so that the calculate_replicon_statistics process output glob
 // matches input. This also means that sort order resulting from toSortedList MUST match glob sort order.
 // An assertion is provided in the aggregation process
-ch_filtered_vcfs.toSortedList { items -> items[1] }.flatMap().groupTuple().set { ch_replicon_stats_vcfs }
-ch_replicon_stats_vcfs.join(ch_replicon_stats_bams).set { ch_replicon_stats }
+// These channels emit sample_id, list(replicon_ids), list(q30), list(hets)
+ch_filtered_vcfs.toSortedList { items -> items[1] }.flatMap().into { ch_replicon_stats_vcfs; _ch_allele_matrix_vcfs }
+
+
+// Calculate replicon statistics
+// Group VCFs by sample_id and add respective BAM filepath
+ch_replicon_stats_vcfs.groupTuple().join(ch_replicon_stats_bams).set { ch_replicon_stats }
 process calculate_replicon_statistics {
   input:
   tuple sample_id, replicons, file(vcf_q30_fps), file(vcf_hets_fps), file(bam_fp) from ch_replicon_stats
@@ -208,6 +212,7 @@ process calculate_replicon_statistics {
 
 
 // Aggregate replicon statistics
+// Transpost channel such that we group stats files of the same replicon
 ch_replicon_stats_per_sample.transpose().groupTuple().set { ch_replicon_stats_aggregate }
 process aggregate_replicon_statistics {
   publishDir "${params.output_dir}"
@@ -232,6 +237,25 @@ process aggregate_replicon_statistics {
   fi;
 
   sed -e '/^#/d' -e '2!{/^Isolate/d}' ${replicon_stats_fps} > ${replicon_id}_RepStats.txt
+  """
+}
+
+
+// Create allele matric for each replicon
+// Transform channel to only emit replicon_id and q30 VCFs (grouped by replicon)
+_ch_allele_matrix_vcfs.groupTuple(by: 1).map { items -> items[1..2] }.set { ch_allele_matrix_vcfs }
+process create_allele_matrix {
+  publishDir "${params.output_dir}"
+
+  input:
+  tuple replicon_id, file(vcf_fps) from ch_allele_matrix_vcfs
+
+  output:
+  file '*_alleles_var.csv'
+
+  script:
+  """
+  create_allele_matrix.py --vcf_fps ${vcf_fps} --replicon ${replicon_id} > ${replicon_id}_alleles_var.csv
   """
 }
 
