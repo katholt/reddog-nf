@@ -10,6 +10,8 @@
 
 // TODO: sort inputs by size so the slowest jobs start first - this can provide small speed improvement
 
+// TODO: create variant where we agglomerate stages in 3-4 steps which python scripts to handle execution
+
 
 // File I/O
 params.reads = 'data/reads/*_{1,2}.fastq.gz'
