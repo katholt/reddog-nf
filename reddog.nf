@@ -1,10 +1,12 @@
 #!/usr/bin/env nextflow
 // TODO: provide input reference name to final output files for naming (aggregate_replicon_statistics, create_allele_matrix)
 // TODO: allele matrix filtering - should we be only considering ingroup isolates for conservation or invariant site assessment?
+// TODO: I have not excluded failed isolates from allele matrices, check implications - phylogeny?
+// TODO: consider decoupling awk script in get_coverage_depth.sh, get_reads_mapped.sh and modifying subprocess call appropriately
 
-// TODO: pre-flight checks
-// TODO: decide approach for merge runs
+// TODO: pre-flight checks, see RedDog.py
 // TODO: provide config and allow options set from commandline
+// TODO: decide approach for merge runs
 
 // TODO: sort inputs by size so the slowest jobs start first - this can provide small speed improvement
 
@@ -329,6 +331,7 @@ process determine_coding_consequences {
   """
 }
 */
+
 
 // Infer phylogeny
 process infer_phylogeny {
