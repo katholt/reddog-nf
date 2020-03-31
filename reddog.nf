@@ -1,10 +1,10 @@
 #!/usr/bin/env nextflow
+// TODO: provide input reference name to final output files for naming (aggregate_replicon_statistics, create_allele_matrix)
+// TODO: allele matrix filtering - should we be only considering ingroup isolates for conservation or invariant site assessment?
+
 // TODO: pre-flight checks
 // TODO: decide approach for merge runs
 // TODO: provide config and allow options set from commandline
-
-// TODO: python script get check replicon names then output to stdout
-// TODO: provide input reference name to final output files for naming (aggregate_replicon_statistics, create_allele_matrix)
 
 // TODO: sort inputs by size so the slowest jobs start first - this can provide small speed improvement
 
@@ -37,7 +37,9 @@ ch_reference_fasta.into {
     ch_collect_replicon_names;
     ch_align_reference;
     ch_snps_call_reference;
-    ch_consensus_reference
+    ch_consensus_reference;
+    ch_genome_alignment_reference;
+    ch_coding_consequences_reference
   }
 
 
@@ -81,7 +83,15 @@ process collect_replicon_names {
 
   script:
   """
+  # Get replicon names then check they are all unique
   replicons=\$(grep '^>' ${reference_fp} | sed -e 's/^>//' -e 's/ .\\+\$//')
+  replicons_duplicate=\$(echo "\${replicons}" | sort | uniq -d)
+  replicons_duplicate_count=\$(echo -n "\${replicons_duplicate}" | sort | uniq -d | wc -l)
+  if [[ "\${replicons_duplicate_count}" -gt 0 ]]; then
+    echo "Found duplicate replicon names, you must rename these" 1>&2
+    echo "Duplicates: \${replicons_duplicate}" 1>&2
+    exit 1
+  fi
   """
 }
 ch_replicons.tokenize(' ').flatMap().set { ch_call_snps_replicons }
@@ -207,7 +217,7 @@ process calculate_replicon_statistics {
   tuple sample_id, replicons, file(vcf_q30_fps), file(vcf_hets_fps), file(bam_fp) from ch_replicon_stats
 
   output:
-  tuple replicons, "*${replicons}_RepStats.txt" into ch_replicon_stats_per_sample
+  tuple val(replicons), file("*${replicons}_RepStats.txt") into ch_replicon_stats_per_sample
 
   script:
   """
@@ -234,15 +244,15 @@ process aggregate_replicon_statistics {
   replicon_id_found=\$(head -n1 -q ${replicon_stats_fps} | sed 's/^#//' | sort | uniq)
   replicon_id_counts=\$(echo "\${replicon_id_found}" | wc -l)
   if [[ "\${replicon_id_counts}" -gt 1 ]]; then
-    echo 'error: got more than one replicon during aggregation' 2>&1
+    echo 'error: got more than one replicon during aggregation' 1>&2
     exit 1;
   elif [[ "\${replicon_id_found}" != "${replicon_id}" ]]; then
-    echo 'error: the wrong replicon during aggregation - expected ${replicon_id}, got \${replicon_id_found}' 2>&1
+    echo 'error: the wrong replicon during aggregation - expected ${replicon_id}, got \${replicon_id_found}' 1>&2
     exit 1;
   fi;
 
   sed -n '2p' ${replicon_stats_fps} > ${replicon_id}_RepStats.txt
-  sed -e '/^#/d' -e '/^Isolate/d' | get_ingroup_outgroup.awk >> ${replicon_id}_RepStats.txt
+  sed -e '/^#/d' -e '/^Isolate/d' ${replicon_stats_fps} | get_ingroup_outgroup.awk >> ${replicon_id}_RepStats.txt
   """
 }
 
@@ -257,47 +267,79 @@ process create_allele_matrix {
   tuple replicon_id, file(vcf_fps) from ch_allele_matrix_vcfs
 
   output:
-  file '*_alleles_var.csv'
+  tuple val(replicon_id), file('*_alleles_var.tsv') into ch_filter_allele_matrix
 
   script:
   """
-  create_allele_matrix.py --vcf_fps ${vcf_fps} --replicon ${replicon_id} > ${replicon_id}_alleles_var.csv
+  create_allele_matrix.py --vcf_fps ${vcf_fps} --replicon ${replicon_id} > ${replicon_id}_alleles_var.tsv
+  """
+}
+
+// Filter allele matrix
+process filter_allele_matrix {
+  publishDir "${params.output_dir}"
+
+  input:
+  tuple replicon_id, file(allele_matrix_fp) from ch_filter_allele_matrix
+
+  output:
+  tuple val(replicon_id), file("*_cons0.95.tsv") into ch_filtered_allele_matrix
+
+  script:
+  """
+  filter_allele_matrix.py --allele_fp ${allele_matrix_fp} > ${replicon_id}_alleles_var_cons0.95.tsv
+  """
+}
+ch_filtered_allele_matrix.into { ch_genome_alignment; ch_determine_coding_consquences }
+
+
+// Create pseudo genome alignment
+process create_pseudo_genome_alignment {
+  publishDir "${params.output_dir}"
+
+  input:
+  tuple replicon_id, file(allele_matrix_fp) from ch_genome_alignment
+  file reference_fp from ch_genome_alignment_reference
+
+  output:
+  tuple val(replicon_id), file("*.mfasta") into ch_infer_phylogeny
+
+  script:
+  """
+  create_pseudo_genome_alignment.py --allele_fp ${allele_matrix_fp} --reference_fp ${reference_fp} --replicon ${replicon_id} > ${replicon_id}_alleles_var_cons0.95.mfasta
   """
 }
 
 
 /*
-// Get consensus sequences
-process get_consensus {
+// Determine coding consequences
+process determine_coding_consequences {
+  publishDir "${params.output_dir}"
+
   input:
-  file reference_fp from ch_consensus_reference
-  tuple file(bam_fp), file(index_fp) from ch_consensus_bams_and_indices
+  tuple replicon_id, file(allele_matrix_fp) from ch_determine_coding_consequences
+  file reference_fp from ch_coding_consequences_reference
 
   output:
-  file '*cns.fq' into ch_consensus_sequences
+  file "*consequences.tsv"
 
   script:
-  sample_id = bam_fp.simpleName
   """
-  samtools mpileup -q 20 -ugB -f ${reference_fp} ${bam_fp} | bcftools call -c - | vcfutils.pl vcf2fq > ${sample_id}_cns.fq
+  determine_coding_consequences.py --alleles_fp ${allele_matrix_fp} --reference ${reference_fp} > ${replicon_id}_alleles_var_cons0.95_consequences.tsv
   """
 }
 */
 
-
-/*
 // Infer phylogeny
 process infer_phylogeny {
   input:
-  file alignment_fp from ch_alignments
+  tuple replicon_id, file(alignment_fp) from ch_infer_phylogeny
 
   output:
   file '*_phylogeny.tree'
 
   script:
-  replicon = alignment_fp.simpleName
   """
-  FastTree -gtr -gamma -nt ${alignment_fp} > ${replicon}_phylogeny.tree
+  FastTree -gtr -gamma -nt ${alignment_fp} > ${replicon_id}_phylogeny.tree
   """
 }
-*/

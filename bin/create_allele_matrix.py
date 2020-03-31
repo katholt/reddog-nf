@@ -61,7 +61,6 @@ def main():
     args = get_arguments()
 
     # For each VCF get SNPs that pass
-    # TODO: consider parallelising
     replicons_seen = set()
     ref_alleles = dict()
     set_alleles = list()
