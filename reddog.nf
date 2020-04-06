@@ -42,8 +42,7 @@ ch_reference_fasta.into {
     ch_align_reference;
     ch_snps_call_reference;
     ch_consensus_reference;
-    ch_genome_alignment_reference;
-    ch_coding_consequences_reference
+    ch_genome_alignment_reference
   }
 
 
@@ -294,7 +293,7 @@ process filter_allele_matrix {
   filter_allele_matrix.py --allele_fp ${allele_matrix_fp} > ${replicon_id}_alleles_var_cons0.95.tsv
   """
 }
-ch_filtered_allele_matrix.into { ch_genome_alignment; ch_determine_coding_consquences }
+ch_filtered_allele_matrix.into { ch_genome_alignment; ch_determine_coding_consequences }
 
 
 // Create pseudo genome alignment
@@ -315,24 +314,21 @@ process create_pseudo_genome_alignment {
 }
 
 
-/*
 // Determine coding consequences
 process determine_coding_consequences {
   publishDir "${params.output_dir}"
 
   input:
   tuple replicon_id, file(allele_matrix_fp) from ch_determine_coding_consequences
-  file reference_fp from ch_coding_consequences_reference
 
   output:
   file "*consequences.tsv"
 
   script:
   """
-  determine_coding_consequences.py --alleles_fp ${allele_matrix_fp} --reference ${reference_fp} > ${replicon_id}_alleles_var_cons0.95_consequences.tsv
+  determine_coding_consequences.py --allele_fp ${allele_matrix_fp} --reference ${params.reference} --replicon ${replicon_id} > ${replicon_id}_alleles_var_cons0.95_consequences.tsv
   """
 }
-*/
 
 
 // Infer phylogeny

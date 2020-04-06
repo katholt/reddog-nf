@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # TODO: deal with '-' and 'N'
+# TODO: can we remove --replicon commandline argument somehow?
 
 
 import argparse
@@ -111,8 +112,10 @@ def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--reference_fp', required=True, type=pathlib.Path,
             help='Genbank-format reference filepath', action=CheckInput)
-    parser.add_argument('--allele_matrix', required=True, type=pathlib.Path,
+    parser.add_argument('--allele_fp', required=True, type=pathlib.Path,
             help='Allele matrix filepath', action=CheckInput)
+    parser.add_argument('--replicon', required=True, type=str,
+            help='Name of replicon')
     return parser.parse_args()
 
 
@@ -121,11 +124,13 @@ def main():
     args = get_arguments()
 
     # Read in reference
-    ref_gbk = {record.name: record for record in Bio.SeqIO.parse(args.reference_fp, 'genbank')}
+    ref_gbk = {record.id: record for record in Bio.SeqIO.parse(args.reference_fp, 'genbank')}
 
     # Process for replicon
-    replicon = 'NZ_UHGC01000001'
-    rep_gbk = ref_gbk[replicon]
+    if args.replicon not in ref_gbk:
+        print(f'error: could not find {args.replicon} in {args.reference_fp}', file=sys.stderr)
+        sys.exit(1)
+    rep_gbk = ref_gbk[args.replicon]
 
     # Create interval tree for features
     # NOTE: we assume tree is balanced, which it should be for this type of data
@@ -135,7 +140,7 @@ def main():
 
     # Determine consequences
     print(*Consequence.fields, sep='\t')
-    with args.allele_matrix.open('r') as fh:
+    with args.allele_fp.open('r') as fh:
         line_token_gen = (line.rstrip().split('\t') for line in fh)
         header_tokens = next(line_token_gen)
         isolates = header_tokens[2:]
