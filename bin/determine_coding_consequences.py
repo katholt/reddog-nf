@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 # TODO: deal with '-' and 'N'
-# TODO: clean up printing approach
-# TODO: clean up consequence section in general please
 
 
 import argparse
@@ -57,6 +55,50 @@ class Node:
         return result
 
 
+class AlleleRecord:
+
+    def __init__(self, record_data, isolates):
+        position_str, reference, *alleles = record_data
+        self.position = int(position_str)
+        self.reference = reference
+        self.alleles = alleles
+        self.isolates = isolates
+
+        self.feature_intervals = list()
+
+
+class Consequence:
+
+    fields = {
+            'SNP': 'position',
+            'ref': 'reference',
+            'alt': 'allele',
+            'change': 'change_type',
+            'gene': 'gene_id',
+            'ancestralCodon': 'sequence',
+            'derivedCodon': 'sequence_allele',
+            'ancestralAA': 'codon',
+            'derivedAA': 'codon_allele',
+            'product': 'gene_product',
+            'isolate_str': 'isolate_str'
+            }
+
+    def __init__(self):
+        for field in self.fields.values():
+            setattr(self, field, str())
+
+    def __str__(self):
+        data_gen = (getattr(self, field) for field in self.fields.values())
+        return '\t'.join(str(d) for d in data_gen)
+
+    @classmethod
+    def from_allele_record(cls, record):
+        consequence = Consequence()
+        consequence.position = record.position
+        consequence.reference = record.reference
+        return consequence
+
+
 class CheckInput(argparse.Action):
 
     def __call__(self, parser, namespace, filepath, option_string=None):
@@ -91,77 +133,73 @@ def main():
     intervals = [Interval.from_feature(feature) for feature in feature_cds_gen]
     interval_tree = create_interval_tree(intervals)
 
-    # Get consequences for each allele
+    # Determine consequences
+    print(*Consequence.fields, sep='\t')
     with args.allele_matrix.open('r') as fh:
         line_token_gen = (line.rstrip().split('\t') for line in fh)
         header_tokens = next(line_token_gen)
         isolates = header_tokens[2:]
-        for position_str, reference_allele, *isolate_alleles in line_token_gen:
-            # Get features
-            position_snp = int(position_str)
-            features = interval_tree.search_position(position_snp)
+        # Iterate through each entry via AlleleRecords
+        allele_record_gen = (AlleleRecord(line_tokens, isolates) for line_tokens in line_token_gen)
+        for record in allele_record_gen:
+            # Find features intervals that this record lands in
+            record.feature_intervals = interval_tree.search_position(record.position)
             # Process intergenic
-            if not features:
-                continue
-                isolates_by_allele = sort_isolates_by_allele(isolates, isolate_alleles, reference_allele)
-                empty_fields = [''] * 6  # TODO: please fix this
-                for allele, allele_isolates in isolates_by_allele.items():
-                    isolate_str = ','.join(allele_isolates)
-                    print(position_snp, reference_allele, allele, 'intergenic', *empty_fields, isolate_str, sep='\t')
+            if not record.feature_intervals:
+                for allele, allele_isolates in isolates_by_allele(record).items():
+                    # Create new consequence object to hold output data for nicer printing imo
+                    consequence = Consequence.from_allele_record(record)
+                    consequence.allele = allele
+                    consequence.change_type = 'intergenic'
+                    print(consequence)
                 continue
             # Process genic
-            for interval in interval_tree.search_position(position_snp):
-                # Get strand
-                feature = interval.feature
-                if feature.strand == 1:
-                    continue
-                    strand = 'forward'
-                elif feature.strand == -1:
-                    strand = 'reverse'
-                else:
+            for interval in record.feature_intervals:
+                # Check strand is acceptable
+                strand = interval.feature.strand
+                if not (strand == 1 or strand == -1):
                     print(f'error: got bad strand from {feature}', file=sys.stderr)
                     sys.exit(1)
-                process_allele(position_snp, feature, interval, strand, isolates, isolate_alleles,
-                        reference_allele, rep_gbk)
+                # Get SNP location within the gene and codon
+                if strand == 1:
+                    position_gene = record.position - interval.start + 1
+                elif strand == -1:
+                    position_gene = interval.end - record.position + 1
+                position_codon = (position_gene - 1) % 3 + 1
+                # Get the codon which contains the SNP
+                codon_number = (position_gene - 1) // 3 + 1
+                codon_start = (codon_number - 1) * 3
+                # Collect gene and codon sequence
+                gene_sequence = interval.feature.extract(rep_gbk.seq)
+                codon_sequence = gene_sequence[codon_start:codon_start+3]
+                codon = codon_sequence.translate()
+                # Get consequences for each allele
+                for allele, allele_isolates in isolates_by_allele(record).items():
+                    # Must complement codon if on reverse strand
+                    if strand == -1:
+                        allele = allele.translate(nucleotide_complement)
+                    # Get consequence
+                    sequence_allele, codon_allele = get_consequence(codon_sequence, allele, position_codon)
+                    # Create new consequence object to hold output data for nicer printing imo
+                    # Doubles to makes intergenic block much cleaner
+                    consequence = Consequence.from_allele_record(record)
+                    consequence.allele = allele
+                    consequence.codon = codon
+                    consequence.codon_allele = codon_allele
+                    consequence.sequence = codon_sequence
+                    consequence.sequence_allele = sequence_allele
+                    consequence.change_type = 'ns' if codon != codon_allele else 's'
+                    consequence.isolate_str = ','.join(allele_isolates)
+                    [consequence.gene_id] = interval.feature.qualifiers['locus_tag']
+                    [consequence.gene_product] = interval.feature.qualifiers['product']
+                    # Print data
+                    print(consequence)
 
 
-def process_allele(position_snp, feature, interval, strand, isolates, isolate_alleles, reference_allele, rep_gbk):
-    # Get SNP location within the gene and codon
-    if strand == 'forward':
-        position_gene = position_snp - interval.start + 1
-    elif strand == 'reverse':
-        position_gene = interval.end - position_snp + 1
-    position_codon = (position_gene - 1) % 3 + 1
-    # Get the nth codon which contains the SNP
-    codon_number = (position_gene - 1) // 3 + 1
-    codon_start = (codon_number - 1) * 3
-    # Collect gene and codon sequence
-    gene_sequence = feature.extract(rep_gbk.seq)
-    codon_sequence = gene_sequence[codon_start:codon_start+3]
-    codon = codon_sequence.translate()
-    # Grab some other information for output
-    [gene_id] = feature.qualifiers['locus_tag']
-    [gene_product] = feature.qualifiers['product']
-    # Sort isolates by allele
-    # TODO: check if there's a builtin or stdlib function for this now
-    isolates_by_allele = sort_isolates_by_allele(isolates, isolate_alleles, reference_allele)
-    # Get consequences for each allele
-    for allele, allele_isolates in isolates_by_allele.items():
-        if strand == 'forward':
-            allele_cons = allele
-        elif strand == 'reverse':
-            allele_cons = allele.translate(nucleotide_complement)
-        sequence, codon_allele = get_consequence(codon_sequence, allele_cons, position_codon)
-        change_type = 'ns' if codon != codon_allele else 's'
-        isolate_str = ','.join(allele_isolates)
-        print(position_snp, reference_allele, allele, change_type, gene_id, codon_sequence,
-                sequence, codon, codon_allele, gene_product, isolate_str, sep='\t')
-
-
-def sort_isolates_by_allele(isolates, isolate_alleles, reference_allele):
+def isolates_by_allele(record):
     ret = dict()
-    for isolate, allele in zip(isolates, isolate_alleles):
-        if allele == reference_allele:
+    for isolate, allele in zip(record.isolates, record.alleles):
+        if allele == record.reference:
             continue
         if allele not in ret:
             ret[allele] = list()
