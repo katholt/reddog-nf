@@ -251,7 +251,7 @@ process calculate_replicon_statistics {
 // Transpost channel such that we group stats files of the same replicon
 ch_replicon_stats_per_sample.transpose().groupTuple().set { ch_replicon_stats_aggregate }
 process aggregate_replicon_statistics {
-  publishDir "${params.output_dir}"
+  publishDir "${params.output_dir}", saveAs: { filename -> "${params.reference.simpleName}_${filename}" }
 
   input:
   tuple replicon_id, file(replicon_stats_fps) from ch_replicon_stats_aggregate
@@ -283,7 +283,7 @@ process aggregate_replicon_statistics {
 _ch_allele_matrix_vcfs.groupTuple(by: 1).map { items -> items[1..2] }.set { ch_allele_matrix_vcfs }
 ch_allele_matrix_vcfs.combine(ch_allele_matrix_consensus).set { ch_create_allele_matrix }
 process create_allele_matrix {
-  publishDir "${params.output_dir}"
+  publishDir "${params.output_dir}", saveAs: { filename -> "${params.reference.simpleName}_${filename}" }
 
   input:
   tuple replicon_id, file(vcf_fps), file(consensus_fps) from ch_create_allele_matrix
@@ -299,7 +299,7 @@ process create_allele_matrix {
 
 // Filter allele matrix
 process filter_allele_matrix {
-  publishDir "${params.output_dir}"
+  publishDir "${params.output_dir}", saveAs: { filename -> "${params.reference.simpleName}_${filename}" }
 
   input:
   tuple replicon_id, file(allele_matrix_fp) from ch_filter_allele_matrix
@@ -317,7 +317,7 @@ ch_filtered_allele_matrix.into { ch_genome_alignment; ch_determine_coding_conseq
 
 // Create pseudo genome alignment
 process create_pseudo_genome_alignment {
-  publishDir "${params.output_dir}"
+  publishDir "${params.output_dir}", saveAs: { filename -> "${params.reference.simpleName}_${filename}" }
 
   input:
   tuple replicon_id, file(allele_matrix_fp) from ch_genome_alignment
@@ -335,7 +335,7 @@ process create_pseudo_genome_alignment {
 
 // Determine coding consequences
 process determine_coding_consequences {
-  publishDir "${params.output_dir}"
+  publishDir "${params.output_dir}", saveAs: { filename -> "${params.reference.simpleName}_${filename}" }
 
   input:
   tuple replicon_id, file(allele_matrix_fp) from ch_determine_coding_consequences
@@ -352,6 +352,8 @@ process determine_coding_consequences {
 
 // Infer phylogeny
 process infer_phylogeny {
+  publishDir "${params.output_dir}", saveAs: { filename -> "${params.reference.simpleName}_${filename}" }
+
   input:
   tuple replicon_id, file(alignment_fp) from ch_infer_phylogeny
 
