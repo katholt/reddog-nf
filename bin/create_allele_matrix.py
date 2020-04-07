@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# TODO: parallelisation for SNP position collection
+# TODO: optimisation for reading in consensus sequences
+
+
 import argparse
 import pathlib
 import sys

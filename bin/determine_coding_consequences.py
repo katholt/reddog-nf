@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # TODO: deal with '-' and 'N'
-# TODO: can we remove --replicon commandline argument somehow?
 
 
 import argparse
