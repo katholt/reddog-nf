@@ -1,19 +1,85 @@
 #!/usr/bin/env nextflow
 // TODO: pre-flight checks, see RedDog.py
-// TODO: provide config and allow options set from commandline
 
 // TODO: with very large datasets we will error on too many command line arguments - one option will be to write to file in 'script' blocks
+// TODO: also wrt large datasets certain process will need to be improved - e.g. allele matrix; getting SNP positions for 1000s of isolate is too slow for a single job
 // TODO: sort inputs by size so the slowest jobs start first - this can provide small speed improvement
 // TODO: create variant where we agglomerate stages in 3-4 steps which python scripts to handle execution
 
 // TODO: decide approach for merge runs
 
 
-// File I/O
-params.reads = 'data/reads/*_{1,2}.fastq.gz'
-//params.reads = 'data/subset_reads/*_{1,2}_sub.fastq.gz'
-params.reference = file('data/NCTC13753.gbk')
-params.output_dir = file('output')
+log.info """
+‌‌
+
+                              d8b           d8b
+                              88P           88P
+                             d88           d88
+  88bd88b     d8888b     d888888       d888888       d8888b      d888b8b
+  88P'  `    d8b_,dP    d8P' ?88      d8P' ?88      d8P' ?88    d8P' ?88
+ d88         88b        88b  ,88b     88b  ,88b     88b  d88    88b  ,88b
+d88'         `?888P'    `?88P'`88b    `?88P'`88b    `?8888P'    `?88P'`88b
+                                                                       )88
+                                                                      ,88P
+                                                                  `?8888P
+
+‌‌
+""".stripIndent()
+
+
+def print_help() {
+  log.info """
+  ==========================================================================
+  reddog-nf: reddog nextflow implementation
+  ==========================================================================
+  Homepage (nextflow implementation): https://github.com/scwatts/reddog-nf
+  Homepage (original pipeline): https://github.com/katholt/RedDog
+
+  Required:
+  --------------------
+    --reads               Input reads (paired, gzip compressed)
+
+    --reference           Reference genbank
+
+    --output_dir          Output directory
+  --------------------
+
+  Other:
+  --------------------
+    --help                Displays this help message
+  --------------------
+
+  ==========================================================================
+
+  """.stripIndent()
+}
+
+
+// Check arguments
+if (params.help) {
+  print_help()
+  exit 0
+}
+if (! params.reads) {
+  print_help()
+  println "‌‌"
+  exit 1, "error: option --reads is required"
+}
+if (! params.reference) {
+  print_help()
+  println "‌‌"
+  exit 1, "error: option --reference is required"
+}
+if (! params.output_dir) {
+  print_help()
+  println "‌‌"
+  exit 1, "error: option --output_dir is required"
+}
+
+
+// Create file objects from input parameters
+reference = file("${params.reference}")
+output_dir = file("${params.output_dir}")
 
 
 // Create channel for input read sets
@@ -26,9 +92,9 @@ process convert_reference {
   file '*.fasta' into ch_reference_fasta
 
   script:
-  reference_fasta = params.reference.simpleName + '.fasta'
+  reference_fasta = reference.simpleName + '.fasta'
   """
-  genbank_to_fasta.py --input_fp ${params.reference} --output_fp ${reference_fasta}
+  genbank_to_fasta.py --input_fp ${reference} --output_fp ${reference_fasta}
   """
 }
 ch_reference_fasta.into {
@@ -116,7 +182,7 @@ ch_raw_bams.into { ch_filter_unmapped; ch_replicon_stats_bams }
 
 // Filter unmapped reads from bam
 process filter_unmapped_reads {
-  publishDir "${params.output_dir}/bams/"
+  publishDir "${output_dir}/bams/"
 
   input:
   tuple sample_id, file(bam_fp) from ch_filter_unmapped
@@ -205,7 +271,7 @@ process filter_snps_vcfutils {
 
 // Filter SNPs with less than Q30 and separate heterozygous SNPs
 process filter_snps_q30_hets {
-  publishDir "${params.output_dir}/vcfs/"
+  publishDir "${output_dir}/vcfs/"
 
   input:
   tuple sample_id, replicon_id, file(vcf_fp) from ch_filter_snps_q30_hets
@@ -247,7 +313,7 @@ process calculate_replicon_statistics {
 // Transpost channel such that we group stats files of the same replicon
 ch_replicon_stats_per_sample.transpose().groupTuple().set { ch_replicon_stats_aggregate }
 process aggregate_replicon_statistics {
-  publishDir "${params.output_dir}", saveAs: { filename -> "${params.reference.simpleName}_${filename}" }
+  publishDir "${output_dir}", saveAs: { filename -> "${reference.simpleName}_${filename}" }
 
   input:
   tuple replicon_id, file(replicon_stats_fps) from ch_replicon_stats_aggregate
@@ -279,7 +345,7 @@ process aggregate_replicon_statistics {
 _ch_allele_matrix_vcfs.groupTuple(by: 1).map { items -> items[1..2] }.set { ch_allele_matrix_vcfs }
 ch_allele_matrix_vcfs.combine(ch_allele_matrix_consensus).join(ch_allele_matrix_rep_stats).set { ch_create_allele_matrix }
 process create_allele_matrix {
-  publishDir "${params.output_dir}", saveAs: { filename -> "${params.reference.simpleName}_${filename}" }
+  publishDir "${output_dir}", saveAs: { filename -> "${reference.simpleName}_${filename}" }
 
   input:
   tuple replicon_id, file(vcf_fps), file(consensus_fps), file(stats_fp) from ch_create_allele_matrix
@@ -296,7 +362,7 @@ process create_allele_matrix {
 
 // Filter allele matrix
 process filter_allele_matrix {
-  publishDir "${params.output_dir}", saveAs: { filename -> "${params.reference.simpleName}_${filename}" }
+  publishDir "${output_dir}", saveAs: { filename -> "${reference.simpleName}_${filename}" }
 
   input:
   tuple replicon_id, file(allele_matrix_fp) from ch_filter_allele_matrix
@@ -314,7 +380,7 @@ ch_filtered_allele_matrix.into { ch_genome_alignment; ch_determine_coding_conseq
 
 // Create pseudo genome alignment
 process create_pseudo_genome_alignment {
-  publishDir "${params.output_dir}", saveAs: { filename -> "${params.reference.simpleName}_${filename}" }
+  publishDir "${output_dir}", saveAs: { filename -> "${reference.simpleName}_${filename}" }
 
   input:
   tuple replicon_id, file(allele_matrix_fp) from ch_genome_alignment
@@ -332,7 +398,7 @@ process create_pseudo_genome_alignment {
 
 // Determine coding consequences
 process determine_coding_consequences {
-  publishDir "${params.output_dir}", saveAs: { filename -> "${params.reference.simpleName}_${filename}" }
+  publishDir "${output_dir}", saveAs: { filename -> "${reference.simpleName}_${filename}" }
 
   input:
   tuple replicon_id, file(allele_matrix_fp) from ch_determine_coding_consequences
@@ -342,14 +408,14 @@ process determine_coding_consequences {
 
   script:
   """
-  determine_coding_consequences.py --allele_fp ${allele_matrix_fp} --reference ${params.reference} --replicon ${replicon_id} > ${replicon_id}_alleles_var_cons0.95_consequences.tsv
+  determine_coding_consequences.py --allele_fp ${allele_matrix_fp} --reference ${reference} --replicon ${replicon_id} > ${replicon_id}_alleles_var_cons0.95_consequences.tsv
   """
 }
 
 
 // Infer phylogeny
 process infer_phylogeny {
-  publishDir "${params.output_dir}", saveAs: { filename -> "${params.reference.simpleName}_${filename}" }
+  publishDir "${output_dir}", saveAs: { filename -> "${reference.simpleName}_${filename}" }
 
   input:
   tuple replicon_id, file(alignment_fp) from ch_infer_phylogeny
