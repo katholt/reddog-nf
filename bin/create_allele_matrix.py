@@ -108,9 +108,9 @@ def main():
                     consensus[sample_id] = record
                     break
             else:
-                msg = f'error: could not find replicon {args.replicon} in {consensus_fp}'
+                # Lack of replicon in consensus is usually from no mapping reads
+                msg = f'warning: could not find replicon {args.replicon} in {consensus_fp}'
                 print(msg, file=sys.stderr)
-                sys.exit(1)
 
 
     # Print SNP calls from consensus sequence (called from raw VCF)
@@ -121,7 +121,12 @@ def main():
         ref_allele = snp_positions[snp_position]
         print(snp_position, ref_allele, sep='\t', end='')
         for sample_id in consensus:
+            # Get record and check if we're in bounds
             record = consensus[sample_id]
+            if snp_position > len(record.seq):
+                print('\t', '-', sep='', end='')
+                continue
+            # Get SNP call and associated quality
             snp = record.seq[snp_position-1]
             quality = record.letter_annotations['phred_quality'][snp_position-1]
             # Exclude low quality SNPs
