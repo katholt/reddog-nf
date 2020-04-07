@@ -1,13 +1,12 @@
 #!/usr/bin/env nextflow
-// TODO: with very large datasets we will error on too many command line arguments - one option will be to write to file in 'script' blocks
-
 // TODO: pre-flight checks, see RedDog.py
 // TODO: provide config and allow options set from commandline
-// TODO: decide approach for merge runs
 
+// TODO: with very large datasets we will error on too many command line arguments - one option will be to write to file in 'script' blocks
 // TODO: sort inputs by size so the slowest jobs start first - this can provide small speed improvement
-
 // TODO: create variant where we agglomerate stages in 3-4 steps which python scripts to handle execution
+
+// TODO: decide approach for merge runs
 
 
 // File I/O
