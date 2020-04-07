@@ -5,7 +5,6 @@
 
 import argparse
 import pathlib
-import sys
 
 
 def get_arguments():

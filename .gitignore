@@ -1,5 +1,6 @@
 DONE
 NOTES
+.idea/
 .nextflow*
 conda_env/
 output/

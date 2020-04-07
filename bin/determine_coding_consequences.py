@@ -28,10 +28,6 @@ class Interval:
         end = feature.location.nofuzzy_end
         return Interval(feature, start, end)
 
-    def __repr__(self):
-        self_type = type(self)
-        return f'<{self_type.__qualname__} at {hex(id(self))} with {self.start}:{self.end}>'
-
 
 class Node:
 

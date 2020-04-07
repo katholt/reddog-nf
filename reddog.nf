@@ -150,8 +150,7 @@ process index_filtered_bams {
 }
 ch_bams_and_indices.into {
     ch_call_snps_bams_and_indices;
-    ch_consensus_bams_and_indices;
-    ch_depth_coverage_bams_and_indices;
+    ch_consensus_bams_and_indices
   }
 
 
@@ -172,6 +171,25 @@ process call_snps {
   samtools mpileup -u -t DP -f ${reference_fp} ${bam_fp} -r ${replicon_id} | bcftools call -O b -cv - > ${sample_id}_${replicon_id}_raw.bcf
   """
 }
+
+
+// Call consensus
+process call_consensus {
+  input:
+  tuple sample_id, file(bam_fp), file(index_fp) from ch_consensus_bams_and_indices
+  file reference_fp from ch_consensus_reference
+
+  output:
+  file '*consensus.fastq' into ch_consensus
+
+  script:
+  """
+  samtools mpileup -q 20 -ugB -f ${reference_fp} ${bam_fp} | bcftools call -c - | vcfutils.pl vcf2fq > "${sample_id}_consensus.fastq"
+  """
+}
+// We need a single list item emitted to combine with VCFs for the allele matrix creatation step
+// This works but there is likely a better way
+ch_consensus.toList().toList().set { ch_allele_matrix_consensus }
 
 
 // Filter SNPs using vcfutils
@@ -204,7 +222,7 @@ process filter_snps_q30_hets {
   filter_snp_calls.py --input_vcf_fp ${vcf_fp} --output_q30_vcf_fp ${sample_id}_${replicon_id}_q30.vcf --output_hets_vcf_fp ${sample_id}_${replicon_id}_hets.vcf
   """
 }
-// Create channels emit sample_id, replicon_id, q30_vcf_fp, hets_vcf_fp (ordered by replicon_id)
+// Create channels that emit sample_id, replicon_id, q30_vcf_fp, hets_vcf_fp (ordered by replicon_id)
 // NOTE: replicon ordering is required here so that the calculate_replicon_statistics process output glob
 // matches input. This also means that sort order resulting from toSortedList MUST match glob sort order.
 // An assertion is provided in the aggregation process
@@ -260,21 +278,22 @@ process aggregate_replicon_statistics {
 }
 
 
-// Create allele matric for each replicon
+// Create allele matrix for each replicon
 // Transform channel to only emit replicon_id and q30 VCFs (grouped by replicon)
 _ch_allele_matrix_vcfs.groupTuple(by: 1).map { items -> items[1..2] }.set { ch_allele_matrix_vcfs }
+ch_allele_matrix_vcfs.combine(ch_allele_matrix_consensus).set { ch_create_allele_matrix }
 process create_allele_matrix {
   publishDir "${params.output_dir}"
 
   input:
-  tuple replicon_id, file(vcf_fps) from ch_allele_matrix_vcfs
+  tuple replicon_id, file(vcf_fps), file(consensus_fps) from ch_create_allele_matrix
 
   output:
   tuple val(replicon_id), file('*_alleles_var.tsv') into ch_filter_allele_matrix
 
   script:
   """
-  create_allele_matrix.py --vcf_fps ${vcf_fps} --replicon ${replicon_id} > ${replicon_id}_alleles_var.tsv
+  create_allele_matrix.py --vcf_fps ${vcf_fps} --consensus_fps ${consensus_fps} --replicon ${replicon_id} > ${replicon_id}_alleles_var.tsv
   """
 }
 

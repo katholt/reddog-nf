@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 import argparse
 import pathlib
-import re
-import subprocess
 import sys
+
+
+from Bio.SeqIO.QualityIO import FastqPhredIterator
 
 
 vcf_fields = {'chrom': str,
@@ -39,18 +40,12 @@ class CheckInput(argparse.Action):
         setattr(namespace, self.dest, value)
 
 
-class CheckOutput(argparse.Action):
-
-    def __call__(self, parser, namespace, filepath, option_string=None):
-        if not filepath.exists():
-            parser.error(f'Output directory {filepath.parent} does not exist')
-        setattr(namespace, self.dest, filepath)
-
-
 def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--vcf_fps', required=True, type=pathlib.Path,
             help='Input VCF filepaths', nargs='+', action=CheckInput)
+    parser.add_argument('--consensus_fps', required=True, type=pathlib.Path,
+            help='Input consensus filepaths', nargs='+', action=CheckInput)
     parser.add_argument('--replicon', required=True, type=str,
             help='Replicon name')
     return parser.parse_args()
@@ -60,10 +55,9 @@ def main():
     # Get command line arguments
     args = get_arguments()
 
-    # For each VCF get SNPs that pass
+    # Get high quality SNP positions from filtered VCFs
+    snp_positions = dict()
     replicons_seen = set()
-    ref_alleles = dict()
-    set_alleles = list()
     for vcf_fp in args.vcf_fps:
         vcf_alleles = dict()
         with vcf_fp.open('r') as fh:
@@ -87,15 +81,15 @@ def main():
                 # Skip non-SNPs
                 if ',' in record.alt:
                     continue
-                # Record alt allele
-                if record.qual >= 20 and record.alt in {'A', 'T', 'G', 'C'}:
-                    vcf_alleles[record.pos] = record.alt
+                # Skip when ref and alt are the same
+                if record.ref == record.alt:
+                    continue
+                # Note SNPs
+                if record.pos in snp_positions and snp_positions[record.pos] != record.ref:
+                    print(f'got mismatch reference allele for position {record.pos}', file=sys.stderr)
+                    sys.exit(1)
                 else:
-                    vcf_alleles[record.pos] = '-'
-                # Record ref allele
-                if record.pos not in ref_alleles:
-                    ref_alleles[record.pos] = record.ref
-            set_alleles.append(vcf_alleles)
+                    snp_positions[record.pos] = record.ref
 
             # Ensure that we're getting the same replicon
             replicons_seen.add(record.chrom)
@@ -103,27 +97,43 @@ def main():
                 print('error: got duplicate replicon names', file=sys.stderr)
                 sys.exit(1)
 
-    # Get SNP positions
-    snp_positions = {pos for vcf_alleles in set_alleles for pos in vcf_alleles}
-    snp_positions = sorted(snp_positions)
 
-    # Compare seen replicon to provided
-    if replicons_seen:
-        [replicon] = replicons_seen
-        if args.replicon != replicon:
-            msg = f'error: got replicon id mismatch, expected {args.replicon} but got {replicon}'
-            print(msg, file=sys.stderr)
-            sys.exit(1)
+    # Read in consensus sequences and get appropriate replicon
+    consensus = dict()
+    for consensus_fp in args.consensus_fps:
+        sample_id = consensus_fp.name.replace('_consensus.fastq', '')
+        with consensus_fp.open('r') as fh:
+            for record in FastqPhredIterator(fh):
+                if record.id == args.replicon:
+                    consensus[sample_id] = record
+                    break
+            else:
+                msg = f'error: could not find replicon {args.replicon} in {consensus_fp}'
+                print(msg, file=sys.stderr)
+                sys.exit(1)
 
-    # Header
-    # Create matrix
-    sample_ids = [fp.stem.replace(f'_{args.replicon}_q30', '') for fp in args.vcf_fps]
-    print('Position', 'Reference', *sample_ids, sep='\t')
-    # Data
-    for snp_position in snp_positions:
-        reference_allele = ref_alleles[snp_position]
-        position_alleles = [alleles.get(snp_position, reference_allele) for alleles in set_alleles]
-        print(snp_position, reference_allele, *position_alleles, sep='\t')
+
+    # Print SNP calls from consensus sequence (called from raw VCF)
+    # The consensus sequence gives us access to low quality calls (allowing us to make missing data
+    # designations) and also access to the high quality SNP calls
+    print('Position', 'Reference', *consensus, sep='\t')
+    for snp_position in sorted(snp_positions):
+        ref_allele = snp_positions[snp_position]
+        print(snp_position, ref_allele, sep='\t', end='')
+        for sample_id in consensus:
+            record = consensus[sample_id]
+            snp = record.seq[snp_position-1]
+            quality = record.letter_annotations['phred_quality'][snp_position-1]
+            # Exclude low quality SNPs
+            if quality < 20:
+                print('\t', '-', sep='', end='')
+            # vcfutils vcf2fq uses lowercase nucleotides for low quailty calls
+            # Exclude those here as well
+            elif snp not in {'A', 'T', 'G', 'C'}:
+                print('\t', '-', sep='', end='')
+            else:
+                print('\t', snp, sep='', end='')
+        print()
 
 
 if __name__ == '__main__':
