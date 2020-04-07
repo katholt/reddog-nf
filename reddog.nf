@@ -254,7 +254,7 @@ process aggregate_replicon_statistics {
   tuple replicon_id, file(replicon_stats_fps) from ch_replicon_stats_aggregate
 
   output:
-  file '*RepStats.txt'
+  tuple val(replicon_id), file('*RepStats.txt') into ch_allele_matrix_rep_stats
 
   script:
   """
@@ -278,21 +278,22 @@ process aggregate_replicon_statistics {
 // Create allele matrix for each replicon
 // Transform channel to only emit replicon_id and q30 VCFs (grouped by replicon)
 _ch_allele_matrix_vcfs.groupTuple(by: 1).map { items -> items[1..2] }.set { ch_allele_matrix_vcfs }
-ch_allele_matrix_vcfs.combine(ch_allele_matrix_consensus).set { ch_create_allele_matrix }
+ch_allele_matrix_vcfs.combine(ch_allele_matrix_consensus).join(ch_allele_matrix_rep_stats).set { ch_create_allele_matrix }
 process create_allele_matrix {
   publishDir "${params.output_dir}", saveAs: { filename -> "${params.reference.simpleName}_${filename}" }
 
   input:
-  tuple replicon_id, file(vcf_fps), file(consensus_fps) from ch_create_allele_matrix
+  tuple replicon_id, file(vcf_fps), file(consensus_fps), file(stats_fp) from ch_create_allele_matrix
 
   output:
   tuple val(replicon_id), file('*_alleles_var.tsv') into ch_filter_allele_matrix
 
   script:
   """
-  create_allele_matrix.py --vcf_fps ${vcf_fps} --consensus_fps ${consensus_fps} --replicon ${replicon_id} > ${replicon_id}_alleles_var.tsv
+  create_allele_matrix.py --vcf_fps ${vcf_fps} --consensus_fps ${consensus_fps} --stats_fp ${stats_fp} --replicon ${replicon_id} > ${replicon_id}_alleles_var.tsv
   """
 }
+
 
 // Filter allele matrix
 process filter_allele_matrix {

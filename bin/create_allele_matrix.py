@@ -46,6 +46,8 @@ def get_arguments():
             help='Input VCF filepaths', nargs='+', action=CheckInput)
     parser.add_argument('--consensus_fps', required=True, type=pathlib.Path,
             help='Input consensus filepaths', nargs='+', action=CheckInput)
+    parser.add_argument('--stats_fp', required=True, type=pathlib.Path,
+            help='Input replicon status filepath', action=CheckInput)
     parser.add_argument('--replicon', required=True, type=str,
             help='Replicon name')
     return parser.parse_args()
@@ -55,10 +57,25 @@ def main():
     # Get command line arguments
     args = get_arguments()
 
+    # Get samples that passed mapping criteria
+    samples_pass = set()
+    with args.stats_fp.open('r') as fh:
+        line_token_gen = (line.rstrip().split('\t') for line in fh)
+        header_tokens = next(line_token_gen)
+        for line_tokens in line_token_gen:
+            record = {field.lower(): value for field, value in zip(header_tokens, line_tokens)}
+            if record['ingroup/fail'] in {'i', 'o'}:
+                samples_pass.add(record['isolate'])
+
+    # Filter failed VCF and consensus input files
+    vcf_fp_suffix = f'_{args.replicon}_q30.vcf'
+    vcf_fps_pass = (fp for fp in args.vcf_fps if fp.name.replace(vcf_fp_suffix, '') in samples_pass)
+    consensus_fps_pass = (fp for fp in args.consensus_fps if fp.name.replace('_consensus.fastq', '') in samples_pass)
+
     # Get high quality SNP positions from filtered VCFs
     snp_positions = dict()
     replicons_seen = set()
-    for vcf_fp in args.vcf_fps:
+    for vcf_fp in vcf_fps_pass:
         vcf_alleles = dict()
         with vcf_fp.open('r') as fh:
             # Skip header
@@ -100,7 +117,7 @@ def main():
 
     # Read in consensus sequences and get appropriate replicon
     consensus = dict()
-    for consensus_fp in args.consensus_fps:
+    for consensus_fp in consensus_fps_pass:
         sample_id = consensus_fp.name.replace('_consensus.fastq', '')
         with consensus_fp.open('r') as fh:
             for record in FastqPhredIterator(fh):
