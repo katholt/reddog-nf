@@ -1,8 +1,5 @@
 #!/usr/bin/env nextflow
-// TODO: provide input reference name to final output files for naming (aggregate_replicon_statistics, create_allele_matrix)
-// TODO: allele matrix filtering - should we be only considering ingroup isolates for conservation or invariant site assessment?
-// TODO: I have not excluded failed isolates from allele matrices, check implications - phylogeny?
-// TODO: consider decoupling awk script in get_coverage_depth.sh, get_reads_mapped.sh and modifying subprocess call appropriately
+// TODO: with very large datasets we will error on too many command line arguments - one option will be to write to file in 'script' blocks
 
 // TODO: pre-flight checks, see RedDog.py
 // TODO: provide config and allow options set from commandline
@@ -358,10 +355,10 @@ process infer_phylogeny {
   tuple replicon_id, file(alignment_fp) from ch_infer_phylogeny
 
   output:
-  file '*_phylogeny.tree'
+  file '*.tree'
 
   script:
   """
-  FastTree -gtr -gamma -nt ${alignment_fp} > ${replicon_id}_phylogeny.tree
+  FastTree -gtr -gamma -nt ${alignment_fp} > ${replicon_id}_alleles_var_cons0.95.tree
   """
 }
