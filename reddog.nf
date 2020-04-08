@@ -4,7 +4,7 @@
 // TODO: with very large datasets we will error on too many command line arguments - one option will be to write to file in 'script' blocks
 // TODO: also wrt large datasets certain process will need to be improved - e.g. allele matrix; getting SNP positions for 1000s of isolate is too slow for a single job
 // TODO: sort inputs by size so the slowest jobs start first - this can provide small speed improvement
-// TODO: create variant where we agglomerate stages in 3-4 steps which python scripts to handle execution
+// TODO: create variant where we agglomerate stages in 3-4 steps with python scripts to handle execution
 
 // TODO: decide approach for merge runs
 

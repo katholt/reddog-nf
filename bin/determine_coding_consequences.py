@@ -142,7 +142,7 @@ def main():
         # Iterate through each entry via AlleleRecords
         allele_record_gen = (AlleleRecord(line_tokens, isolates) for line_tokens in line_token_gen)
         for record in allele_record_gen:
-            # Find features intervals that this record lands in
+            # Find feature intervals that this record lands in
             record.feature_intervals = interval_tree.search_position(record.position)
             # Process intergenic
             if not record.feature_intervals:
