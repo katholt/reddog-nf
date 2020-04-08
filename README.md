@@ -2,8 +2,6 @@
 
 
 ## Processing differences
-* No checkBam stage equivalent yet
-    - this will be a simple post-process script
 * The calculate_replicon_statistics process
     - combines several steps
         - getSamStats
@@ -24,9 +22,31 @@
     - implemented an interval tree to quickly collect features containing a given SNP
 
 
-## Currently known output differences
-* New versions of software calling additional SNPs with same parameters
-    - Presumably this is due to improvements and bug fixes
+## TODO
+* Fix filter_snps_vcfutils process
+    - incorrect parameterisation of -D
+* Update allele matrix creation
+    - using Kat script
+        - uses q30 variants for SNP positions
+        - replaces all site consensus with q20 site-specific consensus
+    - split into smaller jobs
+        - batch into jobs of ~50-100 isolates
+    - add aggregation step
+* Replace pseudo-genome alignment with SNP alignment
+* Add gene coverage and presence/absence matrix
+    - current RedDog test run did not provide this output, investigate
+* Conditionally execute phylogeny process
+    - on the basis of having n or more isolates
+* Run report with additional information, see RedDog and Jane's pipeline
+* Allow FASTA input
+    - must disable certain processes - use `when` directive if clean enough
+    - we'll probably be able to use a single `when` directive early in the pipeline
+* Mixed sample detection
+    - to be discussed with the lab
+* Merge run pipeline
+    - new nextflow script
+* Single reads pipeline
+    - new nextflow script
 
 
 ## Items for further testing
