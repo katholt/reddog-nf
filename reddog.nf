@@ -1,14 +1,4 @@
 #!/usr/bin/env nextflow
-// TODO: pre-flight checks, see RedDog.py
-
-// TODO: with very large datasets we will error on too many command line arguments - one option will be to write to file in 'script' blocks
-// TODO: also wrt large datasets certain process will need to be improved - e.g. allele matrix; getting SNP positions for 1000s of isolate is too slow for a single job
-// TODO: sort inputs by size so the slowest jobs start first - this can provide small speed improvement
-// TODO: create variant where we agglomerate stages in 3-4 steps with python scripts to handle execution
-
-// TODO: decide approach for merge runs
-
-
 log.info """
 ‌‌
 
@@ -32,8 +22,8 @@ def print_help() {
   ==========================================================================
   reddog-nf: reddog nextflow implementation
   ==========================================================================
-  Homepage (nextflow implementation): https://github.com/scwatts/reddog-nf
   Homepage (original pipeline): https://github.com/katholt/RedDog
+  Homepage (nextflow implementation): https://github.com/scwatts/reddog-nf
 
   Required:
   --------------------
@@ -323,7 +313,7 @@ process aggregate_replicon_statistics {
 
   script:
   """
-  # First check we have the corret replicon stats file
+  # First check we have the correct replicon stats file
   replicon_id_found=\$(head -n1 -q ${replicon_stats_fps} | sed 's/^#//' | sort | uniq)
   replicon_id_counts=\$(echo "\${replicon_id_found}" | wc -l)
   if [[ "\${replicon_id_counts}" -gt 1 ]]; then
