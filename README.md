@@ -32,21 +32,35 @@
     - split into smaller jobs
         - batch into jobs of ~50-100 isolates
     - add aggregation step
+        - specify current directory as input, select files with glob generator in python
 * Replace pseudo-genome alignment with SNP alignment
 * Add gene coverage and presence/absence matrix
-    - current RedDog test run did not provide this output, investigate
+    - needs depth and coverage for each replicon
+    - may be best to reintroduce getCoverage stage
+        - output will be used by both this and the relicon stats process
 * Conditionally execute phylogeny process
     - on the basis of having n or more isolates
 * Run report with additional information, see RedDog and Jane's pipeline
+* Add optional fastqc
+    - default behaviour to generate reports
+    - option to turn off
+* Mixed sampel detection
+    - SNP:het ratio in replicon statistics?
+    - use zoe's scripts to plot
+        - reads het and q30 vcfs
+        - plot %mapped to alt, coloured by hets or homs
 * Allow FASTA input
     - must disable certain processes - use `when` directive if clean enough
     - we'll probably be able to use a single `when` directive early in the pipeline
+* Check user inputs and configuration before executing pipeline
+* Sort inputs by file size
+    - can provide small reduction in runtime
 * Mixed sample detection
     - to be discussed with the lab
 * Merge run pipeline
-    - new nextflow script
+    - separate nextflow script
 * Single reads pipeline
-    - new nextflow script
+    - separate nextflow script
 
 
 ## Items for further testing
