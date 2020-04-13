@@ -92,8 +92,8 @@ ch_reference_fasta.into {
     ch_index_reference_samtools;
     ch_collect_replicon_names;
     ch_align_reference;
-    ch_snps_call_reference;
-    ch_consensus_reference;
+    ch_call_snps_reference;
+    ch_allele_matrix_reference;
     ch_genome_alignment_reference
   }
 
@@ -202,17 +202,18 @@ process index_filtered_bams {
 }
 ch_bams_and_indices.into {
     ch_call_snps_bams_and_indices;
-    ch_consensus_bams_and_indices
+    ch_allele_matrix_bams_and_indices
   }
 
 
 // Call SNPs
 // Create channel of combinations for replicion ~ isolate bam files
 ch_call_snps_replicons.combine(ch_call_snps_bams_and_indices).set { ch_call_snps }
+
 process call_snps {
   input:
   tuple replicon_id, sample_id, file(bam_fp), file(index_fp) from ch_call_snps
-  file reference_fp from ch_snps_call_reference
+  file reference_fp from ch_call_snps_reference
   file fasta_index from ch_reference_samtools_index
 
   output:
@@ -223,25 +224,6 @@ process call_snps {
   samtools mpileup -u -t DP -f ${reference_fp} ${bam_fp} -r ${replicon_id} | bcftools call -O b -cv - > ${sample_id}_${replicon_id}_raw.bcf
   """
 }
-
-
-// Call consensus
-process call_consensus {
-  input:
-  tuple sample_id, file(bam_fp), file(index_fp) from ch_consensus_bams_and_indices
-  file reference_fp from ch_consensus_reference
-
-  output:
-  file '*consensus.fastq' into ch_consensus
-
-  script:
-  """
-  samtools mpileup -q 20 -ugB -f ${reference_fp} ${bam_fp} | bcftools call -c - | vcfutils.pl vcf2fq > "${sample_id}_consensus.fastq"
-  """
-}
-// We need a single list item emitted to combine with VCFs for the allele matrix creatation step
-// This works but there is likely a better way
-ch_consensus.toList().toList().set { ch_allele_matrix_consensus }
 
 
 // Filter SNPs using vcfutils
@@ -267,24 +249,25 @@ process filter_snps_q30_hets {
   tuple sample_id, replicon_id, file(vcf_fp) from ch_filter_snps_q30_hets
 
   output:
-  tuple val(sample_id), val(replicon_id), file('*_q30.vcf'), file('*hets.vcf') into ch_filtered_vcfs
+  tuple val(sample_id), val(replicon_id), file('*_q30.vcf'), file('*hets.vcf') into _ch_replicon_stats_vcfs
+  tuple val(sample_id), val(replicon_id), file('*_q30.vcf') into ch_snp_sites_vcfs
 
   script:
   """
   filter_snp_calls.py --input_vcf_fp ${vcf_fp} --output_q30_vcf_fp ${sample_id}_${replicon_id}_q30.vcf --output_hets_vcf_fp ${sample_id}_${replicon_id}_hets.vcf
   """
 }
-// Create channels that emit sample_id, replicon_id, q30_vcf_fp, hets_vcf_fp (ordered by replicon_id)
+// This channel emits sample_id, list(replicon_ids), list(q30), list(hets)
 // NOTE: replicon ordering is required here so that the calculate_replicon_statistics process output glob
 // matches input. This also means that sort order resulting from toSortedList MUST match glob sort order.
 // An assertion is provided in the aggregation process
-// These channels emit sample_id, list(replicon_ids), list(q30), list(hets)
-ch_filtered_vcfs.toSortedList { items -> items[1] }.flatMap().into { ch_replicon_stats_vcfs; _ch_allele_matrix_vcfs }
+_ch_replicon_stats_vcfs.toSortedList { items -> items[1] }.flatMap().set{ ch_replicon_stats_vcfs }
 
 
 // Calculate replicon statistics
 // Group VCFs by sample_id and add respective BAM filepath
 ch_replicon_stats_vcfs.groupTuple().join(ch_replicon_stats_bams).set { ch_replicon_stats }
+
 process calculate_replicon_statistics {
   input:
   tuple sample_id, replicons, file(vcf_q30_fps), file(vcf_hets_fps), file(bam_fp) from ch_replicon_stats
@@ -302,6 +285,7 @@ process calculate_replicon_statistics {
 // Aggregate replicon statistics
 // Transpost channel such that we group stats files of the same replicon
 ch_replicon_stats_per_sample.transpose().groupTuple().set { ch_replicon_stats_aggregate }
+
 process aggregate_replicon_statistics {
   publishDir "${output_dir}", saveAs: { filename -> "${reference.simpleName}_${filename}" }
 
@@ -309,7 +293,8 @@ process aggregate_replicon_statistics {
   tuple replicon_id, file(replicon_stats_fps) from ch_replicon_stats_aggregate
 
   output:
-  tuple val(replicon_id), file('*RepStats.txt') into ch_allele_matrix_rep_stats
+  file('*RepStats.txt') into ch_allele_matrix_rep_stats
+  env sample_status into _ch_samples_status
 
   script:
   """
@@ -326,29 +311,106 @@ process aggregate_replicon_statistics {
 
   sed -n '2p' ${replicon_stats_fps} > ${replicon_id}_RepStats.txt
   sed -e '/^#/d' -e '/^Isolate/d' ${replicon_stats_fps} | get_ingroup_outgroup.awk >> ${replicon_id}_RepStats.txt
+  sample_status=\$(awk -v var="${replicon_id}" 'NR != 1 { print var, \$1, \$10 }' ${replicon_id}_RepStats.txt)
   """
 }
+// This creates a channel that emits sample_id, replicon_id, pass/fail
+// TODO: A dicey approach as it relies on every entry producing 3 data points, make more robust
+_ch_samples_status.map { items -> items.tokenize(' ') }.flatMap().buffer(size: 3).set { ch_samples_status }
 
 
-// Create allele matrix for each replicon
-// Transform channel to only emit replicon_id and q30 VCFs (grouped by replicon)
-_ch_allele_matrix_vcfs.groupTuple(by: 1).map { items -> items[1..2] }.set { ch_allele_matrix_vcfs }
-ch_allele_matrix_vcfs.combine(ch_allele_matrix_consensus).join(ch_allele_matrix_rep_stats).set { ch_create_allele_matrix }
-process create_allele_matrix {
-  publishDir "${output_dir}", saveAs: { filename -> "${reference.simpleName}_${filename}" }
-
+// Get SNP sites for each sample
+process collect_snp_sites {
   input:
-  tuple replicon_id, file(vcf_fps), file(consensus_fps), file(stats_fp) from ch_create_allele_matrix
+  tuple sample_id, replicon_id, file(vcf_fp) from ch_snp_sites_vcfs
 
   output:
-  tuple val(replicon_id), file('*_alleles_var.tsv') into ch_filter_allele_matrix
+  tuple val(replicon_id), file('*_sites.tsv') into ch_snp_sites_positions
 
   script:
   """
-  create_allele_matrix.py --vcf_fps ${vcf_fps} --consensus_fps ${consensus_fps} --stats_fp ${stats_fp} --replicon ${replicon_id} > ${replicon_id}_alleles_var.tsv
+  get_snp_sites.awk ${vcf_fp} > ${replicon_id}_${sample_id}_sites.tsv
+  """
+}
+// Group SNP sites by replicon id
+ch_snp_sites_positions.groupTuple().set { ch_snp_sites_aggregate }
+
+
+// Combine SNP sites
+process aggregate_snp_sites {
+  input:
+  tuple replicon_id, file(snp_sites_fps) from ch_snp_sites_aggregate
+
+  output:
+  tuple val(replicon_id), file('*_sites.tsv') into ch_snp_sites
+
+  script:
+  """
+  sort --merge -n --parallel=1 ${snp_sites_fps} | uniq > ${replicon_id}_sites.tsv
   """
 }
 
+
+// Here we aim to get a list of input files while excluding construction of allele matrix for failed samples
+// This must be done on a per replicon basis - i.e. a sample may fail on one replicon but not others
+// To achieve this only samples that pass mapping for a replicon are assigned the respective replicon SNP site
+// file. This works because the script that constructs the allele matrix creates them from SNP site files; if
+// a SNP site file is missing for a replicon then that matrix is not constructed.
+// Channel emits sample_id, list(snp_site_fps) - for passing samples and replicons only. Process:
+//   - remove all samples that failed to pass mapping criteria for each replicon
+//   - samples passing for each sample are assigned a SNP site file
+//   - remove replicon_id and then group by sample_id
+ch_samples_status.filter { items -> items[2] != 'f' }
+  .map { items -> items[0..1] }
+  .combine(ch_snp_sites, by: 0)
+  .map { items -> items[1,2] }
+  .groupTuple()
+  .set { ch_snp_sites_pass }
+
+// Now add respective BAM and index to each set of SNP site files
+ch_allele_matrix_bams_and_indices.join(ch_snp_sites_pass, by: 0).set { ch_create_allele_matrix }
+
+process create_allele_matrix {
+  input:
+  tuple sample_id, file(bam_fp), file(index_fp), file(sites_fp) from ch_create_allele_matrix
+  file reference_fp from ch_allele_matrix_reference
+
+  output:
+  tuple val(sample_id), file('*_alleles.tsv') into _ch_allele_matrix_aggregate
+
+  script:
+  """
+  create_allele_matrix.py --bam_fp ${bam_fp} --sites_fps ${sites_fp} --reference_fp ${reference_fp} --output_dir ./
+  """
+}
+_ch_allele_matrix_aggregate.println()
+
+
+// TODO: get output of create_allele_matrix to match replicon_id to group for aggregation
+// Get be robust (and slightly less than optimal) and grab the replicon_id from the file name
+
+// TODO: Output is going to be a string for single items or list for more ugh
+// We need to learn more groovy to use in closures for this
+
+
+/*
+// Aggregate allele matrices
+process aggregate_allele_matrices {
+  publishDir "${output_dir}", saveAs: { filename -> "${reference.simpleName}_${filename}" }
+
+  input:
+  file(allele_fps) from ch_allele_matrix_aggregate
+
+  output:
+  file('*alleles.tsv')
+
+  script:
+  """
+  # some BASH
+  """
+}
+
+/*
 
 // Filter allele matrix
 process filter_allele_matrix {
@@ -418,3 +480,4 @@ process infer_phylogeny {
   FastTree -gtr -gamma -nt ${alignment_fp} > ${replicon_id}_alleles_var_cons0.95.tree
   """
 }
+*/
