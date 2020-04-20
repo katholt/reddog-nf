@@ -15,10 +15,13 @@
 * Isolates in replicon statistics file are ordered as failed, outgroup, ingroup
 * The coding consequences process additionally provides a list of affected isolates
     - implemented an interval tree to quickly collect features containing a given SNP
-* Coding consequences for hets (TODO)
+* Filtering BAMs in single-shot while mapping
+    - unmapped read statistic taken from bowtie2 metrics file
+* Using `bcftools mpileup` rather than `samtools mpileup` for variant calling
 * Not using maximum depth for vcfutils.pl varFilter
     - Reddog uses the 2 * average depth of each replicon
     - greatly simplifies processes and provides speed improvement, will work to reintroduce
+* Coding consequences for hets (TODO)
 
 
 ## TODO
