@@ -37,12 +37,10 @@ class VcfRecord:
 
 class CheckInput(argparse.Action):
 
-    def __call__(self, parser, namespace, value, option_string=None):
-        value_check = [value] if isinstance(value, pathlib.Path) else value
-        for filepath in value_check:
-            if not filepath.exists():
-                parser.error(f'Filepath {filepath} for {option_string} does not exist')
-        setattr(namespace, self.dest, value)
+    def __call__(self, parser, namespace, filepath, option_string=None):
+        if not filepath.exists():
+            parser.error(f'Filepath {filepath} for {option_string} does not exist')
+        setattr(namespace, self.dest, filepath)
 
 
 class CheckOutput(argparse.Action):
@@ -57,8 +55,8 @@ def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--bam_fp', required=True, type=pathlib.Path,
             help='Sample BAM filepath', action=CheckInput)
-    parser.add_argument('--sites_fps', required=True, type=pathlib.Path,
-            help='Replicon sites filepaths', nargs='+', action=CheckInput)
+    parser.add_argument('--sites_fp', required=True, type=pathlib.Path,
+            help='Replicon sites filepaths', action=CheckInput)
     parser.add_argument('--reference_fp', required=True, type=pathlib.Path,
             help='Output directory', action=CheckOutput)
     parser.add_argument('--output_dir', required=True, type=pathlib.Path,
@@ -75,55 +73,47 @@ def main():
     # Get command line arguments
     args = get_arguments()
 
-    # Get sample id
-    sample_id = args.bam_fp.stem.replace('_filtered', '')
+    # Get isolate id
+    isolate_id = args.bam_fp.stem.replace('_filtered', '')
 
-    # Place replicon site files into a dict
-    sites_fps = dict()
-    for sites_fp in args.sites_fps:
-        replicon = sites_fp.stem.replace('_sites', '')
-        # Check for duplicate
-        if replicon in sites_fps:
-            print(f'Duplicate replicon found {replicon}', file=sys.stderr)
-            sys.exit(1)
-        # Check we have sites to process
-        with sites_fp.open('r') as fh:
-            next(fh)  # header
-            if fh.readline():
-                sites_fps[replicon] = sites_fp
+    # Get site-specific consensus
+    command_mpileup_base = 'bcftools mpileup -q20 -Q5 -B'
+    command_mpileup_inputs = f'-f {args.reference_fp} -R {args.sites_fp} {args.bam_fp}'
+    command_call = 'bcftools call -V indels -c --ploidy 1 -Ov'
+    command = f'{command_mpileup_base} {command_mpileup_inputs} | {command_call}'
+    result = execute_command(command)
 
-    # Call consensus at each site for each replicon
-    for replicon, sites_fp in sites_fps.items():
-        # Get site-specific consensus
-        command_mpileup_base = 'bcftools mpileup -q 20 -Q 5 -B'
-        command_mpileup_inputs = f'-f {args.reference_fp} -R {sites_fp} {args.bam_fp}'
-        command_call = 'bcftools call -V indels -c --ploidy 1 -Ov'
-        command = f'{command_mpileup_base} {command_mpileup_inputs} | {command_call}'
-        result = execute_command(command)
+    # Check we have data to process
+    lines = result.stdout.rstrip().split('\n')
+    for i, line in enumerate(lines):
+        if not line.startswith('#'):
+            break
 
-        # Check we have data to process
-        lines = result.stdout.rstrip().split('\n')
-        for i, line in enumerate(lines):
-            if not line.startswith('#'):
-                break
+    # Iterate VCF records and print alleles to appropriate replicon file
 
-        # Result alleles to file
-        output_fp = args.output_dir / f'{replicon}_{sample_id}_alleles.tsv'
-        with output_fp.open('w') as fh:
-            print('Position', 'Reference', sample_id, sep='\t', file=fh)
-            line_token_gen = (line.rstrip().split('\t') for line in lines[i:])
-            record_gen = (VcfRecord(line_tokens) for line_tokens in line_token_gen)
-            for record in record_gen:
-                # Check quality and support
-                support_ref, support_alt = get_position_support(record.info)
-                if record.qual < args.min_quality:
-                    print(record.pos, record.ref, '-', sep='\t', file=fh)
-                elif record.alt != '.' and support_alt >= args.min_support:
-                    print(record.pos, record.ref, record.alt, sep='\t', file=fh)
-                elif record.alt == '.' and support_ref >= args.min_support:
-                    print(record.pos, record.ref, record.ref, sep='\t', file=fh)
-                else:
-                    print(record.pos, record.ref, '-', sep='\t', file=fh)
+    line_token_gen = (line.rstrip().split('\t') for line in lines[i:])
+    record_gen = (VcfRecord(line_tokens) for line_tokens in line_token_gen)
+    replicon_current = None
+    fh = None
+    for record in record_gen:
+        # Check if we need to change output file
+        if replicon_current != record.chrom:
+            if replicon_current:
+                fh.close()
+            replicon_current = record.chrom
+            output_fp = args.output_dir / f'{replicon_current}_{isolate_id}_alleles.tsv'
+            fh = output_fp.open('w')
+            print('Position', 'Reference', isolate_id, sep='\t', file=fh)
+        # Check quality and support
+        support_ref, support_alt = get_position_support(record.info)
+        if record.qual < args.min_quality:
+            print(record.pos, record.ref, '-', sep='\t', file=fh)
+        elif record.alt != '.' and support_alt >= args.min_support:
+            print(record.pos, record.ref, record.alt, sep='\t', file=fh)
+        elif record.alt == '.' and support_ref >= args.min_support:
+            print(record.pos, record.ref, record.ref, sep='\t', file=fh)
+        else:
+            print(record.pos, record.ref, '-', sep='\t', file=fh)
 
 
 def get_position_support(record_info):

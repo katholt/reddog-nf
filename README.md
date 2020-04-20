@@ -15,11 +15,26 @@
 * Isolates in replicon statistics file are ordered as failed, outgroup, ingroup
 * The coding consequences process additionally provides a list of affected isolates
     - implemented an interval tree to quickly collect features containing a given SNP
+* Coding consequences for hets (TODO)
+* Not using maximum depth for vcfutils.pl varFilter
+    - Reddog uses the 2 * average depth of each replicon
+    - greatly simplifies processes and provides speed improvement, will work to reintroduce
 
 
 ## TODO
-* Fix filter_snps_vcfutils process
-    - incorrect parameterisation of -D
+* Provide passing isolates + replicons to aggregate_allele_matrices
+    - solution is to allow the python script to robustly glob the isolate allele matrix for a given replicon
+    - give indirectly by replicon stats (and calculate) or directly by nf channel (this seems difficult rn)
+
+* Check we have input read sets
+    - create different channel to check the first item
+* Likely need to add maximum depth for variant calls
+    - use 2 * average depth
+* Currently for fail samples, the largest replicon requires 50% of reads mapped
+    - we should do a proportional requirement i.e. require n% ~ replicon_size
+    - simple additional to `calculate_replicon_statistics.py`
+* Probably can remove mapped flag check in get_reads_mapped.awk
+    - was previously passing unfiltered bam
 * Replace pseudo-genome alignment with SNP alignment
 * Add gene coverage and presence/absence matrix
     - needs depth and coverage for each replicon
