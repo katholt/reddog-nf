@@ -28,7 +28,7 @@
 * Provide passing isolates + replicons to aggregate_allele_matrices
     - solution is to allow the python script to robustly glob the isolate allele matrix for a given replicon
     - give indirectly by replicon stats (and calculate) or directly by nf channel (this seems difficult rn)
-
+* Remove unused scripts from `./bin/`
 * Check we have input read sets
     - create different channel to check the first item
 * Likely need to add maximum depth for variant calls
