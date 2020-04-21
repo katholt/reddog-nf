@@ -27,6 +27,9 @@
 * Provide mean replicon mapping depth (or threshold) to variant calling process
     - average depth * 2 for variant filtering
     - some inline groovy code will be required to assign values to appropriate replicons
+* Create gene count file (based on gene coverage, mean depth stats)?
+    - this would be done in the gene_coverage_depth process
+    - check if this is something wanted
 * Coding consequences for hets
     - this will take some work
     - allele information needs to be obtained, represent as sparse matrix?
