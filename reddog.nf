@@ -124,6 +124,8 @@ ch_reference_fasta.into {
 //   - sort reads
 //   - index resulting BAM file
 process align_reads_to_reference {
+  publishDir "${output_dir}/bams/", pattern: '*.bam'
+
   input:
   tuple isolate_id, path(reads_fwd), path(reads_rev) from ch_read_sets
   path reference_fp from ch_align_reference
@@ -150,6 +152,7 @@ process create_mpileups {
 
   output:
   tuple val(isolate_id), path('*mpileup.tsv') into ch_mpileups
+  path '*mpileup.tsv'  into ch_gene_coverage_depth_mpileups
 
   script:
   """
@@ -168,6 +171,8 @@ ch_mpileups.into { ch_replicon_stats_mpileups }
 //     - homozygous if allele frequency of 1 or a genotype different to reference, else heterozygous if not an INDEL
 //   - get high quality SNP sites
 process call_snps {
+  publishDir "${output_dir}/vcfs/", pattern: '*.vcf'
+
   input:
   tuple isolate_id, path(bam_fp), path(bam_index_fp) from ch_call_snps_bams
   path reference_fp from ch_call_snps_reference
@@ -204,7 +209,7 @@ process calculate_replicon_statistics {
   tuple isolate_id, path(bam_fp), path(bam_index_fp), path(vcf_q30_fp), path(vcf_hets_fp), path(mpileup_fp), path(mapping_metrics_fp) from ch_calculate_replicon_stats
 
   output:
-  file "${isolate_id}_replicon_stats.tsv" into ch_replicon_stats_aggregate
+  path "${isolate_id}_replicon_stats.tsv" into ch_replicon_stats_aggregate
 
   script:
   """
@@ -222,11 +227,13 @@ process calculate_replicon_statistics {
 //   - get a list of replicons that have any passing isolate
 //     - determined by having pass status and more than one SNP
 process aggregate_replicon_statistics {
+  publishDir "${output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }
+
   input:
   path(replicon_stats_fps) from ch_replicon_stats_aggregate.collect()
 
   output:
-  file "*_RepStats.tsv" into ch_replicon_stats
+  path "*_RepStats.tsv" into ch_replicon_stats
   env samples_pass into _ch_samples_pass
 
   script:
@@ -244,11 +251,11 @@ _ch_samples_pass.tokenize(' ').flatMap().set { ch_samples_pass }
 //   - exclude sites from isolates that failed for the respecitve replicon
 process get_snp_sites {
   input:
-  file snp_sites_fps from ch_snp_sites_aggregate.collect()
-  file replicon_stats_fps from ch_snp_sites_replicon_stats
+  path snp_sites_fps from ch_snp_sites_aggregate.collect()
+  path replicon_stats_fps from ch_snp_sites_replicon_stats
 
   output:
-  file "snp_sites.tsv" into ch_snp_sites
+  path "snp_sites.tsv" into ch_snp_sites
 
   script:
   """
@@ -322,7 +329,7 @@ process aggregate_allele_matrices {
 
   input:
   tuple replicon_id, path(allele_fps) from ch_allele_matrix_aggregate
-  file snp_sites_fp from ch_snp_sites
+  path snp_sites_fp from ch_snp_sites
 
   output:
   path '*_alleles.tsv'
