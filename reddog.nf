@@ -91,7 +91,7 @@ process prepare_reference {
   path '*fasta.fai' into ch_reference_samtools_index
 
   script:
-  reference_fp = reference_gbk_fp.simpleName + '.fasta'
+  reference_fp = reference_name + '.fasta'
   """
   # Convert to FASTA format
   genbank_to_fasta.py --input_fp ${reference_gbk_fp} --output_fp ${reference_fp}
@@ -109,11 +109,7 @@ process prepare_reference {
   samtools faidx ${reference_fp}
   """
 }
-ch_reference_fasta.into {
-    ch_align_reference;
-    ch_call_snps_reference;
-    ch_allele_matrix_reference;
-  }
+ch_reference_fasta.into { ch_align_reference; ch_call_snps_reference; ch_allele_matrix_reference }
 
 
 // Align reads and apply some post-processing
@@ -145,7 +141,7 @@ process align_reads_to_reference {
 ch_bams.into { ch_call_snps_bams; ch_mpileup_bams; ch_replicon_stats_bams; ch_allele_matrix_bams }
 
 
-// Create multiway pileups
+// Create samtools multiway pileups
 process create_mpileups {
   input:
   tuple isolate_id, path(bam_fp), path(bam_index_fp) from ch_mpileup_bams
@@ -160,7 +156,6 @@ process create_mpileups {
   """
 }
 ch_mpileups.set { ch_replicon_stats_mpileups; }
-
 
 
 // Get gene coverage and mean depth
@@ -181,7 +176,7 @@ process gene_coverage_depth {
 }
 
 
-// Call SNPs and record high quality SNP sites
+// Call variants, filter for SNPs, and record high quality SNP positions
 //   - get genotype likelihoods with a multiway pileup
 //   - call variants in consensus caller mode
 //   - filter variants - additional to defaults, require minimum depth of 5 and minimum RMS mapping quality of 30
@@ -321,8 +316,8 @@ process create_allele_matrix {
 
 // Create a channel that emits allele matrices arranged by replicon_id
 //   - input of [isolate_id, list(isolate_allele_matrices)]
-//     - nextflow gives list of files if more than one or single file object
-//     - must convert single file object to a list
+//     - nextflow returns a list for multiple singles or single object for one file
+//     - check for different object types and process accordingly
 //   - use isolate_id to robustly get replicon_id from allele matrix filename
 //   - flat emit [replicon_id, isolate_allele_matrix] for each file
 //   - group each matrix by replicon_id to emit [replicon_id, list(isolate_allele_matrices)]
@@ -341,7 +336,6 @@ _ch_allele_matrix_aggregate.flatMap { isolate_id, filepaths ->
         }
     }
   }.groupTuple().set { ch_allele_matrix_aggregate }
-
 
 process aggregate_allele_matrices {
   publishDir "${output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }

@@ -2,7 +2,7 @@
 
 
 ## Processing differences
-* The calculate_replicon_statistics process
+* The calculate\_replicon\_statistics process
     - combines several steps
         - getSamStats
         - getCoverage
@@ -24,11 +24,25 @@
 
 
 ## TODO
+* Swap regex for replicon name with simple string replacement
 * Provide mean replicon mapping depth (or threshold) to variant calling process
     - average depth * 2 for variant filtering
-    - some inline groovy code will be required to assign values to appropriate replicons
+    - run variant call process in the follow order
+      - awk to get average depth (then derive threshold)
+      - create associative BASH array with replicon->threshold
+      - bcftools mpileup + call to generate vcf
+      - iterate replicon + max depth threshold and filter variants on each replicon
+        - filter using vcfutils.pl varFilter with appropriate max depth threshold
+        - this will produce one vcf for each replicon
+      - combine into single vcf
+      - apply second variant filter and split into homozygous and heterozgyous SNPs
+      - get high quality SNP positions
+* During variant calling there are two quality filters
+    - vcfutils varFilter: >= 30 RMS mapping quaility
+    - python script: >= 30 mapping quality
+    - these are different statistics but is the raw mapping quality filter sufficient? check
 * Create gene count file (based on gene coverage, mean depth stats)?
-    - this would be done in the gene_coverage_depth process
+    - this would be done in the gene\_coverage\_depth process
     - check if this is something wanted
 * Coding consequences for hets
     - this will take some work
@@ -41,7 +55,7 @@
 * Check we have input read sets
     - create different channel to check the first item
 * Currently for fail samples, the largest replicon requires 50% of reads mapped
-    - we should do a proportional requirement i.e. require n% ~ replicon_size
+    - we should do a proportional requirement i.e. require n% ~ replicon\_size
     - simple additional to `calculate_replicon_statistics.py`
 * Improve allele matrix creation - for each isolate we're writing both position and reference
     - at least half the disk i/o by removing reference column in each
@@ -49,10 +63,10 @@
     - avoid consuming very large amounts of memory for large datasets
 * Replace excessive use of list, dict, set comprehensions with more digestible for loops
     - see `calculate_replicon_statisitics.py` for the main offender
-* Probably can remove mapped flag check in get_reads_mapped.awk
+* Probably can remove mapped flag check in `get_reads_mapped.awk`
     - was previously passing unfiltered bam
-* For get_snp_sites.awk, check that the input ref and alt allele can be the same (i.e. not use of '.')
-* Revert min. base quality to 20 in the site-specific consensus calling of create_allele_matrix.py
+* For `get_snp_sites.awk`, check that the input ref and alt allele can be the same (i.e. not use of '.')
+* Revert min. base quality to 20 in the site-specific consensus calling of `create_allele_matrix.py`
     - reduced required quality to use with small test dataset
 * Run report with additional information, see RedDog and Jane's pipeline
 * Add optional fastqc
@@ -83,7 +97,7 @@ This is a list of processes/outputs that are yet to be closely tested
     - exclusion of SNP positions which lack sufficient data
 * Ingroup/output calling, large dataset with many unknown SNPs
     - ratio calculation and equality comparison
-* Pseudo-genome alignment
+* SNP alignment
 * Phylogeny
 * Coding consequence
     - interval tree balance
