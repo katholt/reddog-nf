@@ -159,7 +159,7 @@ process create_mpileups {
   samtools mpileup -aa ${bam_fp} > ${isolate_id}_mpileup.tsv
   """
 }
-ch_mpileups.into { ch_replicon_stats_mpileups; }
+ch_mpileups.set { ch_replicon_stats_mpileups; }
 
 
 
