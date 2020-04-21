@@ -25,12 +25,10 @@
 
 
 ## TODO
-* Replace pseudo-genome alignment with SNP alignment
 * Add gene coverage and presence/absence matrix
     - needs depth and coverage for each replicon
     - may be best to reintroduce getCoverage stage
         - output will be used by both this and the relicon stats process
-* Remove unused scripts from `./bin/`
 * Improve allele matrix creation - for each isolate we're writing both position and reference
     - at least half the disk i/o by removing reference column in each
     - if providing position + ref file and then just isolate file, `paste` can be used w/o `cut`
@@ -56,7 +54,7 @@
 * Add optional fastqc
     - default behaviour to generate reports
     - option to turn off
-* Mixed sampel detection
+* Mixed sample detection
     - SNP:het ratio in replicon statistics?
     - use zoe's scripts to plot
         - reads het and q30 vcfs
