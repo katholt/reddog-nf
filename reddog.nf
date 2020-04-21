@@ -140,7 +140,23 @@ process align_reads_to_reference {
   samtools index ${isolate_id}.bam
   """
 }
-ch_bams.into { ch_call_snps_bams; ch_replicon_stats_bams; ch_allele_matrix_bams }
+ch_bams.into { ch_call_snps_bams; ch_mpileup_bams; ch_replicon_stats_bams; ch_allele_matrix_bams }
+
+
+// Create multiway pileups
+process create_mpileups {
+  input:
+  tuple isolate_id, path(bam_fp), path(bam_index_fp) from ch_mpileup_bams
+
+  output:
+  tuple val(isolate_id), path('*mpileup.tsv') into ch_mpileups
+
+  script:
+  """
+  samtools mpileup -aa ${bam_fp} > ${isolate_id}_mpileup.tsv
+  """
+}
+ch_mpileups.into { ch_replicon_stats_mpileups }
 
 
 // Call SNPs and record high quality SNP sites
@@ -178,17 +194,21 @@ ch_snp_vcfs.set { ch_replicon_stats_vcfs }
 //   - calculate appropriate statisitics
 //   - fail isolates on depth or coverage
 //   - additionally for the largest replicon, require that at least 50% reads mapped
-ch_replicon_stats_bams.join(ch_replicon_stats_vcfs).join(ch_alignment_metrics).set { ch_calculate_replicon_stats }
+ch_replicon_stats_bams.join(ch_replicon_stats_vcfs)
+  .join(ch_replicon_stats_mpileups)
+  .join(ch_alignment_metrics)
+  .set { ch_calculate_replicon_stats }
+
 process calculate_replicon_statistics {
   input:
-  tuple isolate_id, path(bam_fp), path(bam_index_fp), path(vcf_q30_fp), path(vcf_hets_fp), path(mapping_metrics_fp) from ch_calculate_replicon_stats
+  tuple isolate_id, path(bam_fp), path(bam_index_fp), path(vcf_q30_fp), path(vcf_hets_fp), path(mpileup_fp), path(mapping_metrics_fp) from ch_calculate_replicon_stats
 
   output:
   file "${isolate_id}_replicon_stats.tsv" into ch_replicon_stats_aggregate
 
   script:
   """
-  calculate_replicon_stats.py --bam_fp ${bam_fp} --vcf_q30_fp ${vcf_q30_fp} --vcf_hets_fp ${vcf_hets_fp} --mapping_metrics_fp ${mapping_metrics_fp} > ${isolate_id}_replicon_stats.tsv
+  calculate_replicon_stats.py --bam_fp ${bam_fp} --vcf_q30_fp ${vcf_q30_fp} --vcf_hets_fp ${vcf_hets_fp} --mpileup_fp ${mpileup_fp} --mapping_metrics_fp ${mapping_metrics_fp} > ${isolate_id}_replicon_stats.tsv
   """
 }
 
