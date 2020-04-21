@@ -21,14 +21,24 @@
 * Not using maximum depth for vcfutils.pl varFilter
     - Reddog uses the 2 * average depth of each replicon
     - greatly simplifies processes and provides speed improvement, will work to reintroduce
-* Coding consequences for hets (TODO)
 
 
 ## TODO
+* Add step to generate samtools mpileup, move from the replicon statistics process
+    - average depth * 2 for variant filtering
+        - this will require some inline groovy code to assign values to appropriate replicons
+    - gene coverage and presence/absence
+    - calculate replicon statistics
 * Add gene coverage and presence/absence matrix
     - needs depth and coverage for each replicon
     - may be best to reintroduce getCoverage stage
         - output will be used by both this and the relicon stats process
+* Coding consequences for hets
+    - this will take some work
+    - allele information needs to be obtained, represent as sparse matrix?
+      - or as full matrix but with 'placeholder' values for homozygous SNPs
+    - new process/ python script to run code - must explicity indicate which isolate has the het
+      - a het in one isolate doesn't imply the site is heterozygous in all isolates
 * Improve allele matrix creation - for each isolate we're writing both position and reference
     - at least half the disk i/o by removing reference column in each
     - if providing position + ref file and then just isolate file, `paste` can be used w/o `cut`
