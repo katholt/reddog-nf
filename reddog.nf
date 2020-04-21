@@ -86,16 +86,15 @@ Channel.fromFilePairs(params.reads, flat:true).set { ch_read_sets }
 //   - get list of replicon names and check they're unique
 process prepare_reference {
   output:
-  file '*.fasta' into ch_reference_fasta
-  file '*fasta.*bt2' into ch_reference_bt2_index
-  file '*fasta.fai' into ch_reference_samtools_index
+  path '*.fasta' into ch_reference_fasta
+  path '*fasta.*bt2' into ch_reference_bt2_index
+  path '*fasta.fai' into ch_reference_samtools_index
 
   script:
   reference_fp = reference_gbk_fp.simpleName + '.fasta'
   """
   # Convert to FASTA format
   genbank_to_fasta.py --input_fp ${reference_gbk_fp} --output_fp ${reference_fp}
-
   # Get replicon names then check they are all unique
   replicons=\$(grep '^>' ${reference_fp} | sed -e 's/^>//' -e 's/ .\\+\$//')
   replicons_duplicate=\$(echo "\${replicons}" | sort | uniq -d)
@@ -105,7 +104,6 @@ process prepare_reference {
     echo "Duplicates: \${replicons_duplicate}" 1>&2
     exit 1
   fi
-
   # Index
   bowtie2-build ${reference_fp} ${reference_fp}
   samtools faidx ${reference_fp}
@@ -127,13 +125,13 @@ ch_reference_fasta.into {
 //   - index resulting BAM file
 process align_reads_to_reference {
   input:
-  tuple isolate_id, file(reads_fwd), file(reads_rev) from ch_read_sets
-  file reference_fp from ch_align_reference
-  file reference_indices from ch_reference_bt2_index
+  tuple isolate_id, path(reads_fwd), path(reads_rev) from ch_read_sets
+  path reference_fp from ch_align_reference
+  path reference_indices from ch_reference_bt2_index
 
   output:
-  tuple val(isolate_id), file("${isolate_id}.bam"), file("${isolate_id}.bam.*") into ch_bams
-  tuple val(isolate_id), file("${isolate_id}_metrics.tsv") into ch_alignment_metrics
+  tuple val(isolate_id), path("${isolate_id}.bam"), path("${isolate_id}.bam.*") into ch_bams
+  tuple val(isolate_id), path("${isolate_id}_metrics.tsv") into ch_alignment_metrics
 
   script:
   """
@@ -155,13 +153,13 @@ ch_bams.into { ch_call_snps_bams; ch_replicon_stats_bams; ch_allele_matrix_bams 
 //   - get high quality SNP sites
 process call_snps {
   input:
-  tuple isolate_id, file(bam_fp), file(bam_index_fp) from ch_call_snps_bams
-  file reference_fp from ch_call_snps_reference
-  file fasta_index from ch_reference_samtools_index
+  tuple isolate_id, path(bam_fp), path(bam_index_fp) from ch_call_snps_bams
+  path reference_fp from ch_call_snps_reference
+  path fasta_index from ch_reference_samtools_index
 
   output:
-  tuple val(isolate_id), file('*_q30.vcf'), file('*_hets.vcf') into ch_snp_vcfs
-  file "${isolate_id}_sites.tsv" into ch_snp_sites_aggregate
+  tuple val(isolate_id), path('*_q30.vcf'), path('*_hets.vcf') into ch_snp_vcfs
+  path "${isolate_id}_sites.tsv" into ch_snp_sites_aggregate
 
   script:
   """
@@ -183,7 +181,7 @@ ch_snp_vcfs.set { ch_replicon_stats_vcfs }
 ch_replicon_stats_bams.join(ch_replicon_stats_vcfs).join(ch_alignment_metrics).set { ch_calculate_replicon_stats }
 process calculate_replicon_statistics {
   input:
-  tuple isolate_id, file(bam_fp), file(bam_index_fp), file(vcf_q30_fp), file(vcf_hets_fp), file(mapping_metrics_fp) from ch_calculate_replicon_stats
+  tuple isolate_id, path(bam_fp), path(bam_index_fp), path(vcf_q30_fp), path(vcf_hets_fp), path(mapping_metrics_fp) from ch_calculate_replicon_stats
 
   output:
   file "${isolate_id}_replicon_stats.tsv" into ch_replicon_stats_aggregate
@@ -205,23 +203,20 @@ process calculate_replicon_statistics {
 //     - determined by having pass status and more than one SNP
 process aggregate_replicon_statistics {
   input:
-  file(replicon_stats_fps) from ch_replicon_stats_aggregate.collect()
+  path(replicon_stats_fps) from ch_replicon_stats_aggregate.collect()
 
   output:
   file "*_RepStats.tsv" into ch_replicon_stats
   env samples_pass into _ch_samples_pass
-  env replicons_pass into _ch_replicons_pass
 
   script:
   """
   aggregate_replicon_stats.py --rep_stats_fps ${replicon_stats_fps} --output_dir ./
   samples_pass=\$(grep -wh 'p' *_RepStats.tsv | cut -f1 -d\$'\t' | sort | uniq)
-  replicons_pass=\$(awk '\$10 == "p" && \$7 > 0 { print FILENAME }' *RepStats.tsv | sort | uniq | sed 's/_RepStats.tsv//')
   """
 }
 ch_replicon_stats.into { ch_snp_sites_replicon_stats; ch_allele_matrix_replicon_stats }
 _ch_samples_pass.tokenize(' ').flatMap().set { ch_samples_pass }
-_ch_replicons_pass.tokenize(' ').flatMap().set { ch_replicons_pass }
 
 
 // Combine SNP sites
@@ -253,12 +248,12 @@ ch_samples_pass.join(ch_allele_matrix_bams).combine(ch_snp_sites).set { ch_creat
 
 process create_allele_matrix {
   input:
-  tuple isolate_id, file(bam_fp), file(index_fp), file(sites_fp) from ch_create_allele_matrix
-  file replicon_stats_fps from ch_allele_matrix_replicon_stats
-  file reference_fp from ch_allele_matrix_reference
+  tuple isolate_id, path(bam_fp), path(index_fp), path(sites_fp) from ch_create_allele_matrix
+  path replicon_stats_fps from ch_allele_matrix_replicon_stats
+  path reference_fp from ch_allele_matrix_reference
 
   output:
-  file '*_alleles.tsv'  into _ch_allele_matrix_aggregate
+  tuple val(isolate_id), path('*_alleles.tsv') into _ch_allele_matrix_aggregate
 
   script:
   """
@@ -272,58 +267,90 @@ process create_allele_matrix {
 
 
 // Aggregate allele matrices
-_ch_allele_matrix_aggregate.collect().toList().combine(ch_replicons_pass).set { ch_allele_matrix_aggregate }
+//   - group matrices by replicon id
+//   - merge into single allele matrix
+//   - filter merged matrix
+//     - remove invariant sites; sites with only one allele (excluding '-')
+//     - remove site if more than 5% of alleles are unknown (indicated by '-')
+
+// Create a channel that emits allele matrices arranged by replicon_id
+//   - input of [isolate_id, list(isolate_allele_matrices)]
+//     - nextflow gives list of files if more than one or single file object
+//     - must convert single file object to a list
+//   - use isolate_id to robustly get replicon_id from allele matrix filename
+//   - flat emit [replicon_id, isolate_allele_matrix] for each file
+//   - group each matrix by replicon_id to emit [replicon_id, list(isolate_allele_matrices)]
+def get_replicon(isolate_id, filepath) {
+  regex_groups = (filepath.getName() =~ /^(.+)_${isolate_id}_alleles.tsv$/)
+  (filename, replicon) = regex_groups[0]
+  return replicon
+}
+
+_ch_allele_matrix_aggregate.flatMap { isolate_id, filepaths ->
+    if (! (filepaths instanceof List)) {
+      return [[get_replicon(isolate_id, filepaths), filepaths]]
+    } else {
+      return filepaths.collect { filepath ->
+          [get_replicon(isolate_id, filepath), filepath]
+        }
+    }
+  }.groupTuple().set { ch_allele_matrix_aggregate }
+
+
 process aggregate_allele_matrices {
+  publishDir "${output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }
+
   input:
-  tuple replicon_id, file(allele_fps) from ch_allele_matrix_aggregate
+  tuple replicon_id, path(allele_fps) from ch_allele_matrix_aggregate
+  file snp_sites_fp from ch_snp_sites
 
   output:
-  file('*alleles_var*tsv')
+  path '*_alleles.tsv'
+  tuple val(replicon_id), path('*_alleles_var_cons0.95.tsv') into ch_allele_matrix
 
   script:
   """
-  # Aggregate matrices then filter
-  #filter_allele_matrix.py --allele_fp aggregate_alleles.tsv > ${replicon_id}_alleles_var_cons0.95.tsv
-  echo ${replicon_id}
-  echo ${allele_fps}
-  touch temp_alleles_var.tsv
-  exit 1
+  { head -n1 ${snp_sites_fp}; grep -w "^${replicon_id}" snp_sites.tsv; } > replicon_sites.tsv
+  aggregate_allele_matrices.py --allele_fps ${allele_fps} --sites_fp replicon_sites.tsv > ${replicon_id}_alleles.tsv
+  filter_allele_matrix.py --allele_fp ${replicon_id}_alleles.tsv > ${replicon_id}_alleles_var_cons0.95.tsv
   """
 }
+ch_allele_matrix.into { ch_snp_alignment_alleles; ch_consequences_alleles }
 
 
-/*
 // Create SNP alignment
 process create_snp_alignment{
   publishDir "${output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }
 
   input:
-  tuple replicon_id, file(allele_matrix_fp) from ch_genome_alignment
-  file reference_fp from ch_genome_alignment_reference
+  tuple replicon_id, path(allele_matrix_fp) from ch_snp_alignment_alleles
 
   output:
-  tuple val(replicon_id), file("*.mfasta") into ch_infer_phylogeny
+  tuple val(replicon_id), path("*.mfasta") into ch_snp_alignment
 
   script:
   """
-  create_pseudo_genome_alignment.py --allele_fp ${allele_matrix_fp} --reference_fp ${reference_fp} --replicon ${replicon_id} > ${replicon_id}_alleles_var_cons0.95.mfasta
+  create_snp_alignment.py --allele_fp ${allele_matrix_fp} > ${replicon_id}_alleles_var_cons0.95.mfasta
   """
 }
 
 
 // Determine coding consequences
+//   - create interval tree from gene features
+//   - for each site find genes that it falls within
+//   - infer codon change and amino acid change
 process determine_coding_consequences {
   publishDir "${output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }
 
   input:
-  tuple replicon_id, file(allele_matrix_fp) from ch_determine_coding_consequences
+  tuple replicon_id, path(allele_matrix_fp) from ch_consequences_alleles
 
   output:
-  file "*consequences.tsv"
+  path "*consequences.tsv"
 
   script:
   """
-  determine_coding_consequences.py --allele_fp ${allele_matrix_fp} --reference ${reference} --replicon ${replicon_id} > ${replicon_id}_alleles_var_cons0.95_consequences.tsv
+  determine_coding_consequences.py --allele_fp ${allele_matrix_fp} --reference_fp ${reference_gbk_fp} --replicon ${replicon_id} > ${replicon_id}_alleles_var_cons0.95_consequences.tsv
   """
 }
 
@@ -333,14 +360,13 @@ process infer_phylogeny {
   publishDir "${output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }
 
   input:
-  tuple replicon_id, file(alignment_fp) from ch_infer_phylogeny
+  tuple replicon_id, path(alignment_fp) from ch_snp_alignment
 
   output:
-  file '*.tree'
+  path '*.tree'
 
   script:
   """
   FastTree -gtr -gamma -nt ${alignment_fp} > ${replicon_id}_alleles_var_cons0.95.tree
   """
 }
-*/

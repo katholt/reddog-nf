@@ -90,7 +90,6 @@ def main():
             break
 
     # Iterate VCF records and print alleles to appropriate replicon file
-
     line_token_gen = (line.rstrip().split('\t') for line in lines[i:])
     record_gen = (VcfRecord(line_tokens) for line_tokens in line_token_gen)
     replicon_current = None

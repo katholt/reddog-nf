@@ -25,10 +25,15 @@
 
 
 ## TODO
-* Provide passing isolates + replicons to aggregate_allele_matrices
-    - solution is to allow the python script to robustly glob the isolate allele matrix for a given replicon
-    - give indirectly by replicon stats (and calculate) or directly by nf channel (this seems difficult rn)
+* Replace pseudo-genome alignment with SNP alignment
+* Add gene coverage and presence/absence matrix
+    - needs depth and coverage for each replicon
+    - may be best to reintroduce getCoverage stage
+        - output will be used by both this and the relicon stats process
 * Remove unused scripts from `./bin/`
+* Improve allele matrix creation - for each isolate we're writing both position and reference
+    - at least half the disk i/o by removing reference column in each
+    - if providing position + ref file and then just isolate file, `paste` can be used w/o `cut`
 * Check we have input read sets
     - create different channel to check the first item
 * Likely need to add maximum depth for variant calls
@@ -36,39 +41,17 @@
 * Currently for fail samples, the largest replicon requires 50% of reads mapped
     - we should do a proportional requirement i.e. require n% ~ replicon_size
     - simple additional to `calculate_replicon_statistics.py`
+* Chunked reads for SNP aligments and matrix aggregation
+    - avoid consuming very large amounts of memory for large datasets
 * Probably can remove mapped flag check in get_reads_mapped.awk
     - was previously passing unfiltered bam
-* Replace pseudo-genome alignment with SNP alignment
-* Add gene coverage and presence/absence matrix
-    - needs depth and coverage for each replicon
-    - may be best to reintroduce getCoverage stage
-        - output will be used by both this and the relicon stats process
-* Remove processing per replicon
-    - just do all at once and handle in scripts
-    - additional code for replicon statistics, SNP sites, allele matrix
+* Replace excessive use of list, dict, set comprehensions with more digestible for loops
+    - see `calculate_replicon_statisitics.py` for the main offender
 * Conditionally execute phylogeny process
     - on the basis of having n or more isolates
 * For get_snp_sites.awk, check that the input ref and alt allele can be the same (i.e. not use of '.')
 * Revert min. base quality to 20 in the site-specific consensus calling of create_allele_matrix.py
     - reduced required quality to use with small test dataset
-* Parallelise process that are working on sample basis
-    - achieve this with the `buffer(size: n)` operator and `parallel` within the process
-    - this woud require unpacking of list items in the script block, a little messy
-    - still not a complete solution, this will take some consideration
-    - collect_snp_sites, create_allele_matrix, collect_snp_sites
-* Parallelise sort in aggregate_snp_sites process
-* Harden creation of the ch_sample_status channel
-    - do some BASH comparisons, assertions to ensure that we have good data
-* For create_allele_matrix, there may be some condition where no output files are created, check carefully
-    - when a replicon has not hihg quality sites, it is skipped
-    - when a sample has no high quality consensus calls, it will be skipped
-    - however bcftools *may* always produce entries for sites even if a call cannot be made, check
-* Remove dependency of consistent ordering between nf and BASH
-    - done in transform of _ch_replicon_stats_vcfs for calculate_replicon_statistics
-    - just get replicon_id from filename, this is standard practice
-    - maybe I can later find a more optimal way later on
-* I've used `Channel.toList().toList()` inorder to get desire behaviour from `combine`
-    - is there a better way?
 * Run report with additional information, see RedDog and Jane's pipeline
 * Add optional fastqc
     - default behaviour to generate reports
