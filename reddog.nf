@@ -159,7 +159,26 @@ process create_mpileups {
   samtools mpileup -aa ${bam_fp} > ${isolate_id}_mpileup.tsv
   """
 }
-ch_mpileups.into { ch_replicon_stats_mpileups }
+ch_mpileups.into { ch_replicon_stats_mpileups; }
+
+
+
+// Get gene coverage and mean depth
+process gene_coverage_depth {
+  publishDir "${output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }
+
+  input:
+  path mpileup_fps from ch_gene_coverage_depth_mpileups.collect()
+
+  output:
+  path('gene_coverage.tsv')
+  path('gene_depth.tsv')
+
+  script:
+  """
+  create_coverage_depth_matrices.py --mpileup_fps ${mpileup_fps} --reference_fp ${reference_gbk_fp} --output_dir ./
+  """
+}
 
 
 // Call SNPs and record high quality SNP sites
