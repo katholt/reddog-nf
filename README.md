@@ -22,7 +22,6 @@
 
 
 ## TODO
-* Swap regex for replicon name with simple string replacement
 * Coding consequences for hets
     - create matrix of hets in the same way we do for homs
     - this should be done conditionally

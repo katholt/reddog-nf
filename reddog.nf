@@ -338,18 +338,14 @@ process create_allele_matrix {
 //   - use isolate_id to robustly get replicon_id from allele matrix filename
 //   - flat emit [replicon_id, isolate_allele_matrix] for each file
 //   - group each matrix by replicon_id to emit [replicon_id, list(isolate_allele_matrices)]
-def get_replicon(isolate_id, filepath) {
-  regex_groups = (filepath.getName() =~ /^(.+)_${isolate_id}_alleles.tsv$/)
-  (filename, replicon) = regex_groups[0]
-  return replicon
-}
-
 _ch_allele_matrix_aggregate.flatMap { isolate_id, filepaths ->
     if (! (filepaths instanceof List)) {
-      return [[get_replicon(isolate_id, filepaths), filepaths]]
+      replicon_id = filepaths.getName().minus("_${isolate_id}_alleles.tsv")
+      return [[replicon_id, filepaths]]
     } else {
       return filepaths.collect { filepath ->
-          [get_replicon(isolate_id, filepath), filepath]
+          replicon_id = filepath.getName().minus("_${isolate_id}_alleles.tsv")
+          [replicon_id, filepath]
         }
     }
   }.groupTuple().set { ch_allele_matrix_aggregate }
