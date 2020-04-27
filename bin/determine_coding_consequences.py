@@ -66,17 +66,20 @@ class AlleleRecord:
 class Consequence:
 
     fields = {
-            'SNP': 'position',
+            'position': 'position',
             'ref': 'reference',
             'alt': 'allele',
-            'change': 'change_type',
+            'change_type': 'change_type',
             'gene': 'gene_id',
-            'ancestralCodon': 'sequence',
-            'derivedCodon': 'sequence_allele',
-            'ancestralAA': 'codon',
-            'derivedAA': 'codon_allele',
-            'product': 'gene_product',
-            'isolate_str': 'isolate_str'
+            'ref_codon': 'sequence',
+            'alt_codon': 'sequence_allele',
+            'ref_aa': 'codon',
+            'alt_aa': 'codon_allele',
+            'gene_product': 'gene_product',
+            'gene_nucleotide_position': 'gene_nucleotide_position',
+            'gene_codon_position': 'gene_codon_position',
+            'codon_nucleotide_position': 'codon_nucleotide_position',
+            'isolates': 'isolate_str'
             }
 
     def __init__(self):
@@ -188,6 +191,9 @@ def main():
                     consequence.codon_allele = codon_allele
                     consequence.sequence = codon_sequence
                     consequence.sequence_allele = sequence_allele
+                    consequence.gene_nucleotide_position = position_gene
+                    consequence.gene_codon_position = codon_number
+                    consequence.codon_nucleotide_position = position_codon
                     consequence.change_type = 'ns' if codon != codon_allele else 's'
                     consequence.isolate_str = ','.join(allele_isolates)
                     [consequence.gene_id] = interval.feature.qualifiers['locus_tag']

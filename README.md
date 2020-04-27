@@ -18,13 +18,22 @@
 * Filtering BAMs in single-shot while mapping
     - unmapped read statistic taken from bowtie2 metrics file
 * Using `bcftools mpileup` rather than `samtools mpileup` for variant calling
-* No equivalent for following files
-    - AllStats
-    - gene presence/absence
+    - `bcftools mpileup` has built in filtering criteria causing difference in numbers of SNP calls
+* Using Kat's approach to determine alleles at high quality SNP sites
+    - this impacts allele filtering at 95% conservation as alleles can be different
+* No equivalent for following files - gene presence/absence
     - gene counts in isolate set
+    - AllStats
+* Reverse strand consequence reports the complement nucleotide:
+```
+           position  ref  alt  change_type  gene           ref_codon  alt_codon  ref_aa  alt_aa  gene_product     gene_nucleotide_position  gene_codon_position  codon_nucleotide_position  isolates
+nextflow:  48918     A    A    ns           DYC81_RS00305  GTA        GAA        V       E       acylphosphatase  104                       35                   2                          NCTC13753_set3
+reddog:    48918     A    T    ns           DYC81_RS00305  GTA        GAA        V       E       acylphosphatase  104                       35                   2                          n/a
+```
 
 
 ## TODO
+* Automate comparison of test output data
 * Coding consequences for hets
     - create matrix of hets in the same way we do for homs
     - this should be done conditionally
@@ -75,6 +84,8 @@
 
 
 ## Queries
+* Is a SNP site defined as variant if all isolates have the same allele that is different to reference
+    - presumably yes but should check
 * During variant calling there are two quality filters
     - vcfutils varFilter: >= 30 RMS mapping quaility
     - python script: >= 30 mapping quality
@@ -91,6 +102,8 @@
 
 ## Items for further testing
 This is a list of processes/outputs that are yet to be closely tested
+* New allele matrix creation method
+    - are call sites correct?
 * Allele matrix filtering, large dataset with many unknown SNPs
     - exclusion of SNP positions which lack sufficient data
 * Ingroup/output calling, large dataset with many unknown SNPs
@@ -102,3 +115,4 @@ This is a list of processes/outputs that are yet to be closely tested
     - interval tree balance
     - ensure bounds capture
     - consider comparing against https://samtools.github.io/bcftools/howtos/csq-calling.html if applicable
+* Isolate list in consequences containing more than one isolate
