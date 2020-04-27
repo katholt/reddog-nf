@@ -4,9 +4,9 @@ BEGIN {
 }
 
 {
-  depths[$1] += $2
+  depths[$1] += $4
   size[$1] += 1
-  if ($2 > 0) {
+  if ($4 > 0) {
     bases_mapped[$1] += 1
   }
 }
@@ -18,6 +18,6 @@ END {
     } else {
       average_depth = depths[replicon] / bases_mapped[replicon]
     }
-    print replicon, average_depth, bases_mapped[replicon] / size[replicon] * 100, size[replicon]
+    printf "%s\t%.2f\t%.2f\t%d\n", replicon, average_depth, bases_mapped[replicon] / size[replicon] * 100, size[replicon]
   }
 }

@@ -155,7 +155,6 @@ process create_mpileups {
   samtools mpileup -aa ${bam_fp} > ${isolate_id}_mpileup.tsv
   """
 }
-ch_mpileups.set { ch_replicon_stats_mpileups; }
 
 
 // Get gene coverage and mean depth
@@ -179,27 +178,45 @@ process gene_coverage_depth {
 // Call variants, filter for SNPs, and record high quality SNP positions
 //   - get genotype likelihoods with a multiway pileup
 //   - call variants in consensus caller mode
-//   - filter variants - additional to defaults, require minimum depth of 5 and minimum RMS mapping quality of 30
+//   - get average depth of each replicon
+//   - filter variants - additional to defaults, require:
+//     - minimum depth of 5
+//     - minimum RMS mapping quality of 30
+//     - maximum depth of mean replicon depth * 2
 //   - split variants into homozygous SNPs and heterzygous SNPs
 //     - require all variants to have a mapping quality of 30 (different to RMS mapping quality)
 //     - homozygous if allele frequency of 1 or a genotype different to reference, else heterozygous if not an INDEL
 //   - get high quality SNP sites
+ch_call_snps_bams.join(ch_mpileups).set { ch_call_snps }
+
 process call_snps {
   publishDir "${output_dir}/vcfs/", pattern: '*.vcf'
 
   input:
-  tuple isolate_id, path(bam_fp), path(bam_index_fp) from ch_call_snps_bams
+  tuple isolate_id, path(bam_fp), path(bam_index_fp), path(mpileup_fp) from ch_call_snps
   path reference_fp from ch_call_snps_reference
   path fasta_index from ch_reference_samtools_index
 
   output:
   tuple val(isolate_id), path('*_q30.vcf'), path('*_hets.vcf') into ch_snp_vcfs
+  tuple val(isolate_id), path("${isolate_id}_coverage_depth.tsv") into ch_replicon_stats_coverage_depth
   path "${isolate_id}_sites.tsv" into ch_snp_sites_aggregate
 
   script:
   """
-  bcftools mpileup -Ou -f ${reference_fp} ${bam_fp} | bcftools call -cv --ploidy 1 | \
-    vcfutils.pl varFilter -d5 -Q30 | filter_variants.awk -v snp_fp=${isolate_id}_q30.vcf -v het_fp=${isolate_id}_hets.vcf
+  # Call variants and index
+  bcftools mpileup -Ou -f ${reference_fp} ${bam_fp} | bcftools call -Oz -c -v --ploidy 1 > ${isolate_id}_raw.bcf
+  bcftools index ${isolate_id}_raw.bcf
+  # Get depths for filtering purposes
+  get_coverage_depth.awk ${mpileup_fp} > ${isolate_id}_coverage_depth.tsv
+  # Filter SNPs for each replicon with appropriate max depth
+  while read -a data; do
+    replicon_id=\${data[0]};
+    depth_max=\${data[1]};
+    bcftools view -r \${replicon_id} ${isolate_id}_raw.bcf | vcfutils.pl varFilter -d5 -D\${depth_max} -Q30 > ${isolate_id}_\${replicon_id}.vcf
+  done < <(awk '{print \$1, \$2 * 2}' ${isolate_id}_coverage_depth.tsv)
+  cat ${isolate_id}*vcf | filter_variants.awk -v snp_fp=${isolate_id}_q30.vcf -v het_fp=${isolate_id}_hets.vcf
+  # Get SNP sites
   get_snp_sites.awk ${isolate_id}_q30.vcf > ${isolate_id}_sites.tsv
   """
 }
@@ -208,26 +225,26 @@ ch_snp_vcfs.set { ch_replicon_stats_vcfs }
 
 // Calculate replicon statistics
 //   - get total reads from mapping metrics file
-//   - get coverage and mapped read counts from samtools mpileup and samtools view
+//   - coverage and mapped read counts previously calculated from mpileups
 //   - get SNP, INDEL, and heterzygous SNP counts from VCFs
 //   - calculate appropriate statisitics
 //   - fail isolates on depth or coverage
 //   - additionally for the largest replicon, require that at least 50% reads mapped
 ch_replicon_stats_bams.join(ch_replicon_stats_vcfs)
-  .join(ch_replicon_stats_mpileups)
+  .join(ch_replicon_stats_coverage_depth)
   .join(ch_alignment_metrics)
   .set { ch_calculate_replicon_stats }
 
 process calculate_replicon_statistics {
   input:
-  tuple isolate_id, path(bam_fp), path(bam_index_fp), path(vcf_q30_fp), path(vcf_hets_fp), path(mpileup_fp), path(mapping_metrics_fp) from ch_calculate_replicon_stats
+  tuple isolate_id, path(bam_fp), path(bam_index_fp), path(vcf_q30_fp), path(vcf_hets_fp), path(coverage_depth_fp), path(mapping_metrics_fp) from ch_calculate_replicon_stats
 
   output:
   path "${isolate_id}_replicon_stats.tsv" into ch_replicon_stats_aggregate
 
   script:
   """
-  calculate_replicon_stats.py --bam_fp ${bam_fp} --vcf_q30_fp ${vcf_q30_fp} --vcf_hets_fp ${vcf_hets_fp} --mpileup_fp ${mpileup_fp} --mapping_metrics_fp ${mapping_metrics_fp} > ${isolate_id}_replicon_stats.tsv
+  calculate_replicon_stats.py --bam_fp ${bam_fp} --vcf_q30_fp ${vcf_q30_fp} --vcf_hets_fp ${vcf_hets_fp} --coverage_depth_fp ${coverage_depth_fp} --mapping_metrics_fp ${mapping_metrics_fp} > ${isolate_id}_replicon_stats.tsv
   """
 }
 
@@ -263,7 +280,7 @@ _ch_samples_pass.tokenize(' ').flatMap().set { ch_samples_pass }
 // Combine SNP sites
 //   - create list of all unique high quality SNP sites
 //   - exclude sites from isolates that failed for the respecitve replicon
-process get_snp_sites {
+process aggregate_snp_sites {
   input:
   path snp_sites_fps from ch_snp_sites_aggregate.collect()
   path replicon_stats_fps from ch_snp_sites_replicon_stats

@@ -18,38 +18,28 @@
 * Filtering BAMs in single-shot while mapping
     - unmapped read statistic taken from bowtie2 metrics file
 * Using `bcftools mpileup` rather than `samtools mpileup` for variant calling
-* Not using maximum depth for vcfutils.pl varFilter
-    - Reddog uses the 2 * average depth of each replicon
-    - greatly simplifies processes and provides speed improvement, will work to reintroduce
+* No 'AllStats' output
 
 
 ## TODO
 * Swap regex for replicon name with simple string replacement
-* Provide mean replicon mapping depth (or threshold) to variant calling process
-    - average depth * 2 for variant filtering
-    - run variant call process in the follow order
-      - awk to get average depth (then derive threshold)
-      - create associative BASH array with replicon->threshold
-      - bcftools mpileup + call to generate vcf
-      - iterate replicon + max depth threshold and filter variants on each replicon
-        - filter using vcfutils.pl varFilter with appropriate max depth threshold
-        - this will produce one vcf for each replicon
-      - combine into single vcf
-      - apply second variant filter and split into homozygous and heterozgyous SNPs
-      - get high quality SNP positions
+* Coding consequences for hets
+    - create matrix of hets in the same way we do for homs
+    - this should be done conditionally
+    - pass the data forward
+* Use recommended filtering for variant filtering in samtools
+    - https://samtools.github.io/bcftools/howtos/filtering.html
 * During variant calling there are two quality filters
     - vcfutils varFilter: >= 30 RMS mapping quaility
     - python script: >= 30 mapping quality
     - these are different statistics but is the raw mapping quality filter sufficient? check
+* Check that we don't need unfiltered BAMs
+    - this could be produced optionally
+* Add presence absence output to gene\_coverage\_depth process
+    - gene count file may not be required then
 * Create gene count file (based on gene coverage, mean depth stats)?
     - this would be done in the gene\_coverage\_depth process
     - check if this is something wanted
-* Coding consequences for hets
-    - this will take some work
-    - allele information needs to be obtained, represent as sparse matrix?
-      - or as full matrix but with 'placeholder' values for homozygous SNPs
-    - new process/ python script to run code - must explicity indicate which isolate has the het
-      - a het in one isolate doesn't imply the site is heterozygous in all isolates
 * Conditionally execute phylogeny process
     - on the basis of having n or more isolates
 * Check we have input read sets
@@ -61,8 +51,6 @@
     - at least half the disk i/o by removing reference column in each
 * Chunked reads for SNP aligments and matrix aggregation
     - avoid consuming very large amounts of memory for large datasets
-* Replace excessive use of list, dict, set comprehensions with more digestible for loops
-    - see `calculate_replicon_statisitics.py` for the main offender
 * Probably can remove mapped flag check in `get_reads_mapped.awk`
     - was previously passing unfiltered bam
 * For `get_snp_sites.awk`, check that the input ref and alt allele can be the same (i.e. not use of '.')
@@ -97,8 +85,10 @@ This is a list of processes/outputs that are yet to be closely tested
     - exclusion of SNP positions which lack sufficient data
 * Ingroup/output calling, large dataset with many unknown SNPs
     - ratio calculation and equality comparison
+* Output of gene\_coverage\_depth process
 * SNP alignment
 * Phylogeny
 * Coding consequence
     - interval tree balance
     - ensure bounds capture
+    - consider comparing against https://samtools.github.io/bcftools/howtos/csq-calling.html if applicable
