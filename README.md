@@ -27,6 +27,7 @@ nextflow:  48918     A    A    ns           DYC81_RS00305  GTA        GAA       
 
 
 ## TODO
+* Update tests with code from lastest revision
 * Automate comparison of test output data
 * Coding consequences for hets
     - create matrix of hets in the same way we do for homs

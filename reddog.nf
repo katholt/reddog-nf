@@ -258,23 +258,21 @@ process calculate_replicon_statistics {
 //   - get a list of replicons that have any passing isolate
 //     - determined by having pass status and more than one SNP
 process aggregate_replicon_statistics {
-  publishDir "${output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }
+  publishDir "${output_dir}", pattern: '*_RepStats.tsv', saveAs: { filename -> "${reference_name}_${filename}" }
 
   input:
   path(replicon_stats_fps) from ch_replicon_stats_aggregate.collect()
 
   output:
-  path "*_RepStats.tsv" into ch_replicon_stats
-  env samples_pass into _ch_samples_pass
+  path '*_RepStats.tsv'
+  path 'sample_replicons_passing.tsv' into ch_sample_replicons_passing_filepath
 
   script:
   """
   aggregate_replicon_stats.py --rep_stats_fps ${replicon_stats_fps} --output_dir ./
-  samples_pass=\$(grep -wh 'p' *_RepStats.tsv | cut -f1 -d\$'\t' | sort | uniq)
+  get_passing_sample_replicons.awk ${replicon_stats_fps} > sample_replicons_passing.tsv
   """
 }
-ch_replicon_stats.into { ch_snp_sites_replicon_stats; ch_allele_matrix_replicon_stats }
-_ch_samples_pass.tokenize(' ').flatMap().set { ch_samples_pass }
 
 
 // Combine SNP sites
@@ -283,14 +281,14 @@ _ch_samples_pass.tokenize(' ').flatMap().set { ch_samples_pass }
 process aggregate_snp_sites {
   input:
   path snp_sites_fps from ch_snp_sites_aggregate.collect()
-  path replicon_stats_fps from ch_snp_sites_replicon_stats
+  path sample_replicons_passing_fp from ch_sample_replicons_passing_filepath
 
   output:
-  path "snp_sites.tsv" into ch_snp_sites
+  path 'snp_sites.tsv' into ch_snp_sites
 
   script:
   """
-  aggregate_snp_sites.py --sites_fps ${snp_sites_fps} --replicon_stats_fp ${replicon_stats_fps} > snp_sites.tsv
+  aggregate_snp_sites.py --sites_fps ${snp_sites_fps} --sample_replicons_passing_fp ${sample_replicons_passing_fp} > snp_sites.tsv
   """
 }
 
@@ -301,13 +299,22 @@ process aggregate_snp_sites {
 //     - relaxed filtering to accept low-quality alleles at high quality sites
 //   - for each replicon, write alleles called at each site as separate file
 
+// Read in samples the replicons that passed and generate a channel to emit [sample_id, replicon_ids]
+// Where replicon_ids is a string with each replicon_id separated by a single space
+ch_sample_replicons_passing_filepath.flatMap { filepath ->
+    filepath.readLines().collect { line ->
+      tokens = line.tokenize('\t')
+      [tokens[0], tokens[1..-1].join(' ')]
+    }
+  }.set { ch_sample_replicons_passing }
+
 // Remove isolates that have no replicons that pass mapping criteria and then add SNP site file to each BAM
-ch_samples_pass.join(ch_allele_matrix_bams).combine(ch_snp_sites).set { ch_create_allele_matrix }
+// We perform this here so that we do not run jobs for samples that have no passing replicons
+ch_allele_matrix_bams.join(ch_sample_replicons_passing).combine(ch_snp_sites).set { ch_create_allele_matrix }
 
 process create_allele_matrix {
   input:
-  tuple isolate_id, path(bam_fp), path(index_fp), path(sites_fp) from ch_create_allele_matrix
-  path replicon_stats_fps from ch_allele_matrix_replicon_stats
+  tuple isolate_id, path(bam_fp), path(index_fp), val(replicons_pass), path(sites_fp) from ch_create_allele_matrix
   path reference_fp from ch_allele_matrix_reference
 
   output:
@@ -316,13 +323,11 @@ process create_allele_matrix {
   script:
   """
   # Get sites only for replicons that pass mapping criteria
-  replicons_pass=\$(grep -l NCTC13753_set2 *RepStats.tsv | sed 's/_RepStats.tsv//')
-  { head -n1 ${sites_fp}; grep -wf <(echo \${replicons_pass} | tr ' ' '\n' | sed 's/^/^/') ${sites_fp}; } > isolate_sites.tsv
+  { head -n1 ${sites_fp}; grep -wf <(echo ${replicons_pass} | tr ' ' '\n' | sed 's/^/^/') ${sites_fp}; } > isolate_sites.tsv
   # Create matrix
   create_allele_matrix.py --bam_fp ${bam_fp} --sites_fp isolate_sites.tsv --reference_fp ${reference_fp} --output_dir ./
   """
 }
-
 
 // Aggregate allele matrices
 //   - group matrices by replicon id
@@ -379,7 +384,7 @@ process create_snp_alignment{
   tuple replicon_id, path(allele_matrix_fp) from ch_snp_alignment_alleles
 
   output:
-  tuple val(replicon_id), path("*.mfasta") into ch_snp_alignment
+  tuple val(replicon_id), path('*.mfasta') into ch_snp_alignment
 
   script:
   """
@@ -399,7 +404,7 @@ process determine_coding_consequences {
   tuple replicon_id, path(allele_matrix_fp) from ch_consequences_alleles
 
   output:
-  path "*consequences.tsv"
+  path '*consequences.tsv'
 
   script:
   """
