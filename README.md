@@ -2,33 +2,27 @@
 
 
 ## Processing differences
-* The calculate\_replicon\_statistics process
-    - combines several steps
-        - getSamStats
-        - getCoverage
-        - deriveRepStats
-    - calculates the following from combination of samtools view/mpileup and awk scripts:
-        - coverage and depth
-        - heterozygous SNP count
-        - SNPs and INDELs counts
-        - read counts
+* Most stages have been rearranged and combined in some way
+    - overall pipeline structure is preserved
 * Isolates in replicon statistics file are ordered as failed, outgroup, ingroup
 * The coding consequences process additionally provides a list of affected isolates
-    - implemented an interval tree to quickly collect features containing a given SNP
 * Filtering BAMs in single-shot while mapping
     - unmapped read statistic taken from bowtie2 metrics file
+    - no unfiltered BAM intermediate file
 * Using `bcftools mpileup` rather than `samtools mpileup` for variant calling
     - `bcftools mpileup` has built in filtering criteria causing difference in numbers of SNP calls
 * Using Kat's approach to determine alleles at high quality SNP sites
-    - this impacts allele filtering at 95% conservation as alleles can be different
-* No equivalent for following files - gene presence/absence
+    - this impacts allele filtering at 95% conservation as alleles can differ from previous method
+    - usually less sites with known alleles as we now only consider >=Q20 alignments for consensus calls
+* No equivalent for following files
+    - gene presence/absence
     - gene counts in isolate set
     - AllStats
-* Reverse strand consequence reports the complement nucleotide:
+* Coding consequences on reverse strand report the complement nucleotide:
 ```
            position  ref  alt  change_type  gene           ref_codon  alt_codon  ref_aa  alt_aa  gene_product     gene_nucleotide_position  gene_codon_position  codon_nucleotide_position  isolates
-nextflow:  48918     A    A    ns           DYC81_RS00305  GTA        GAA        V       E       acylphosphatase  104                       35                   2                          NCTC13753_set3
 reddog:    48918     A    T    ns           DYC81_RS00305  GTA        GAA        V       E       acylphosphatase  104                       35                   2                          n/a
+nextflow:  48918     A    A    ns           DYC81_RS00305  GTA        GAA        V       E       acylphosphatase  104                       35                   2                          NCTC13753_set3
 ```
 
 
