@@ -27,7 +27,15 @@ nextflow:  48918     A    A    ns           DYC81_RS00305  GTA        GAA       
 
 
 ## TODO
-* Update tests with code from lastest revision
+* Test on large dataset
+    - haemophilus influenze, currently running
+    - typhi, zoe to provide data
+* Set output files to be copied or moved rather than symlinked
+    - move is preferable, particularly for large runs producing many BAMs
+    - could do this through netflow publishDir interface
+        - if moving files this will cause problems unless they're not used downstream
+    - or through a final stage to run some BASH to move files
+        - for file in $(find . -type l); do mv $(readlink ${file}) ${file}; done
 * Automate comparison of test output data
 * Coding consequences for hets
     - create matrix of hets in the same way we do for homs
