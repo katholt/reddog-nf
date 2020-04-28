@@ -18,15 +18,16 @@
     - gene presence/absence
     - gene counts in isolate set
     - AllStats
-* Coding consequences on reverse strand report the complement nucleotide:
-```
-           position  ref  alt  change_type  gene           ref_codon  alt_codon  ref_aa  alt_aa  gene_product     gene_nucleotide_position  gene_codon_position  codon_nucleotide_position  isolates
-reddog:    48918     A    T    ns           DYC81_RS00305  GTA        GAA        V       E       acylphosphatase  104                       35                   2                          n/a
-nextflow:  48918     A    A    ns           DYC81_RS00305  GTA        GAA        V       E       acylphosphatase  104                       35                   2                          NCTC13753_set3
-```
 
 
 ## TODO
+* Coding consequence currently reports the alt nucleotide as the complement
+    - as it appears within the coding strand of the gene
+    - the ref codon and alt codon are not reverse complement
+    - must either:
+        - not complement the alt nucleotide, or
+        - reverse complement the ref and alt codons
+    - which behaviour is prefered? reddog does not complement/reverse complement
 * Test on large dataset
     - haemophilus influenze, currently running
     - typhi, zoe to provide data
