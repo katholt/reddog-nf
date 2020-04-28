@@ -21,8 +21,8 @@ def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--sites_fps', required=True, type=pathlib.Path,
             help='SNP sites filepaths', nargs='+', action=CheckInput)
-    parser.add_argument('--sample_replicons_passing_fp', required=True, type=pathlib.Path,
-            help='Sample replicons passing filepath', action=CheckInput)
+    parser.add_argument('--isolate_replicons_passing_fp', required=True, type=pathlib.Path,
+            help='Isolate replicons passing filepath', action=CheckInput)
     return parser.parse_args()
 
 
@@ -32,7 +32,7 @@ def main():
 
     # Get a set of replicon + isolates that pass
     isolates = set()
-    with args.sample_replicons_passing_fp.open('r') as fh:
+    with args.isolate_replicons_passing_fp.open('r') as fh:
         line_token_gen = (line.rstrip().split('\t') for line in fh)
         for isolate, *replicons in line_token_gen:
             for replicon in replicons:
