@@ -78,7 +78,7 @@ reference_name = reference_gbk_fp.simpleName
 
 // Create channel for input read sets and get number of input isolates
 Channel.fromFilePairs(params.reads, flat: true).into { ch_read_sets; ch_read_sets_count }
-isolate_count = ch_read_sets_count.count().val
+isolate_count = ch_read_sets_count.count().value
 
 
 // Prepare reference
@@ -308,7 +308,7 @@ ch_isolate_replicons_passing_filepath.flatMap { filepath ->
       [tokens[0], tokens[1..-1].join(' ')]
     }
   }.into { ch_isolate_replicons_passing; ch_isolate_passing_count }
-isolate_passing_count = ch_isolate_passing_count.count().val
+isolate_passing_count = ch_isolate_passing_count.count().value
 
 // Remove isolates that have no replicons that pass mapping criteria and then add SNP site file to each BAM
 // We perform this here so that we do not run jobs for isolates that have no passing replicons
