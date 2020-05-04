@@ -29,6 +29,9 @@
         - on third set errorStrategy to terminate
         - may be able to access the maxTries directive to do:
             - errorStrategy: { task.attempt < task.maxTries ? 'retry' : 'terminate' }
+* Detect whether we're on MASSIVE
+    - then set profile
+    - unsure if this can be set during runtime, will investigate
 * Coding consequences currently not processing alleles in features with compound locations
     - need to better understand limitations of current approach to determine compatibility with these
     - currently not assessing consequences and instead warning user
@@ -49,9 +52,6 @@
     - would require reworking a large amount of `determine_coding_consequences.py`
 * Scaling job resources on file size may be more appropriate
     - use the `size()` method, returns file size in bytes
-* Pipeline continues when a job fails n times and generates output files
-    - there is not immediate notification of this occuring
-    - seems to be unwanted behaviour
 * Test on large dataset
     - haemophilus influenze, currently running
     - typhi, zoe to provide data
