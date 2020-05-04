@@ -21,6 +21,14 @@
 
 
 ## TODO
+* Pipeline continues when a job fails n times and generates output files
+    - there is not immediate notification of this occuring
+    - seems to be unwanted behaviour
+    - dynamically setting errorStrategy seems to be a possible option:
+        - errorStrategy: { task.attempt < 3 ? 'retry' : 'terminate' }
+        - on third set errorStrategy to terminate
+        - may be able to access the maxTries directive to do:
+            - errorStrategy: { task.attempt < task.maxTries ? 'retry' : 'terminate' }
 * Coding consequences currently not processing alleles in features with compound locations
     - need to better understand limitations of current approach to determine compatibility with these
     - currently not assessing consequences and instead warning user
