@@ -95,6 +95,9 @@ def main():
     replicon_current = None
     fh = None
     for record in record_gen:
+        # Skip records with more than one allele
+        if ',' in record.alt:
+            continue
         # Check if we need to change output file
         if replicon_current != record.chrom:
             if replicon_current:

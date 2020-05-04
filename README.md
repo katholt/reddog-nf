@@ -21,13 +21,29 @@
 
 
 ## TODO
-* Coding consequence currently reports the alt nucleotide as the complement
-    - as it appears within the coding strand of the gene
-    - the ref codon and alt codon are not reverse complement
-    - must either:
-        - not complement the alt nucleotide, or
-        - reverse complement the ref and alt codons
-    - which behaviour is prefered? reddog does not complement/reverse complement
+* Coding consequences currently not processing alleles in features with compound locations
+    - need to better understand limitations of current approach to determine compatibility with these
+    - currently not assessing consequences and instead warning user
+    - we should be able to handle these if:
+        - gene sequence is correctly obtained
+        - within SNP position adjusted as needed
+            - this will depend on position with in gene
+            - likely the most difficult part
+        - ensure that the SNP position is not between compound positions
+            - currently we only test outer bounds of genes
+            - will need to test each bound individual until we're sure it is genic
+    - another consideration is whether these annotations have biological meaning
+        - do these genes truly have non-contiguous open reading frames?
+        - or is this some product of annotation weirdness
+* Coding consequences currently only examines each SNP individually
+    - report coding result when multiple SNPs are in one codon
+    - this probably should replace looking at SNPs individually
+    - would require reworking a large amount of `determine_coding_consequences.py`
+* Scaling job resources on file size may be more appropriate
+    - use the `size()` method, returns file size in bytes
+* Pipeline continues when a job fails n times and generates output files
+    - there is not immediate notification of this occuring
+    - seems to be unwanted behaviour
 * Test on large dataset
     - haemophilus influenze, currently running
     - typhi, zoe to provide data
@@ -85,6 +101,7 @@
     - separate nextflow script
 * Single reads pipeline
     - separate nextflow script
+* Variants other than SNPs
 
 
 ## Queries

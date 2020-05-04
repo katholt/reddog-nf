@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
-# TODO: deal with '-' and 'N'
-
-
 import argparse
 import pathlib
 import sys
 
 
-import Bio.SeqIO
 import Bio.Alphabet.IUPAC
+import Bio.SeqFeature
+import Bio.SeqIO
 
 
 nucleotide_complement = str.maketrans('atgcATGC', 'tacgTACG')
+ambiguous_amino_acids = {'B', 'J', 'X', 'Z'}
 
 
 class Interval:
@@ -65,6 +64,8 @@ class AlleleRecord:
 
 class Consequence:
 
+    # Mapping ordered header fields to class attributes
+    # header name -> attribute
     fields = {
             'position': 'position',
             'ref': 'reference',
@@ -79,7 +80,8 @@ class Consequence:
             'gene_nucleotide_position': 'gene_nucleotide_position',
             'gene_codon_position': 'gene_codon_position',
             'codon_nucleotide_position': 'codon_nucleotide_position',
-            'isolates': 'isolate_str'
+            'isolates': 'isolate_str',
+            'notes': 'notes',
             }
 
     def __init__(self):
@@ -131,9 +133,12 @@ def main():
     rep_gbk = ref_gbk[args.replicon]
 
     # Create interval tree for features
-    # NOTE: we assume tree is balanced, which it should be for this type of data
-    feature_cds_gen = (feature for feature in rep_gbk.features if feature.type == 'CDS')
-    intervals = [Interval.from_feature(feature) for feature in feature_cds_gen]
+    # NOTE: tree is assumed to be balanced, which it should be for this type of data
+    intervals = list()
+    for feature in rep_gbk.features:
+        if feature.type != 'CDS':
+            continue
+        intervals.append(Interval.from_feature(feature))
     interval_tree = create_interval_tree(intervals)
 
     # Determine consequences
@@ -178,33 +183,58 @@ def main():
                 codon = codon_sequence.translate()
                 # Get consequences for each allele
                 for allele, allele_isolates in isolates_by_allele(record).items():
-                    # Must complement codon if on reverse strand
-                    if strand == -1:
-                        allele = allele.translate(nucleotide_complement)
-                    # Get consequence
-                    sequence_allele, codon_allele = get_consequence(codon_sequence, allele, position_codon)
                     # Create new consequence object to hold output data for nicer printing imo
                     # Doubles to makes intergenic block much cleaner
                     consequence = Consequence.from_allele_record(record)
                     consequence.allele = allele
-                    consequence.codon = codon
-                    consequence.codon_allele = codon_allele
-                    consequence.sequence = codon_sequence
-                    consequence.sequence_allele = sequence_allele
-                    consequence.gene_nucleotide_position = position_gene
-                    consequence.gene_codon_position = codon_number
-                    consequence.codon_nucleotide_position = position_codon
-                    consequence.change_type = 'ns' if codon != codon_allele else 's'
-                    consequence.isolate_str = ','.join(allele_isolates)
-                    [consequence.gene_id] = interval.feature.qualifiers['locus_tag']
-                    [consequence.gene_product] = interval.feature.qualifiers['product']
-                    # Print data
-                    print(consequence)
+
+                    # Must complement allele if on reverse strand
+                    # The ref and alt alleles relative to coding strand
+                    # Both codon and amino acid details are reported on the appropriate strand
+                    if strand == -1:
+                        allele = allele.translate(nucleotide_complement)
+
+                    # NOTE: we skip alleles that fall within compound locations, I need to
+                    # investigate nature of these features further before implementing appropriate
+                    # logic to handle them correctly.
+                    if isinstance(interval.feature.location, Bio.SeqFeature.CompoundLocation):
+                        [locus_tag] = interval.feature.qualifiers['locus_tag']
+                        msg = (f'warning: skipping position {record.position} in gene {locus_tag} '
+                                'as the gene has a compound location')
+                        print(msg, file=sys.stderr)
+                        consequence.change_type = 'not assessed'
+                        consequence.notes = 'allele falls within compound location of {locus_tag}'
+                        print(consequence)
+                    else:
+                        # Get consequence
+                        sequence_allele, codon_allele = get_consequence(codon_sequence, allele, position_codon)
+                        consequence.codon = codon
+                        consequence.codon_allele = codon_allele
+                        consequence.sequence = codon_sequence
+                        consequence.sequence_allele = sequence_allele
+                        consequence.gene_nucleotide_position = position_gene
+                        consequence.gene_codon_position = codon_number
+                        consequence.codon_nucleotide_position = position_codon
+                        if codon == codon_allele:
+                            consequence.change_type = 'synonymous'
+                        elif codon in ambiguous_amino_acids or codon_allele in ambiguous_amino_acids:
+                            consequence.change_type = 'ambiguous'
+                        else:
+                            consequence.change_type = 'non-synonymous'
+                        consequence.isolate_str = ','.join(allele_isolates)
+                        [consequence.gene_id] = interval.feature.qualifiers['locus_tag']
+                        [consequence.gene_product] = interval.feature.qualifiers['product']
+                        # Print data
+                        print(consequence)
 
 
 def isolates_by_allele(record):
     ret = dict()
     for isolate, allele in zip(record.isolates, record.alleles):
+        # Skip alleles that are unknown
+        if allele == '-':
+            continue
+        # Skip alleles that match reference
         if allele == record.reference:
             continue
         if allele not in ret:
@@ -216,7 +246,7 @@ def isolates_by_allele(record):
 def get_consequence(codon_sequence, allele, position_codon):
     sequence_list = list(codon_sequence)
     sequence_list[position_codon-1] = allele
-    sequence = Bio.Seq.Seq(''.join(sequence_list), Bio.Alphabet.IUPAC.unambiguous_dna)
+    sequence = Bio.Seq.Seq(''.join(sequence_list), Bio.Alphabet.IUPAC.ambiguous_dna)
     return sequence, sequence.translate()
 
 
