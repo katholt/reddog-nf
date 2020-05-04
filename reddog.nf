@@ -139,7 +139,7 @@ process align_reads_to_reference {
   samtools index ${isolate_id}.bam
   """
 }
-ch_bams.into { ch_call_snps_bams; ch_mpileup_bams; ch_replicon_stats_bams; ch_allele_matrix_bams }
+ch_bams.into { ch_call_snps_bams; ch_mpileup_bams; ch_mapping_stats_bams; ch_allele_matrix_bams }
 
 
 // Create samtools multiway pileups
@@ -200,7 +200,7 @@ process call_snps {
 
   output:
   tuple val(isolate_id), path('*_q30.vcf'), path('*_hets.vcf') into ch_snp_vcfs
-  tuple val(isolate_id), path("${isolate_id}_coverage_depth.tsv") into ch_replicon_stats_coverage_depth
+  tuple val(isolate_id), path("${isolate_id}_coverage_depth.tsv") into ch_mapping_stats_coverage_depth
   path "${isolate_id}_sites.tsv" into ch_snp_sites_aggregate
 
   script:
@@ -221,36 +221,36 @@ process call_snps {
   get_snp_sites.awk ${isolate_id}_q30.vcf > ${isolate_id}_sites.tsv
   """
 }
-ch_snp_vcfs.set { ch_replicon_stats_vcfs }
+ch_snp_vcfs.set { ch_mapping_stats_vcfs }
 
 
-// Calculate replicon statistics
+// Calculate mapping statistics
 //   - get total reads from mapping metrics file
 //   - coverage and mapped read counts previously calculated from mpileups
 //   - get SNP, INDEL, and heterzygous SNP counts from VCFs
 //   - calculate appropriate statisitics
 //   - fail isolates on depth or coverage
 //   - additionally for the largest replicon, require that at least 50% reads mapped
-ch_replicon_stats_bams.join(ch_replicon_stats_vcfs)
-  .join(ch_replicon_stats_coverage_depth)
+ch_mapping_stats_bams.join(ch_mapping_stats_vcfs)
+  .join(ch_mapping_stats_coverage_depth)
   .join(ch_alignment_metrics)
-  .set { ch_calculate_replicon_stats }
+  .set { ch_calculate_mapping_stats }
 
-process calculate_replicon_statistics {
+process calculate_mapping_statistics {
   input:
-  tuple isolate_id, path(bam_fp), path(bam_index_fp), path(vcf_q30_fp), path(vcf_hets_fp), path(coverage_depth_fp), path(mapping_metrics_fp) from ch_calculate_replicon_stats
+  tuple isolate_id, path(bam_fp), path(bam_index_fp), path(vcf_q30_fp), path(vcf_hets_fp), path(coverage_depth_fp), path(mapping_metrics_fp) from ch_calculate_mapping_stats
 
   output:
-  path "${isolate_id}_replicon_stats.tsv" into ch_replicon_stats_aggregate
+  path "${isolate_id}_mapping_stats.tsv" into ch_mapping_stats_aggregate
 
   script:
   """
-  calculate_replicon_stats.py --bam_fp ${bam_fp} --vcf_q30_fp ${vcf_q30_fp} --vcf_hets_fp ${vcf_hets_fp} --coverage_depth_fp ${coverage_depth_fp} --mapping_metrics_fp ${mapping_metrics_fp} > ${isolate_id}_replicon_stats.tsv
+  calculate_mapping_stats.py --bam_fp ${bam_fp} --vcf_q30_fp ${vcf_q30_fp} --vcf_hets_fp ${vcf_hets_fp} --coverage_depth_fp ${coverage_depth_fp} --mapping_metrics_fp ${mapping_metrics_fp} > ${isolate_id}_mapping_stats.tsv
   """
 }
 
 
-// Aggregate replicon statistics
+// Aggregate mapping statistics
 //   - read in all records and aggregate by replicon
 //   - for passing isolates, calculate phylogeny group using the ratio of 'total reads mapped' : 'coverage' / 100
 //     - set maximum ratio for ingroup as 'ratio mean' + 'ratio stddev' * 2
@@ -258,20 +258,20 @@ process calculate_replicon_statistics {
 //   - get a list of isolates that pass mapping on at least one replicon
 //   - get a list of replicons that have any passing isolate
 //     - determined by having pass status and more than one SNP
-process aggregate_replicon_statistics {
-  publishDir "${output_dir}", pattern: '*_RepStats.tsv', saveAs: { filename -> "${reference_name}_${filename}" }
+process aggregate_mapping_statistics {
+  publishDir "${output_dir}", pattern: '*_mapping_stats.tsv', saveAs: { filename -> "${reference_name}_${filename}" }
 
   input:
-  path(replicon_stats_fps) from ch_replicon_stats_aggregate.collect()
+  path(mapping_stats_fps) from ch_mapping_stats_aggregate.collect()
 
   output:
-  path '*_RepStats.tsv'
+  path '*_mapping_stats.tsv'
   path 'isolate_replicons_passing.tsv' into ch_isolate_replicons_passing_filepath
 
   script:
   """
-  aggregate_replicon_stats.py --rep_stats_fps ${replicon_stats_fps} --output_dir ./
-  get_passing_isolate_replicons.awk ${replicon_stats_fps} > isolate_replicons_passing.tsv
+  aggregate_mapping_stats.py --rep_stats_fps ${mapping_stats_fps} --output_dir ./
+  get_passing_isolate_replicons.awk ${mapping_stats_fps} > isolate_replicons_passing.tsv
   """
 }
 
@@ -367,13 +367,13 @@ process aggregate_allele_matrices {
 
   output:
   path '*_alleles.tsv'
-  tuple val(replicon_id), path('*_alleles_var_cons0.95.tsv') into ch_allele_matrix
+  tuple val(replicon_id), path('*_alleles_core.tsv') into ch_allele_matrix
 
   script:
   """
   { head -n1 ${snp_sites_fp}; grep -w "^${replicon_id}" snp_sites.tsv; } > replicon_sites.tsv
   aggregate_allele_matrices.py --allele_fps ${allele_fps} --sites_fp replicon_sites.tsv > ${replicon_id}_alleles.tsv
-  filter_allele_matrix.py --allele_fp ${replicon_id}_alleles.tsv > ${replicon_id}_alleles_var_cons0.95.tsv
+  filter_allele_matrix.py --allele_fp ${replicon_id}_alleles.tsv > ${replicon_id}_alleles_core.tsv
   """
 }
 ch_allele_matrix.into { ch_snp_alignment_alleles; ch_consequences_alleles }
@@ -391,7 +391,7 @@ process create_snp_alignment{
 
   script:
   """
-  create_snp_alignment.py --allele_fp ${allele_matrix_fp} > ${replicon_id}_alleles_var_cons0.95.mfasta
+  create_snp_alignment.py --allele_fp ${allele_matrix_fp} > ${replicon_id}_core.mfasta
   """
 }
 
@@ -407,11 +407,11 @@ process determine_coding_consequences {
   tuple replicon_id, path(allele_matrix_fp) from ch_consequences_alleles
 
   output:
-  path '*consequences.tsv'
+  path '*consequences_core.tsv'
 
   script:
   """
-  determine_coding_consequences.py --allele_fp ${allele_matrix_fp} --reference_fp ${reference_gbk_fp} --replicon ${replicon_id} > ${replicon_id}_alleles_var_cons0.95_consequences.tsv
+  determine_coding_consequences.py --allele_fp ${allele_matrix_fp} --reference_fp ${reference_gbk_fp} --replicon ${replicon_id} > ${replicon_id}_consequences_core.tsv
   """
 }
 
@@ -428,6 +428,6 @@ process infer_phylogeny {
 
   script:
   """
-  FastTree -gtr -gamma -nt ${alignment_fp} > ${replicon_id}_alleles_var_cons0.95.tree
+  FastTree -gtr -gamma -nt ${alignment_fp} > ${replicon_id}_core.tree
   """
 }
