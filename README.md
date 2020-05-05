@@ -25,6 +25,7 @@
 
 
 ## TODO
+* Optional stage to subsample reads to a specified level
 * Coding consequences currently only examines each SNP individually
     - report coding result when multiple SNPs are in one codon
     - this probably should replace looking at SNPs individually
