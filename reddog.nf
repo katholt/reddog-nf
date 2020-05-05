@@ -402,7 +402,14 @@ process aggregate_allele_matrices {
   filter_allele_matrix.py --allele_fp ${replicon_id}_alleles.tsv > ${replicon_id}_alleles_core.tsv
   """
 }
-ch_allele_matrix.into { ch_snp_alignment_alleles; ch_consequences_alleles }
+// Filter matrices that have no alleles so we don't needlessly execute downstream processes
+ch_allele_matrix.filter { replicon_id, fp ->
+    // Read first two lines of allele matrix and determine if we have data
+    has_alleles = true
+		fh = fp.newReader()
+    for (int i = 0; i < 2; i++) { has_alleles = fh.readLine() != null }
+    return has_alleles
+  }.into { ch_snp_alignment_alleles; ch_consequences_alleles }
 
 
 // Create SNP alignment
