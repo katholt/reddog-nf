@@ -133,7 +133,7 @@ def main():
     rep_gbk = ref_gbk[args.replicon]
 
     # Create interval tree for features
-    # NOTE: tree is assumed to be balanced, which it should be for this type of data
+    # Tree is assumed to be balanced, which it should be for this type of data
     intervals = list()
     for feature in rep_gbk.features:
         if feature.type != 'CDS':
@@ -194,9 +194,7 @@ def main():
                     if strand == -1:
                         allele = allele.translate(nucleotide_complement)
 
-                    # NOTE: we skip alleles that fall within compound locations, I need to
-                    # investigate nature of these features further before implementing appropriate
-                    # logic to handle them correctly.
+                    # Skip alleles that fall within compound locations
                     if isinstance(interval.feature.location, Bio.SeqFeature.CompoundLocation):
                         [locus_tag] = interval.feature.qualifiers['locus_tag']
                         msg = (f'warning: skipping position {record.position} in gene {locus_tag} '

@@ -14,6 +14,10 @@
 * Using Kat's approach to determine alleles at high quality SNP sites
     - this impacts allele filtering at 95% conservation as alleles can differ from previous method
     - usually less sites with known alleles as we now only consider >=Q20 alignments for consensus calls
+* Coding consequences does not assess alleles in features that have compound locations
+    - occurs when gene crosses contig boundary or due to annotation
+    - several genes in the Hi reference have compound location annotations to just show frameshifts
+        - determining consequences here is not feasible without defining what is the true ORF
 * No equivalent for following files
     - gene presence/absence
     - gene counts in isolate set
@@ -21,31 +25,6 @@
 
 
 ## TODO
-* Pipeline continues when a job fails n times and generates output files
-    - there is not immediate notification of this occuring
-    - seems to be unwanted behaviour
-    - dynamically setting errorStrategy seems to be a possible option:
-        - errorStrategy: { task.attempt < 3 ? 'retry' : 'terminate' }
-        - on third set errorStrategy to terminate
-        - may be able to access the maxTries directive to do:
-            - errorStrategy: { task.attempt < task.maxTries ? 'retry' : 'terminate' }
-* Detect whether we're on MASSIVE
-    - then set profile
-    - unsure if this can be set during runtime, will investigate
-* Coding consequences currently not processing alleles in features with compound locations
-    - need to better understand limitations of current approach to determine compatibility with these
-    - currently not assessing consequences and instead warning user
-    - we should be able to handle these if:
-        - gene sequence is correctly obtained
-        - within SNP position adjusted as needed
-            - this will depend on position with in gene
-            - likely the most difficult part
-        - ensure that the SNP position is not between compound positions
-            - currently we only test outer bounds of genes
-            - will need to test each bound individual until we're sure it is genic
-    - another consideration is whether these annotations have biological meaning
-        - do these genes truly have non-contiguous open reading frames?
-        - or is this some product of annotation weirdness
 * Coding consequences currently only examines each SNP individually
     - report coding result when multiple SNPs are in one codon
     - this probably should replace looking at SNPs individually
@@ -129,6 +108,12 @@
 * Other mixed sample detection methods?
 
 
+## Misc notes
+* I observed the pipeline to continue after exceeding maximum retries for a job
+    - occured on haemophilus dataset
+    - was not able to recreate on small test pipeline
+
+
 ## Items for further testing
 This is a list of processes/outputs that are yet to be closely tested
 * New allele matrix creation method
@@ -145,3 +130,4 @@ This is a list of processes/outputs that are yet to be closely tested
     - ensure bounds capture
     - consider comparing against https://samtools.github.io/bcftools/howtos/csq-calling.html if applicable
 * Isolate list in consequences containing more than one isolate
+* Coding consequences for genes that join across contig boundaries (on same contig)
