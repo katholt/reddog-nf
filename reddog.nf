@@ -90,9 +90,11 @@ if (! reference_gbk_fp.exists()) {
 }
 
 
-// Do not run if output exists
-if (output_dir.exists() && ! params.force) {
-  exit 1, "error: output directory '${output_dir}' already exists, remove or use --force to overwrite"
+// Do not run if output exists and contains files other than 'run_info' which is already created by pipeline
+output_dir_files = []
+output_dir.eachFile { output_dir_files.add(it.name) }
+if (output_dir_files != ['run_info'] && ! params.force) {
+  exit 1, "error: output directory '${output_dir}' already exists and contains other files, remove or use --force to overwrite"
 }
 
 
