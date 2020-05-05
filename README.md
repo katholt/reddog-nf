@@ -50,8 +50,6 @@
 * Probably can remove mapped flag check in `get_reads_mapped.awk`
     - was previously passing unfiltered bam
 * For `get_snp_sites.awk`, check that the input ref and alt allele can be the same (i.e. not use of '.')
-* Revert min. base quality to 20 in the site-specific consensus calling of `create_allele_matrix.py`
-    - reduced required quality to use with small test dataset
 * Add optional fastqc
     - default behaviour to generate reports
     - option to turn off

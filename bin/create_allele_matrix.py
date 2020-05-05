@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-# TODO: revert base quality (-Q) to 20, reduced for testing purposes
-
-
 import argparse
 import pathlib
 import re
@@ -77,7 +74,7 @@ def main():
     isolate_id = args.bam_fp.stem.replace('_filtered', '')
 
     # Get site-specific consensus
-    command_mpileup_base = 'bcftools mpileup -q20 -Q5 -B'
+    command_mpileup_base = 'bcftools mpileup -q20 -Q20 -B'
     command_mpileup_inputs = f'-f {args.reference_fp} -R {args.sites_fp} {args.bam_fp}'
     command_call = 'bcftools call -V indels -c --ploidy 1 -Ov'
     command = f'{command_mpileup_base} {command_mpileup_inputs} | {command_call}'
