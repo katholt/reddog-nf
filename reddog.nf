@@ -81,6 +81,30 @@ Channel.fromFilePairs(params.reads, flat: true).into { ch_read_sets; ch_read_set
 isolate_count = ch_read_sets_count.count()
 
 
+// Ensure we have appropriate input files
+if (isolate_count.val < 1) {
+  exit 1, "error: did not find any read files value '${params.reads}'"
+}
+if (! reference_gbk_fp.exists()) {
+  exit 1, "error: reference input '${reference_gbk_fp}' does not exist"
+}
+
+
+// Do not run if output exists
+if (output_dir.exists() && ! params.force) {
+  exit 1, "error: output directory '${output_dir}' already exists, remove or use --force to overwrite"
+}
+
+
+// Do not run on MASSIVE unless user specifies profile to use to avoid inadvertently using a local executor
+massive_hostnames = ['m3-login1', 'm3-login2']
+on_massive = massive_hostnames.contains(InetAddress.getLocalHost().getHostName())
+profile_explicit = workflow.commandLine.tokenize(' ').contains('-profile')
+if (on_massive && ! profile_explicit) {
+  exit 1, "error: to run on MASSIVE you must explicitly set -profile"
+}
+
+
 // Prepare reference
 //   - convert to FASTA
 //   - index FASTA with bowtie2 and samtools

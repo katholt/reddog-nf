@@ -32,8 +32,8 @@
 * Scaling job resources on file size may be more appropriate
     - use the `size()` method, returns file size in bytes
 * Test on large dataset
-    - haemophilus influenze, currently running
-    - typhi, zoe to provide data
+    - haemophilus influenzae done (800 isolates, 250k SNPs)
+    - typhi set running
 * Set output files to be copied or moved rather than symlinked
     - move is preferable, particularly for large runs producing many BAMs
     - could do this through netflow publishDir interface
@@ -47,8 +47,6 @@
     - pass the data forward
 * Conditionally execute phylogeny process
     - on the basis of having n or more isolates
-* Check we have input read sets
-    - create different channel to check the first item
 * Probably can remove mapped flag check in `get_reads_mapped.awk`
     - was previously passing unfiltered bam
 * For `get_snp_sites.awk`, check that the input ref and alt allele can be the same (i.e. not use of '.')
