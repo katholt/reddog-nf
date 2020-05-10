@@ -367,7 +367,7 @@ process create_allele_matrix {
 
 // Create a channel that emits allele matrices arranged by replicon_id
 //   - input of [isolate_id, list(isolate_allele_matrices)]
-//     - nextflow returns a list for multiple singles or single object for one file
+//     - nextflow returns a list for multiple files or single object for one file
 //     - check for different object types and process accordingly
 //   - use isolate_id to robustly get replicon_id from allele matrix filename
 //   - flat emit [replicon_id, isolate_allele_matrix] for each file
@@ -406,7 +406,7 @@ process aggregate_allele_matrices {
 ch_allele_matrix.filter { replicon_id, fp ->
     // Read first two lines of allele matrix and determine if we have data
     has_alleles = true
-		fh = fp.newReader()
+    fh = fp.newReader()
     for (int i = 0; i < 2; i++) { has_alleles = fh.readLine() != null }
     return has_alleles
   }.into { ch_snp_alignment_alleles; ch_consequences_alleles }

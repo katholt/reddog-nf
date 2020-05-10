@@ -14,6 +14,8 @@
 * Using Kat's approach to determine alleles at high quality SNP sites
     - this impacts allele filtering at 95% conservation as alleles can differ from previous method
     - usually less sites with known alleles as we now only consider >=Q20 alignments for consensus calls
+* During matrix aggregation ingroup/outgroup is not calculated for replicons with < 2 passing isolates
+    - instead the group status is set to undetermined
 * Coding consequences does not assess alleles in features that have compound locations
     - occurs when gene crosses contig boundary or due to annotation
     - several genes in the Hi reference have compound location annotations to just show frameshifts
@@ -25,7 +27,28 @@
 
 
 ## TODO
+* Only create phylogeny with two or more passing isolates
+* Optional on nextflow fail/incomplete send email
+* Validate format for first n readsets
+    - don't check all - too intensive
+    - use python/biopython
+    - not a stage, script from pipeline
+* Rename 'core' alleles to something else
+    - alleles aren't really core; they have at least n% known sites and >=1 isolate with a SNP
+* Write more logic to catch when user does not have run_info created in output dir
+    - otherwise issues occur when evaluating output_dir_files != ['run_info']
+    - should remove 'run_info' from output_dir_files and look at size
+    - this might still cause issues if users rename 'run_info' to something else
+* Testing, generate reads with errors in them
+    - Input list to later compare to
+    - Fail isolates, outgroups
+        - simulate n reads and add n random or nnnn reads
+    - Multiple replicons
+    - ART?
+* Validate reference
 * Optional stage to subsample reads to a specified level
+    - warn user if read sets are great than a specific size
+    - we could even subsample to target shortq i.e. reduce input size to mapping within 30mins
 * Coding consequences currently only examines each SNP individually
     - report coding result when multiple SNPs are in one codon
     - this probably should replace looking at SNPs individually
@@ -102,6 +125,10 @@
     - this would be done in the gene\_coverage\_depth process
     - trival to calculate outside of pipeline
     - check if this is something wanted
+* Ingroup defined as:
+    - m = total_reads / replicon_coverage / 100
+    - isolate's m <= (stddev all isolate's m) * 2
+    - should we also look at number of SNPs?
 * Other mixed sample detection methods?
 
 

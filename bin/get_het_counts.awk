@@ -4,13 +4,12 @@ BEGIN {
 }
 
 $1 !~ /^#/ {
-  replicons[$1]++
-  hets++
+  replicon_hets[$1]++
 }
 
 END {
-  if (length(replicons) > 1) exit 1
-  if (length(replicons) == 0) exit 0
-  for (replicon in replicons) printf "%s", replicon
-  print "", hets
+  if (length(replicon_hets) == 0) exit 0
+  for (replicon in replicon_hets)  {
+    print replicon, replicon_hets[replicon]
+  }
 }

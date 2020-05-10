@@ -86,20 +86,38 @@ def main():
 
     # Calculate ingroup/outgroup for each
     for replicon, stats_all in replicon_stats.items():
+        # Get all passing entries and set to undetermined
         stats_pass = [stats for stats in stats_all if stats.pass_fail == 'p']
-        ratio_stddev = statistics.stdev(stats.ratio for stats in stats_pass)
-        ratio_mean = statistics.mean(stats.ratio for stats in stats_pass)
-        ratio_max = ratio_mean + ratio_stddev * 2
         for stats in stats_pass:
-            stats.phylogeny_group = 'i' if stats.ratio <= ratio_max else 'o'
+            stats.phylogeny_group = 'undetermined'
+        # If we have sufficient entries, calculate ingroup/outgroups
+        if len(stats_pass) > 1:
+            ratio_stddev = statistics.stdev(stats.ratio for stats in stats_pass)
+            ratio_mean = statistics.mean(stats.ratio for stats in stats_pass)
+            ratio_max = ratio_mean + ratio_stddev * 2
+            for stats in stats_pass:
+                stats.phylogeny_group = 'i' if stats.ratio <= ratio_max else 'o'
         # Write to file, order by fail, outgroup, and then ingroup
         output_fp = args.output_dir / f'{replicon}_mapping_stats.tsv'
         with output_fp.open('w') as fh:
-            stats_failed = [stats for stats in stats_all if stats.pass_fail == 'f']
-            stats_outgroup = [stats for stats in stats_all if stats.phylogeny_group == 'o']
-            stats_ingroup = [stats for stats in stats_all if stats.phylogeny_group == 'i']
+            # Explicit sorting to avoiding missing entries
+            stats_failed = list()
+            stats_undetermined = list()
+            stats_outgroup = list()
+            stats_ingroup = list()
+            for stats in stats_all:
+                if stats.pass_fail == 'f':
+                    stats_failed.append(stats)
+                elif stats.phylogeny_group == 'undetermined':
+                    stats_undetermined.append(stats)
+                elif stats.phylogeny_group == 'o':
+                    stats_outgroup.append(stats)
+                elif stats.phylogeny_group == 'i':
+                    stats_ingroup.append(stats)
+                else:
+                    raise ValueError('could not sort entry into an output group:\n{stats}')
             print(*Stats.fields_out, sep='\t', file=fh)
-            print(*stats_failed, *stats_outgroup, *stats_ingroup, sep='\n', file=fh)
+            print(*stats_failed, *stats_undetermined, *stats_outgroup, *stats_ingroup, sep='\n', file=fh)
 
 
 if __name__ == '__main__':
