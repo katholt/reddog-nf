@@ -93,8 +93,8 @@ if (! params.output_dir) {
 }
 
 
-// Require optional stage variables are boolean
-// We must check and change values if needed. We can't change param variables so instead we declare new ones
+// Require optional stage variables to be boolean
+// We must check and change values if needed. The param variables are immutable so instead we declare new ones
 run_read_subsample = check_boolean_option(params.subsample_reads, 'subsample_reads')
 run_quality_assessment = check_boolean_option(params.quality_assessment, 'quality_assessment')
 run_phylogeny = check_boolean_option(params.force_tree, 'force_tree')
@@ -122,28 +122,12 @@ Channel.fromFilePairs(params.reads, flat: true).into { ch_read_sets; ch_read_set
 isolate_count = ch_read_sets_count.count()
 
 
-// Ensure we have appropriate input files
+// Ensure we have the appropriate input files
 if (isolate_count.val < 1) {
   exit 1, "error: did not find any read files value '${params.reads}'"
 }
 if (! reference_gbk_fp.exists()) {
   exit 1, "error: reference input '${reference_gbk_fp}' does not exist"
-}
-
-
-// Set up channels for optional subsampling
-// Optional execution of subsampling is achieved by:
-//   - populating only the subsample channel with input reads
-//   - then feeding outputs of the subsample process to alignment and qc channels
-//     - the `mix` operator is required to do this
-//   - in the absence of subsampling, alignment and qc channels are populated as normal
-ch_read_sets_qc = Channel.empty()
-ch_read_sets_align = Channel.empty()
-ch_read_sets_subsample = Channel.empty()
-if (! run_read_subsample) {
-  ch_read_sets.into { ch_read_sets_align; ch_read_sets_qc }
-} else {
-  ch_read_sets.set { ch_read_sets_subsample }
 }
 
 
@@ -186,6 +170,22 @@ on_massive = massive_hostnames.contains(InetAddress.getLocalHost().getHostName()
 profile_explicit = workflow.commandLine.tokenize(' ').contains('-profile')
 if (on_massive && ! profile_explicit) {
   exit 1, "error: to run on MASSIVE you must explicitly set -profile"
+}
+
+
+// Seed channels with data, allowing for optional subsampling
+// Optional execution of subsampling is achieved by:
+//   - populating only the subsample channel with input reads
+//   - then feeding outputs of the subsample process to alignment and qc channels
+//     - the `mix` operator is required to do this
+//   - in the absence of subsampling, alignment and qc channels are populated as normal
+ch_read_sets_qc = Channel.empty()
+ch_read_sets_align = Channel.empty()
+ch_read_sets_subsample = Channel.empty()
+if (! run_read_subsample) {
+  ch_read_sets.into { ch_read_sets_align; ch_read_sets_qc }
+} else {
+  ch_read_sets.set { ch_read_sets_subsample }
 }
 
 

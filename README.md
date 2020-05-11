@@ -38,6 +38,7 @@
         - simulate n reads and add n random or nnnn reads
     - Multiple replicons
     - ART?
+* Automate comparison of test output data
 * Coding consequences currently only examines each SNP individually
     - report coding result when multiple SNPs are in one codon
     - this probably should replace looking at SNPs individually
@@ -50,20 +51,19 @@
         - if moving files this will cause problems unless they're not used downstream
     - or through a final stage to run some BASH to move files
         - for file in $(find . -type l); do mv $(readlink ${file}) ${file}; done
-* Automate comparison of test output data
 * Coding consequences for hets
     - create matrix of hets in the same way we do for homs
     - this should be done conditionally
     - pass the data forward
-* Add option to send email of nextflow fail (pipeline failure, not task failure)
-* Probably can remove mapped flag check in `get_reads_mapped.awk`
-    - was previously passing unfiltered bam
-* For `get_snp_sites.awk`, check that the input ref and alt allele can be the same (i.e. not use of '.')
 * Mixed sample detection
     - SNP:het ratio in replicon statistics
     - use zoe's scripts to plot
         - reads het and q30 vcfs
         - plot %mapped to alt, coloured by hets or homs
+* Add option to send email of nextflow fail (pipeline failure, not task failure)
+* Probably can remove mapped flag check in `get_reads_mapped.awk`
+    - was previously passing unfiltered bam
+* For `get_snp_sites.awk`, check that the input ref and alt allele can be the same (i.e. not use of '.')
 
 
 ## Planned improvements
