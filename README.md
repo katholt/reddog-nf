@@ -28,7 +28,9 @@
 
 ## TODO
 * Only create phylogeny with two or more passing isolates
-* Optional on nextflow fail/incomplete send email
+* Add optional fastqc
+    - default behaviour to generate reports
+    - option to turn off
 * Testing, generate reads with errors in them
     - Input list to later compare to
     - Fail isolates, outgroups
@@ -55,20 +57,15 @@
     - create matrix of hets in the same way we do for homs
     - this should be done conditionally
     - pass the data forward
-* Conditionally execute phylogeny process
-    - on the basis of having n or more isolates
+* Add option to send email of nextflow fail (pipeline failure, not task failure)
 * Probably can remove mapped flag check in `get_reads_mapped.awk`
     - was previously passing unfiltered bam
 * For `get_snp_sites.awk`, check that the input ref and alt allele can be the same (i.e. not use of '.')
-* Add optional fastqc
-    - default behaviour to generate reports
-    - option to turn off
 * Mixed sample detection
     - SNP:het ratio in replicon statistics
     - use zoe's scripts to plot
         - reads het and q30 vcfs
         - plot %mapped to alt, coloured by hets or homs
-* Check user inputs and configuration before executing pipeline
 
 
 ## Planned improvements
