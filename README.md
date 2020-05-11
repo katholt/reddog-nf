@@ -4,6 +4,11 @@
 ## Processing differences
 * Most stages have been rearranged and combined in some way
     - overall pipeline structure is preserved
+* Validation on first few readsets and input reference
+* Quality assessment of input reads
+    - fastqc and aggregated by multiqc
+* Reads subsampling if requested
+    - useful to ensure read alignment can execute on shortq
 * Isolates in replicon statistics file are ordered as failed, outgroup, ingroup
 * The coding consequences process additionally provides a list of affected isolates
 * Filtering BAMs in single-shot while mapping
@@ -27,15 +32,15 @@
 
 
 ## TODO
+* Check subsample read count is integer (or can be cast from string)
+* Look into simplifying optional subsampling stage
+    - the use of the mix operator and conditional set-up of channels is a little messy
 * Testing, generate reads with errors in them
     - Input list to later compare to
     - Fail isolates, outgroups
         - simulate n reads and add n random or nnnn reads
     - Multiple replicons
     - ART?
-* Optional stage to subsample reads to a specified level
-    - warn user if read sets are great than a specific size
-    - we could even subsample to target shortq i.e. reduce input size to mapping within 30mins
 * Coding consequences currently only examines each SNP individually
     - report coding result when multiple SNPs are in one codon
     - this probably should replace looking at SNPs individually

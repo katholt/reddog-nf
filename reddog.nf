@@ -45,6 +45,7 @@ def print_help() {
 }
 
 
+// Execute a command and capture standard streams along with return code
 def execute_command(String command) {
   stdout = new StringBuilder()
   stderr = new StringBuilder()
@@ -94,6 +95,7 @@ if (! params.output_dir) {
 
 // Require optional stage variables are boolean
 // We must check and change values if needed. We can't change param variables so instead we declare new ones
+run_read_subsample = check_boolean_option(params.subsample_reads, 'subsample_reads')
 run_quality_assessment = check_boolean_option(params.quality_assessment, 'quality_assessment')
 run_phylogeny = check_boolean_option(params.force_tree, 'force_tree')
 
@@ -108,7 +110,7 @@ reference_name = reference_gbk_fp.simpleName
 
 
 // Create channel for input read sets and get number of input isolates
-Channel.fromFilePairs(params.reads, flat: true).into { ch_read_sets; ch_read_sets_qc; ch_read_sets_count }
+Channel.fromFilePairs(params.reads, flat: true).into { ch_read_sets; ch_read_sets_count }
 isolate_count = ch_read_sets_count.count()
 
 
@@ -118,6 +120,22 @@ if (isolate_count.val < 1) {
 }
 if (! reference_gbk_fp.exists()) {
   exit 1, "error: reference input '${reference_gbk_fp}' does not exist"
+}
+
+
+// Set up channels for optional subsampling
+// Optional execution of subsampling is achieved by:
+//   - populating only the subsample channel with input reads
+//   - then feeding outputs of the subsample process to alignment and qc channels
+//     - the `mix` operator is required to do this
+//   - in the absence of subsampling, alignment and qc channels are populated as normal
+ch_read_sets_qc = Channel.empty()
+ch_read_sets_align = Channel.empty()
+ch_read_sets_subsample = Channel.empty()
+if (! run_read_subsample) {
+  ch_read_sets.into { ch_read_sets_align; ch_read_sets_qc }
+} else {
+  ch_read_sets.set { ch_read_sets_subsample }
 }
 
 
@@ -163,12 +181,27 @@ if (on_massive && ! profile_explicit) {
 }
 
 
+// Subsample reads if requested
+process subsample_reads {
+  input:
+  tuple isolate_id, path(reads_fwd), path(reads_rev) from ch_read_sets_subsample
+
+  output:
+  tuple isolate_id, path('*1_subsampled*'), path('*2_subsampled*') into ch_subsampled_read_sets_align, ch_subsampled_read_sets_qc
+
+  script:
+  """
+  subsample_reads.py --forward_fp ${reads_fwd} --reverse_fp ${reads_rev} --subsample_reads ${params.subsample_read_count} --output ./
+  """
+}
+
+
 // Run read quality assessment
-process fastqc {
+process generate_read_quality_reports {
   publishDir "${output_dir}/fastqc/individual_reports/"
 
   input:
-  tuple isolate_id, path(reads_fwd), path(reads_rev) from ch_read_sets_qc
+  tuple isolate_id, path(reads_fwd), path(reads_rev) from ch_read_sets_qc.mix(ch_subsampled_read_sets_qc)
 
   output:
   path '*html'
@@ -185,7 +218,7 @@ process fastqc {
 
 
 // Aggregate reports with multiqc
-process multiqc {
+process aggregate_read_quality_reports {
   publishDir "${output_dir}/fastqc/"
 
   input:
@@ -246,7 +279,7 @@ process align_reads_to_reference {
   publishDir "${output_dir}/bams/", pattern: '*.bam'
 
   input:
-  tuple isolate_id, path(reads_fwd), path(reads_rev) from ch_read_sets
+  tuple isolate_id, path(reads_fwd), path(reads_rev) from ch_read_sets_align.mix(ch_subsampled_read_sets_align)
   path reference_fp from ch_align_reference
   path reference_indices from ch_reference_bt2_index
 
