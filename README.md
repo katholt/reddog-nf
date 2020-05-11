@@ -27,10 +27,6 @@
 
 
 ## TODO
-* Only create phylogeny with two or more passing isolates
-* Add optional fastqc
-    - default behaviour to generate reports
-    - option to turn off
 * Testing, generate reads with errors in them
     - Input list to later compare to
     - Fail isolates, outgroups

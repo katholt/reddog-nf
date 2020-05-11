@@ -86,7 +86,7 @@ reference_name = reference_gbk_fp.simpleName
 
 
 // Create channel for input read sets and get number of input isolates
-Channel.fromFilePairs(params.reads, flat: true).into { ch_read_sets; ch_read_sets_count }
+Channel.fromFilePairs(params.reads, flat: true).into { ch_read_sets; ch_read_sets_qc; ch_read_sets_count }
 isolate_count = ch_read_sets_count.count()
 
 
@@ -138,6 +138,46 @@ on_massive = massive_hostnames.contains(InetAddress.getLocalHost().getHostName()
 profile_explicit = workflow.commandLine.tokenize(' ').contains('-profile')
 if (on_massive && ! profile_explicit) {
   exit 1, "error: to run on MASSIVE you must explicitly set -profile"
+}
+
+
+// Run read quality assessment
+process fastqc {
+  publishDir "${output_dir}/fastqc/individual_reports/"
+
+  input:
+  tuple isolate_id, path(reads_fwd), path(reads_rev) from ch_read_sets_qc
+
+  output:
+  path '*html'
+  path '*zip' into ch_fastqc_reports
+
+  when:
+  params.quality_assessment
+
+  script:
+  """
+  fastqc -o . -t 1 -q -f fastq ${reads_fwd} ${reads_rev}
+  """
+}
+
+
+// Aggregate reports with multiqc
+process multiqc {
+  publishDir "${output_dir}/fastqc/"
+
+  input:
+  path fastqc_report_fps from ch_fastqc_reports.collect()
+
+  output:
+  path '*html'
+  path 'multiqc_data/'
+
+  script:
+  graph_type_opt = fastqc_report_fps.size() < 100 ? '--interactive' : '--flat'
+  """
+  multiqc . -m fastqc --data-dir ${graph_type_opt}
+  """
 }
 
 
@@ -392,6 +432,7 @@ process create_allele_matrix {
   """
 }
 
+
 // Aggregate allele matrices
 //   - group matrices by replicon id
 //   - merge into single allele matrix
@@ -492,6 +533,10 @@ process infer_phylogeny {
 
   output:
   path '*.tree'
+
+  when:
+  isolate_count.val <= 1000
+
 
   script:
   """
