@@ -54,7 +54,23 @@ def execute_command(String command) {
 }
 
 
-// Check arguments
+// For an optional stage param variable, check that it is either a Boolean or String
+// If it is a string and either 'true' or 'false', return the boolean equivalent
+def check_boolean_option(Object option, String name) {
+  if (option.getClass() == java.lang.Boolean) {
+    return option
+  } else if (option.getClass() == java.lang.String) {
+    if (option.toLowerCase() == 'true') {
+      return true
+    } else if (option.toLowerCase() == 'false') {
+      return false
+    }
+  }
+  exit 1, "error: ${name} option must be true or false"
+}
+
+
+// Check required input and outputs
 if (params.help) {
   print_help()
   exit 0
@@ -74,6 +90,12 @@ if (! params.output_dir) {
   println "‌‌"
   exit 1, "error: option --output_dir is required"
 }
+
+
+// Require optional stage variables are boolean
+// We must check and change values if needed. We can't change param variables so instead we declare new ones
+run_quality_assessment = check_boolean_option(params.quality_assessment, 'quality_assessment')
+run_phylogeny = check_boolean_option(params.force_tree, 'force_tree')
 
 
 // Create file objects from input parameters
@@ -153,7 +175,7 @@ process fastqc {
   path '*zip' into ch_fastqc_reports
 
   when:
-  params.quality_assessment
+  run_quality_assessment
 
   script:
   """
@@ -535,7 +557,7 @@ process infer_phylogeny {
   path '*.tree'
 
   when:
-  isolate_count.val <= 1000
+  isolate_count.val <= 1000 | run_phylogeny
 
 
   script:
