@@ -39,6 +39,12 @@
     - Multiple replicons
     - ART?
 * Automate comparison of test output data
+* Subsampling approach is too slow when subsampling down to a large number
+    - subsampling to 5 million reads takes ~10 minutes
+    - likely a result of hash collisons during set operations
+    - different approach could be to use a probability function at each read iteration
+        - output read counts will not be exact but will scale much better
+        - may or may not be quicker at lower numbers
 * Coding consequences currently only examines each SNP individually
     - report coding result when multiple SNPs are in one codon
     - this probably should replace looking at SNPs individually
@@ -47,7 +53,7 @@
     - use the `size()` method, returns file size in bytes
 * Set output files to be copied or moved rather than symlinked
     - move is preferable, particularly for large runs producing many BAMs
-    - could do this through netflow publishDir interface
+    - could do this through nextflow publishDir interface
         - if moving files this will cause problems unless they're not used downstream
     - or through a final stage to run some BASH to move files
         - for file in $(find . -type l); do mv $(readlink ${file}) ${file}; done
