@@ -29,23 +29,12 @@
 ## TODO
 * Only create phylogeny with two or more passing isolates
 * Optional on nextflow fail/incomplete send email
-* Validate format for first n readsets
-    - don't check all - too intensive
-    - use python/biopython
-    - not a stage, script from pipeline
-* Rename 'core' alleles to something else
-    - alleles aren't really core; they have at least n% known sites and >=1 isolate with a SNP
-* Write more logic to catch when user does not have run_info created in output dir
-    - otherwise issues occur when evaluating output_dir_files != ['run_info']
-    - should remove 'run_info' from output_dir_files and look at size
-    - this might still cause issues if users rename 'run_info' to something else
 * Testing, generate reads with errors in them
     - Input list to later compare to
     - Fail isolates, outgroups
         - simulate n reads and add n random or nnnn reads
     - Multiple replicons
     - ART?
-* Validate reference
 * Optional stage to subsample reads to a specified level
     - warn user if read sets are great than a specific size
     - we could even subsample to target shortq i.e. reduce input size to mapping within 30mins
@@ -55,9 +44,6 @@
     - would require reworking a large amount of `determine_coding_consequences.py`
 * Scaling job resources on file size may be more appropriate
     - use the `size()` method, returns file size in bytes
-* Test on large dataset
-    - haemophilus influenzae done (800 isolates, 250k SNPs)
-    - typhi set running
 * Set output files to be copied or moved rather than symlinked
     - move is preferable, particularly for large runs producing many BAMs
     - could do this through netflow publishDir interface

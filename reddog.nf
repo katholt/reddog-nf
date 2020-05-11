@@ -45,6 +45,15 @@ def print_help() {
 }
 
 
+def execute_command(String command) {
+  stdout = new StringBuilder()
+  stderr = new StringBuilder()
+  process = command.execute()
+  process.waitForProcessOutput(stdout, stderr)
+  return [process.exitValue(), stdout, stderr]
+}
+
+
 // Check arguments
 if (params.help) {
   print_help()
@@ -90,10 +99,35 @@ if (! reference_gbk_fp.exists()) {
 }
 
 
-// Do not run if output exists and contains files other than 'run_info' which is already created by pipeline
+// Set path to project bin directory
+bin_dir = "${workflow.projectDir}/bin"
+
+
+// Validate reference
+script = 'validate_reference.py'
+validate_command = "${bin_dir}/${script} --reference_fp ${params.reference}"
+(return_code, stdout, stderr) = execute_command(validate_command)
+if (return_code != 0) {
+  exit 1, "error: validation of reference failed and exited with the following message:\n\n${stderr}"
+}
+
+
+// Validate first 10 readsets
+script = 'validate_reads.py'
+Channel.fromFilePairs(params.reads, flat: true).take(10).flatMap { it -> it[1..2] }.collect().set { ch_read_sets_validate }
+validate_command = "${bin_dir}/${script} --reads_fps ${ch_read_sets_validate.val.join(' ')}"
+(return_code, stdout, stderr) = execute_command(validate_command)
+if (return_code != 0) {
+  exit 1, "error: validation of first ten reads failed and exited with the following message:\n\n${stderr}"
+}
+
+
+// Do not run if output exists and contains files other than the run info directory (which is created by this point)
 output_dir_files = []
 output_dir.eachFile { output_dir_files.add(it.name) }
-if (output_dir_files != ['run_info'] && ! params.force) {
+run_info_dirname = file(params.run_info_dir).simpleName
+output_dir_files.remove(run_info_dirname)
+if (output_dir_files.size() > 0 && ! params.force) {
   exit 1, "error: output directory '${output_dir}' already exists and contains other files, remove or use --force to overwrite"
 }
 
