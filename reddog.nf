@@ -100,6 +100,14 @@ run_quality_assessment = check_boolean_option(params.quality_assessment, 'qualit
 run_phylogeny = check_boolean_option(params.force_tree, 'force_tree')
 
 
+// Check integer params
+if (run_read_subsample & params.subsample_read_count.getClass() != java.lang.Integer) {
+  if (! params.subsample_read_count.isInteger()) {
+    exit 1, "error: subsample_read_count must be an integer, got {params.subsample_read_count}"
+  }
+}
+
+
 // Create file objects from input parameters
 reference_gbk_fp = file("${params.reference}")
 output_dir = file("${params.output_dir}")

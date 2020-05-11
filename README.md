@@ -32,9 +32,6 @@
 
 
 ## TODO
-* Check subsample read count is integer (or can be cast from string)
-* Look into simplifying optional subsampling stage
-    - the use of the mix operator and conditional set-up of channels is a little messy
 * Testing, generate reads with errors in them
     - Input list to later compare to
     - Fail isolates, outgroups
