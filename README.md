@@ -57,6 +57,12 @@
     - different approach could be to use a probability function at each read iteration
         - output read counts will not be exact but will scale much better
         - may or may not be quicker at lower numbers
+* Model memory usage and wall time ~ readsets file size
+    - the is a strongly relationship (but other factors are important)
+    - will generally provide very good of run time in read alignment, SNP calling
+    - use data from the nextflow run reports - very easy to extract
+    - also look at resource usage for jobs that aggregate
+        - model on Q30 SNPs, passing isolates, replicon size, etc
 * Coding consequences currently only examines each SNP individually
     - report coding result when multiple SNPs are in one codon
     - this probably should replace looking at SNPs individually
