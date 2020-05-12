@@ -5,7 +5,9 @@ NOTES
 conda_env/
 output/
 !tests/reddog_run/output/
+tests/3_simulated_reads/reads/
 prev/
 reddog/
 testing/
 work/
+script_*
