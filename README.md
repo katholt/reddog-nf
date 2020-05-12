@@ -70,6 +70,7 @@
 * Probably can remove mapped flag check in `get_reads_mapped.awk`
     - was previously passing unfiltered bam
 * For `get_snp_sites.awk`, check that the input ref and alt allele can be the same (i.e. not use of '.')
+* Read simulator in `bin/` and be removed for distribution
 
 
 ## Planned improvements

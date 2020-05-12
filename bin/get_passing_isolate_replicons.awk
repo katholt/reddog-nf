@@ -2,7 +2,7 @@
 # Record samples and associated replicons that:
 #   - pass mapping filter
 #   - have more than one SNP
-! /isolate/ && $11 == "p" && $8 > 0 {
+! NR != 1 && $11 == "p" && $8 > 0 {
   replicons_pass[$2][$1]
 }
 

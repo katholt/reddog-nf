@@ -205,7 +205,7 @@ process subsample_reads {
 
 
 // Run read quality assessment
-process generate_read_quality_reports {
+process create_read_quality_reports {
   publishDir "${output_dir}/fastqc/individual_reports/"
 
   input:
