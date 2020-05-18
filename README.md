@@ -48,6 +48,15 @@
 ## TODO
 * Remove CheckInput and CheckOutput classes
 * Automate comparison of test output data
+* Order mapping stats by isolate name SNPs (prior to pass/fail and ingroup/outgroup order)
+* Add position correction for INDELs in dataset simulator
+    - easiest approach seems to be modifying reads as they appear
+    - modify from highest to lowest position
+    - no need to correct offsets
+    - assuming only single nucleotide INDELs
+* Add ingroup/outgroups test isolates to test spec
+    - might be tricky as adding more later will have the stddev of the metric
+    - nonetheless calculate and add both near pass/fail and clear pass/fail
 * FastQC seems to give wrong phred score for second isolate in read simulation run
 * I think read validation fails if format is correct but there is very short reads
     - probably want to abort if reads are so short mapping is not useful
