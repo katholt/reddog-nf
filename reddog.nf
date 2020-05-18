@@ -369,7 +369,7 @@ process call_snps {
   script:
   """
   # Call variants and index
-  bcftools mpileup -Ou -f ${reference_fp} ${bam_fp} | bcftools call -Oz -c -v --ploidy 1 > ${isolate_id}_raw.bcf
+  bcftools mpileup -Ou -f ${reference_fp} ${bam_fp} | bcftools call -Oz -c -v > ${isolate_id}_raw.bcf
   bcftools index ${isolate_id}_raw.bcf
   # Get depths for filtering purposes
   get_coverage_depth.awk ${mpileup_fp} > ${isolate_id}_coverage_depth.tsv
