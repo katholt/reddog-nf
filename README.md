@@ -32,6 +32,7 @@
 
 
 ## TODO
+* Remove CheckInput and CheckOutput classes
 * Further develop read simulator for testing
     - currently simulates SNPs, INDELs, and low quality alleles
         - where low quality alleles appear as '-' in the allele table
@@ -135,6 +136,13 @@
     - m = total_reads / replicon_coverage / 100
     - isolate's m <= (stddev all isolate's m) * 2
     - should we also look at number of SNPs?
+* Hets are currently determined by looking at a diploid genotype bcftools call
+    - specifically looking at GT fields of 1/1 or 0/0
+    - what are the implications of callign in diploid mode rather than haploid?
+    - we can look at variant type and AF1 to achieve the same in haploid, as far as I can tell
+    - also SNPs with ONE other non-reference allele are considered hets
+        - e.g. ref: A; alt: T (50 reads), C (1 read)
+        - should this be a hom of A->T rather than a het?
 * Other mixed sample detection methods?
 
 
