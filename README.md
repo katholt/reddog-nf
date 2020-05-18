@@ -43,10 +43,6 @@
             - add junk reads to achieve desired coverage/ read count
         - best approach will required some refactor to keep code clean
             - classes are probably needed at this point tbh
-    - hets aren't being detected as such
-        - simulating two alleles in an isolate at a specific ratio
-            - e.g. A/T at a site with a maf of 0.30
-        - being filtered prior to het sorting
 * Automate comparison of test output data
 * FastQC seems to give wrong phred score for second isolate in read simulation run
 * I think read validation fails if format is correct but there is very short reads
