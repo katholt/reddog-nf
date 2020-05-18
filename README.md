@@ -31,18 +31,22 @@
     - AllStats
 
 
+## Readset simulation notes
+* Creating heterozygous SNPs that will be called in the out can be difficult
+    - this largely relates to hets where neither allele is the same as the reference
+    - if the read depth is high it will significance testing in `bcftools call`
+        - this appears to be true for any allele ratio of the het
+    - read depth MUST be low for these types of hets to be called
+        - simulated mean depth of ~15 appears to work okay for testing these
+        - above mean depth of 20, start to see simulated het drop out
+    - additionally, the allele ratio must be sufficiently high at low read depths
+        - otherwise it is just called as a homozygous SNP
+        - calling as a hom occurs even when there are several reads have an alt allele
+            - one e.g. I saw was 12 C and 6 T (ratio of 33%) called as a hom
+
+
 ## TODO
 * Remove CheckInput and CheckOutput classes
-* Further develop read simulator for testing
-    - currently simulates SNPs, INDELs, and low quality alleles
-        - where low quality alleles appear as '-' in the allele table
-    - junk reads
-        - tests for mapping stats and ingroup and outgroup assignment
-        - best approach would be to adjust coverage to make room for junk reads
-            - conditionally reduce step appropriately to get lower good read count
-            - add junk reads to achieve desired coverage/ read count
-        - best approach will required some refactor to keep code clean
-            - classes are probably needed at this point tbh
 * Automate comparison of test output data
 * FastQC seems to give wrong phred score for second isolate in read simulation run
 * I think read validation fails if format is correct but there is very short reads
