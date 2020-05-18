@@ -34,21 +34,22 @@
 ## Readset simulation notes
 * Creating heterozygous SNPs that will be called in the out can be difficult
     - this largely relates to hets where neither allele is the same as the reference
-    - if the read depth is high it will significance testing in `bcftools call`
+    - if the read depth is high, `bcftools call` returns a non-sig pvalue for the het
         - this appears to be true for any allele ratio of the het
     - read depth MUST be low for these types of hets to be called
         - simulated mean depth of ~15 appears to work okay for testing these
-        - above mean depth of 20, start to see simulated het drop out
+        - above a mean depth of 20, I start to see simulated hets drop out
     - additionally, the allele ratio must be sufficiently high at low read depths
         - otherwise it is just called as a homozygous SNP
         - calling as a hom occurs even when there are several reads have an alt allele
-            - one e.g. I saw was 12 C and 6 T (ratio of 33%) called as a hom
+            - one instance I saw was 12 C and 6 T (ratio of 33%) called as a hom
 
 
 ## TODO
 * Remove CheckInput and CheckOutput classes
 * Automate comparison of test output data
 * Order mapping stats by isolate name SNPs (prior to pass/fail and ingroup/outgroup order)
+* Reverse complement tests for simulated dataset
 * Add position correction for INDELs in dataset simulator
     - easiest approach seems to be modifying reads as they appear
     - modify from highest to lowest position
@@ -57,7 +58,9 @@
 * Add ingroup/outgroups test isolates to test spec
     - might be tricky as adding more later will have the stddev of the metric
     - nonetheless calculate and add both near pass/fail and clear pass/fail
-* FastQC seems to give wrong phred score for second isolate in read simulation run
+* MultiQC/FastQC seems to give wrong phred score for second isolate in read simulation run
+* Tests specifically for scripts
+    - not unit tests, just test against verified inputs-\>outputs
 * I think read validation fails if format is correct but there is very short reads
     - probably want to abort if reads are so short mapping is not useful
     - accidentally gave nf reddog simulated reads with no sequence and it tried to run
@@ -142,7 +145,7 @@
     - trival to calculate outside of pipeline
     - check if this is something wanted
 * Ingroup defined as:
-    - m = total_reads / replicon_coverage / 100
+    - m = total\_reads / replicon\_coverage / 100
     - isolate's m <= (stddev all isolate's m) * 2
     - should we also look at number of SNPs?
 * Hets are currently determined by looking at a diploid genotype bcftools call
