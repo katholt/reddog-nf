@@ -9,12 +9,19 @@ BEGIN {
 		print "error: -v het_fp=<filepath> is required" > "/dev/stderr"
     exit 1
   }
+  # Set header to be printed
+  header_done = 0
 }
 
-# Print header
-/^#/ {
+# Print header, strip bcftool info
+! header_done && /^#/ && ! /^##bcftools/ {
   print $0 > snp_fp
   print $0 > het_fp
+}
+
+# Once past first header, prevent further header output
+! header_done && ! /^#/ {
+  header_done = 1
 }
 
 # Print passing SNPs and hets to appropriate output
