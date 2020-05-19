@@ -46,15 +46,14 @@
 
 
 ## TODO
-* Remove CheckInput and CheckOutput classes
 * Automate comparison of test output data
 * Order mapping stats by isolate name SNPs (prior to pass/fail and ingroup/outgroup order)
-* Add ingroup/outgroups test isolates to test spec
-    - might be tricky as adding more later will have the stddev of the metric
-    - nonetheless calculate and add both near pass/fail and clear pass/fail
 * MultiQC/FastQC seems to give wrong phred score for second isolate in read simulation run
 * Tests specifically for scripts
     - not unit tests, just test against verified inputs-\>outputs
+* Add ingroup/outgroups test isolates to test spec
+    - might be tricky as adding more later will have the stddev of the metric
+    - nonetheless calculate and add both near pass/fail and clear pass/fail
 * I think read validation fails if format is correct but there is very short reads
     - probably want to abort if reads are so short mapping is not useful
     - accidentally gave nf reddog simulated reads with no sequence and it tried to run
