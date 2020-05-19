@@ -49,12 +49,6 @@
 * Remove CheckInput and CheckOutput classes
 * Automate comparison of test output data
 * Order mapping stats by isolate name SNPs (prior to pass/fail and ingroup/outgroup order)
-* Reverse complement tests for simulated dataset
-* Add position correction for INDELs in dataset simulator
-    - easiest approach seems to be modifying reads as they appear
-    - modify from highest to lowest position
-    - no need to correct offsets
-    - assuming only single nucleotide INDELs
 * Add ingroup/outgroups test isolates to test spec
     - might be tricky as adding more later will have the stddev of the metric
     - nonetheless calculate and add both near pass/fail and clear pass/fail
@@ -98,6 +92,12 @@
         - reads het and q30 vcfs
         - plot %mapped to alt, coloured by hets or homs
 * Add option to send email of nextflow fail (pipeline failure, not task failure)
+* Add position correction for INDELs in dataset simulator
+    - having multiple INDELs or INDELs and other variants simulated in one isolate is not a priority
+    - easiest approach seems to be modifying reads as they appear
+    - modify from highest to lowest position
+    - no need to correct offsets
+    - assuming only single nucleotide INDELs
 * Probably can remove mapped flag check in `get_reads_mapped.awk`
     - was previously passing unfiltered bam
 * For `get_snp_sites.awk`, check that the input ref and alt allele can be the same (i.e. not use of '.')
