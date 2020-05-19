@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-# TODO: check this is the correct process
-# TODO: report stats?
-
-
 import argparse
 import pathlib
 

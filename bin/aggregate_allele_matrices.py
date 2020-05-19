@@ -17,10 +17,16 @@ class CheckInput(argparse.Action):
 def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--allele_fps', required=True, type=pathlib.Path,
-            help='Allele matrix filepaths', nargs='+', action=CheckInput)
+            help='Allele matrix filepaths', nargs='+')
     parser.add_argument('--sites_fp', required=True, type=pathlib.Path,
-            help='SNPs sites filepath', action=CheckInput)
-    return parser.parse_args()
+            help='SNPs sites filepath')
+    args = parser.parse_args()
+    for allele_fp in args.allele_fps:
+        if not allele_fp.exists():
+            parser.error(f'Input file {allele_fp} does not exist')
+    if not args.sites_fp.exists():
+        parser.error(f'Input file {args.sites_fp} does not exist')
+    return args
 
 
 def main():

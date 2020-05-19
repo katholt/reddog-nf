@@ -7,29 +7,16 @@ import pathlib
 import Bio.SeqIO
 
 
-class CheckInput(argparse.Action):
-
-    def __call__(self, parser, namespace, filepath, option_string=None):
-        if not filepath.exists():
-            parser.error(f'Filepath {filepath} for {option_string} does not exist')
-        setattr(namespace, self.dest, filepath)
-
-
-class CheckOutput(argparse.Action):
-
-    def __call__(self, parser, namespace, filepath, option_string=None):
-        if not filepath.parent.exists():
-            parser.error(f'Directory {filepath.parent} for {option_string} does not exist')
-        setattr(namespace, self.dest, filepath)
-
-
 def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_fp', required=True, type=pathlib.Path,
-            help='Input genbank file', action=CheckInput)
+            help='Input genbank file')
     parser.add_argument('--output_fp', required=True, type=pathlib.Path,
-            help='Ouput file fasta file', action=CheckOutput)
-    return parser.parse_args()
+            help='Output file fasta file')
+    args = parser.parse_args()
+    if not args.input_fp.exists():
+        parser.error('Input file {args.input_fp} does not exist')
+    return args
 
 
 def main():

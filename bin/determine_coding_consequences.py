@@ -100,23 +100,20 @@ class Consequence:
         return consequence
 
 
-class CheckInput(argparse.Action):
-
-    def __call__(self, parser, namespace, filepath, option_string=None):
-        if not filepath.exists():
-            parser.error(f'Filepath {filepath} for {option_string} does not exist')
-        setattr(namespace, self.dest, filepath)
-
-
 def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--reference_fp', required=True, type=pathlib.Path,
-            help='Genbank-format reference filepath', action=CheckInput)
+            help='Genbank-format reference filepath')
     parser.add_argument('--allele_fp', required=True, type=pathlib.Path,
-            help='Allele matrix filepath', action=CheckInput)
+            help='Allele matrix filepath')
     parser.add_argument('--replicon', required=True, type=str,
             help='Name of replicon')
-    return parser.parse_args()
+    args = parser.parse_args()
+    if not args.reference_fp.exists():
+        parser.error('Input file {args.reference_fp} does not exist')
+    if not args.allele_fp.exists():
+        parser.error('Input file {args.allele_fp} does not exist')
+    return args
 
 
 def main():

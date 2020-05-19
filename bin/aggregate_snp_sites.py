@@ -4,26 +4,19 @@ import pathlib
 import sys
 
 
-class CheckInput(argparse.Action):
-
-    def __call__(self, parser, namespace, filepaths, option_string=None):
-        if not isinstance(filepaths, list):
-            check_value = [filepaths]
-        else:
-            check_value = filepaths
-        for filepath in check_value:
-            if not filepath.exists():
-                parser.error(f'Filepath {filepath} for {option_string} does not exist')
-        setattr(namespace, self.dest, filepaths)
-
-
 def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--sites_fps', required=True, type=pathlib.Path,
-            help='SNP sites filepaths', nargs='+', action=CheckInput)
+            help='SNP sites filepaths', nargs='+')
     parser.add_argument('--isolate_replicons_passing_fp', required=True, type=pathlib.Path,
-            help='Isolate replicons passing filepath', action=CheckInput)
-    return parser.parse_args()
+            help='Isolate replicons passing filepath')
+    args = parser.parse_args()
+    for sites_fp in args.sites_fps:
+        if not sites_fp.exists():
+            parser.error(f'Input file {sites_fp} does not exist')
+    if not args.isolate_replicons_passing_fp.exists():
+        parser.error(f'Input file {args.isolate_replicons_passing_fp} does not exist')
+    return args
 
 
 def main():

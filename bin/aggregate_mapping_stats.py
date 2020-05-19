@@ -5,23 +5,6 @@ import statistics
 import sys
 
 
-class CheckInput(argparse.Action):
-
-    def __call__(self, parser, namespace, filepaths, option_string=None):
-        for filepath in filepaths:
-            if not filepath.exists():
-                parser.error(f'Filepath {filepath} for {option_string} does not exist')
-        setattr(namespace, self.dest, filepaths)
-
-
-class CheckOutput(argparse.Action):
-
-    def __call__(self, parser, namespace, filepath, option_string=None):
-        if not filepath.exists():
-            parser.error(f'Output {filepath} for {option_string} does not exist')
-        setattr(namespace, self.dest, filepath)
-
-
 class Stats:
 
     fields = {'replicon': str,
@@ -62,10 +45,16 @@ class Stats:
 def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--rep_stats_fps', required=True, type=pathlib.Path,
-            help='Replicon stats filepaths', nargs='+', action=CheckInput)
+            help='Replicon stats filepaths', nargs='+')
     parser.add_argument('--output_dir', required=True, type=pathlib.Path,
-            help='Output directory', action=CheckOutput)
-    return parser.parse_args()
+            help='Output directory')
+    args = parser.parse_args()
+    for rep_stats_fp in args.rep_stats_fps:
+        if not rep_stats_fp.exists():
+            parser.error(f'Input file {rep_stats_fp} does not exist')
+    if not args.output_dir.exists():
+        parser.error(f'Output directory {args.output_dir} does not exist')
+    return args
 
 
 def main():

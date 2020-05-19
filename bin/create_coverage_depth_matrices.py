@@ -8,33 +8,23 @@ import sys
 import Bio.SeqIO
 
 
-class CheckInput(argparse.Action):
-
-    def __call__(self, parser, namespace, filepaths, option_string=None):
-        filepaths_check = filepaths if isinstance(filepaths, list) else [filepaths]
-        for filepath in filepaths_check:
-            if not filepath.exists():
-                parser.error(f'Filepath {filepath} for {option_string} does not exist')
-        setattr(namespace, self.dest, filepaths)
-
-
-class CheckOutput(argparse.Action):
-
-    def __call__(self, parser, namespace, filepath, option_string=None):
-        if not filepath.exists():
-            parser.error(f'Output directory {filepath.parent} does not exist')
-        setattr(namespace, self.dest, filepath)
-
-
 def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--mpileup_fps', required=True, type=pathlib.Path,
-            help='samtools mpileup filepaths', nargs='+', action=CheckInput)
+            help='samtools mpileup filepaths', nargs='+')
     parser.add_argument('--reference_fp', required=True, type=pathlib.Path,
-            help='Reference filepath (genbank format)', action=CheckInput)
+            help='Reference filepath (genbank format)')
     parser.add_argument('--output_dir', required=True, type=pathlib.Path,
-            help='Output directory', action=CheckOutput)
-    return parser.parse_args()
+            help='Output directory')
+    args = parser.parse_args()
+    for mpileup_fp in args.mpileup_fps:
+        if not mpileup_fp.exists():
+            parser.error('Input file {mpileup_fp} does not exist')
+    if not args.reference_fp.exists():
+        parser.error('Input file {args.reference_fp} does not exist')
+    if not args.output_dir.exists():
+        parser.error('Output directory {args.output_dir} does not exist')
+    return args
 
 
 def main():

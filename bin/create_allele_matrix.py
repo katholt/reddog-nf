@@ -40,14 +40,6 @@ class CheckInput(argparse.Action):
         setattr(namespace, self.dest, filepath)
 
 
-class CheckOutput(argparse.Action):
-
-    def __call__(self, parser, namespace, filepath, option_string=None):
-        if not filepath.exists():
-            parser.error(f'Output directory {filepath.parent} does not exist')
-        setattr(namespace, self.dest, filepath)
-
-
 def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--bam_fp', required=True, type=pathlib.Path,
@@ -55,15 +47,19 @@ def get_arguments():
     parser.add_argument('--sites_fp', required=True, type=pathlib.Path,
             help='Replicon sites filepaths', action=CheckInput)
     parser.add_argument('--reference_fp', required=True, type=pathlib.Path,
-            help='Output directory', action=CheckOutput)
+            help='Output directory')
     parser.add_argument('--output_dir', required=True, type=pathlib.Path,
-            help='Output directory', action=CheckOutput)
+            help='Output directory')
 
     parser.add_argument('--min_quality', default=20, type=int,
             help='Minimum phread quality to call allele')
     parser.add_argument('--min_support', default=0.9, type=float,
             help='Minimum proportion of reads support reference allele call')
-    return parser.parse_args()
+
+    args = parser.parse_args()
+    if not args.output_dir.exists():
+        parser.error(f'Output directory {args.output_dir} does not exist')
+    return args
 
 
 def main():

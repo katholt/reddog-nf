@@ -4,19 +4,14 @@ import pathlib
 import sys
 
 
-class CheckInput(argparse.Action):
-
-    def __call__(self, parser, namespace, filepath, option_string=None):
-        if not filepath.exists():
-            parser.error(f'Filepath {filepath} for {option_string} does not exist')
-        setattr(namespace, self.dest, filepath)
-
-
 def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--allele_fp', required=True, type=pathlib.Path,
-            help='Input allele matrix filepath', action=CheckInput)
-    return parser.parse_args()
+            help='Input allele matrix filepath')
+    args = parser.parse_args()
+    if not args.allele_fp.exists():
+        parser.error('Input file {args.allele_fp} does not exist')
+    return args
 
 
 def main():
