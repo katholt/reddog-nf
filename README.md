@@ -26,7 +26,6 @@
     - several genes in the Hi reference have compound location annotations to just show frameshifts
         - determining consequences here is not feasible without defining what is the true ORF
 * No equivalent for following files
-    - gene presence/absence
     - gene counts in isolate set
     - AllStats
 
@@ -54,7 +53,7 @@
 * Add ingroup/outgroups test isolates to test spec
     - might be tricky as adding more later will have the stddev of the metric
     - nonetheless calculate and add both near pass/fail and clear pass/fail
-* I think read validation fails if format is correct but there is very short reads
+* I think read validation fails if format is correct but there are very short reads
     - probably want to abort if reads are so short mapping is not useful
     - accidentally gave nf reddog simulated reads with no sequence and it tried to run
 * Subsampling approach is too slow when subsampling down to a large number
@@ -100,7 +99,6 @@
 * Probably can remove mapped flag check in `get_reads_mapped.awk`
     - was previously passing unfiltered bam
 * For `get_snp_sites.awk`, check that the input ref and alt allele can be the same (i.e. not use of '.')
-* Read simulator in `bin/` and be removed for distribution
 
 
 ## Planned improvements
@@ -110,13 +108,6 @@
 * Currently for fail samples, the largest replicon requires 50% of reads mapped
     - we should do a proportional requirement i.e. require n% ~ replicon\_size
     - simple additional to `calculate_replicon_statistics.py`
-* Improve allele matrix creation - for each isolate we're writing both position and reference
-    - at least half the disk i/o by removing reference column in each
-* Chunked reads for SNP aligments and matrix aggregation
-    - avoid consuming very large amounts of memory for large datasets
-* Allow FASTA input
-    - must disable certain processes - use `when` directive if clean enough
-    - we'll probably be able to use a single `when` directive early in the pipeline
 * Sort inputs by file size
     - can provide small reduction in runtime
 
@@ -130,8 +121,6 @@
 
 
 ## Queries
-* Is a SNP site defined as variant if all isolates have the same allele that is different to reference
-    - presumably yes but should check
 * During variant calling there are two quality filters
     - vcfutils varFilter: >= 30 RMS mapping quaility
     - python script: >= 30 mapping quality
@@ -157,26 +146,11 @@
 * Other mixed sample detection methods?
 
 
-## Misc notes
-* I observed the pipeline to continue after exceeding maximum retries for a job
-    - occured on haemophilus dataset
-    - was not able to recreate on small test pipeline
-
-
 ## Items for further testing
 This is a list of processes/outputs that are yet to be closely tested
-* New allele matrix creation method
-    - are call sites correct?
-* Allele matrix filtering, large dataset with many unknown SNPs
-    - exclusion of SNP positions which lack sufficient data
 * Ingroup/output calling, large dataset with many unknown SNPs
     - ratio calculation and equality comparison
 * Output of gene\_coverage\_depth process
-* SNP alignment
-* Phylogeny
-* Coding consequence
-    - interval tree balance
-    - ensure bounds capture
-    - consider comparing against https://samtools.github.io/bcftools/howtos/csq-calling.html if applicable
+* SNP alignment and phylogeny
 * Isolate list in consequences containing more than one isolate
 * Coding consequences for genes that join across contig boundaries (on same contig)
