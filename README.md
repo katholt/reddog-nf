@@ -45,6 +45,8 @@
 
 
 ## TODO
+* Need to check indexing here
+    - are we indexing correctly at bin/create\_coverage\_depth\_matrices.py#L62
 * Automate comparison of test output data
 * Order mapping stats by isolate name SNPs (prior to pass/fail and ingroup/outgroup order)
 * MultiQC/FastQC seems to give wrong phred score for second isolate in read simulation run

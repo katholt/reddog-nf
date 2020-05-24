@@ -2,11 +2,11 @@
 BEGIN {
   # Check arguments
   if (snp_fp == "") {
-		print "error: -v snp_fp=<filepath> is required" > "/dev/stderr"
+    print "error: -v snp_fp=<filepath> is required" > "/dev/stderr"
     exit 1
   }
   if (het_fp == "") {
-		print "error: -v het_fp=<filepath> is required" > "/dev/stderr"
+    print "error: -v het_fp=<filepath> is required" > "/dev/stderr"
     exit 1
   }
   # Set header to be printed
