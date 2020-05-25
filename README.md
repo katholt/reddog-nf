@@ -56,6 +56,9 @@
     - fastqc is difficult - no processing just copying
         - might instead be best to reorganise files in groovy and then just run a multiqc process
         - publishing all inputs (must avoid using glob to capture these)
+* Investigate scope access of processes for purpose of variable passing
+    - rn we're passing reference name by argument very often
+    - this is a little messy tbh, hopefuly can do better
 * Update process names in config
     - also rename workflow modules e.g. call\_variats\_pe mapping\_stats, allele\_matrix, post\_analysis
 * For se isolate mapping stats read count will need adjustment

@@ -3,22 +3,47 @@
 nextflow.preview.dsl=2
 
 
-// Workflows
-include preprocess_reads from './src/modules/read_preprocessing.nf'
-include call_variants from './src/modules/variant_calling.nf'
-include run_mapping_stats from './src/modules/mapping_stats.nf'
-include run_allele_matrices from './src/modules/allele_matrices.nf'
-include run_merge_results from './src/modules/merge_results.nf'
-include run_post from './src/modules/post_analysis.nf'
+// NOTE: imports separated for readability
+// Read preprocessing processes
+include subsample_reads from './src/processes/paired_reads.nf'
+include create_read_quality_reports from './src/processes/paired_reads.nf'
 
-// Processes used in main workflow - separated for readability
+// Variant calling processes
+include align_reads from './src/processes/paired_reads.nf'
+include call_snps from './src/processes/paired_reads.nf'
+include create_mpileups from './src/processes/common.nf'
+
+// Mapping stats processes
+include calculate_gene_coverage_depth from './src/processes/common.nf'
+include calculate_mapping_statistics from './src/processes/common.nf'
+include aggregate_mapping_statistics from './src/processes/common.nf'
+include aggregate_snp_sites from './src/processes/common.nf'
+
+// Allele matrix processes
+include create_allele_matrix from './src/processes/common.nf'
+include aggregate_allele_matrices from './src/processes/common.nf'
+
+// Other processes
 include prepare_reference from './src/processes/common.nf'
-include { create_snp_alignment; infer_phylogeny } from './src/processes/common.nf'
+include aggregate_read_quality_reports from './src/processes/common.nf'
+include filter_allele_matrix from './src/processes/common.nf'
+include determine_coding_consequences from './src/processes/common.nf'
+include create_snp_alignment from './src/processes/common.nf'
+include infer_phylogeny from './src/processes/common.nf'
 
-// Utility - separated for readability
-include { print_splash; print_help } from './src/utilities.nf'
-include { check_arguments; check_input_files; check_output_dir } from './src/utilities.nf'
-include { check_host; check_boolean_option } from './src/utilities.nf'
+// Channel helper functions
+include collect_passing_isolate_replicons from './src/channel_helpers.nf'
+include sort_allele_matrices from './src/channel_helpers.nf'
+include filter_empty_allele_matrices from './src/channel_helpers.nf'
+
+// Utility functions
+include print_splash from './src/utilities.nf'
+include print_help from './src/utilities.nf'
+include check_arguments from './src/utilities.nf'
+include check_input_files from './src/utilities.nf'
+include check_output_dir from './src/utilities.nf'
+include check_host from './src/utilities.nf'
+include check_boolean_option from './src/utilities.nf'
 
 
 // Check configuration
@@ -60,33 +85,72 @@ if (! reference_fp.exists()) {
 
 // TODO: check merge inputs exist and are complete i.e. no missing isolates
 // TODO: ensure collisions in filename space between new and previous datasets
-merge_source_dir = file(params.previous_run_dir)
-merge_source_fastqc = Channel.fromPath(merge_source_dir / 'fastqc/individual_reports/*')
-merge_source_gene_depth = Channel.fromPath(merge_source_dir / '*gene_depth.tsv')
-merge_source_gene_coverage = Channel.fromPath(merge_source_dir / '*gene_coverage.tsv')
-merge_source_mapping_stats = Channel.fromPath(merge_source_dir / '*mapping_stats.tsv')
-merge_source_allele_matrices = Channel.fromPath(merge_source_dir / '*alleles.tsv')
+if (merge_run) {
+  merge_source_dir = file(params.previous_run_dir)
+  merge_source_fastqc = Channel.fromPath(merge_source_dir / 'fastqc/individual_reports/*')
+  merge_source_gene_depth = Channel.fromPath(merge_source_dir / '*gene_depth.tsv')
+  merge_source_gene_coverage = Channel.fromPath(merge_source_dir / '*gene_coverage.tsv')
+  merge_source_mapping_stats = Channel.fromPath(merge_source_dir / '*mapping_stats.tsv')
+  merge_source_allele_matrices = Channel.fromPath(merge_source_dir / '*alleles.tsv')
+}
 
 
 // Run workflow - this unnamed workflow will be implicity executed
 workflow {
-  // TODO: investigate whether processes can access variables above scope
-  // need to provide reference name for saving files to many processes - currently a little messy
-  // params seem to work but only if they're set during start up i.e. in config/cmdline
-
   main:
     reference_data = prepare_reference(reference_fp)
 
-    // Branch for SE/PE inputs here
-    // NOTE: we can process both concurrently in one run - configuration would need to be very clear
-    read_data = preprocess_reads(ch_read_sets, run_read_subsample, run_quality_assessment)
-    variant_data = call_variants(read_data.reads, reference_data.fasta, reference_data.bt2_index, reference_data.samtools_index)
+    if (run_read_subsample) {
+      ch_read_sets = subsample_reads(ch_read_sets)
+    }
 
-    // Mix SE/PE channels here
-    // NOTE: just use the `mix` channel op
-    stats_data = run_mapping_stats(variant_data, reference_fp)
-    allele_matrix_data = run_allele_matrices(variant_data.bams, stats_data.snp_sites, stats_data.passing, reference_data.fasta)
+    if (run_quality_assessment) {
+      fastqc_data = create_read_quality_reports(ch_read_sets)
+    }
 
+    align_data = align_reads(ch_read_sets, reference_data.fasta, reference_data.bt2_index)
+
+    mpileup_data = create_mpileups(align_data.bams)
+
+    bams_and_mpileups = align_data.bams.join(mpileup_data.output)
+    snp_data = call_snps(bams_and_mpileups, reference_data.fasta, reference_data.samtools_index)
+
+    bams_vcfs_stats_and_metrics = align_data.bams.join(snp_data.vcfs)
+      .join(snp_data.coverage_depth)
+      .join(align_data.metrics)
+    stats_data = calculate_mapping_statistics(bams_vcfs_stats_and_metrics)
+
+    stats_aggregated_data = aggregate_mapping_statistics(stats_data.collect(), reference_data.name)
+
+    sites_data = aggregate_snp_sites(snp_data.sites.collect(), stats_aggregated_data.isolate_replicons)
+
+    gene_coverage_depth = calculate_gene_coverage_depth(mpileup_data.output_noid.collect(), reference_fp)
+
+    // Remove isolates that have no replicons that pass mapping criteria and then add SNP site file to each BAM
+    // We perform this here so that we do not run jobs for isolates that have no passing replicons
+    isolate_replicons_passing = collect_passing_isolate_replicons(stats_aggregated_data.isolate_replicons)
+    bams_and_sites = align_data.bams.join(isolate_replicons_passing).combine(sites_data.output)
+    matrix_data = create_allele_matrix(bams_and_sites, reference_data.fasta)
+
+    replicon_allele_matrices = sort_allele_matrices(matrix_data.output)
+    matrix_aggregate_data = aggregate_allele_matrices(replicon_allele_matrices, sites_data.output, reference_data.name)
+
+    allele_matrices = filter_empty_allele_matrices(matrix_aggregate_data.output)
+
+    aggregate_read_quality_reports(fastqc_data.output.collect())
+
+    allele_matrices_core = filter_allele_matrix(allele_matrices, reference_data.name)
+
+    determine_coding_consequences(allele_matrices_core, reference_fp)
+
+    // TODO: restore isolate_count logic - issues with channel->int in DSL2
+    isolate_count = 500
+    snp_alignment = create_snp_alignment(allele_matrices_core, reference_data.name)
+    if (isolate_count <= 1000 | run_phylogeny) {
+      infer_phylogeny(snp_alignment, reference_data.name)
+    }
+
+    /*
     // Execute merge run if required, otherwise run post analysis as normal
     if (merge_run) {
       // TODO: this is a lot of argument verbiage, think about a better approach
@@ -100,4 +164,5 @@ workflow {
     } else {
       run_post(read_data.fastqc, allele_matrix_data.matrices, reference_fp, run_phylogeny)
     }
+    */
 }
