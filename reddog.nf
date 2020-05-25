@@ -33,6 +33,11 @@ check_host(workflow)
 run_read_subsample = check_boolean_option(params.subsample_reads, 'subsample_reads')
 run_quality_assessment = check_boolean_option(params.quality_assessment, 'quality_assessment')
 run_phylogeny = check_boolean_option(params.force_tree, 'force_tree')
+merge_run = check_boolean_option(params.force_tree, 'merge_run')
+
+
+// Validate merge run options and files in previous run
+// TODO: implement this
 
 
 // Check integer params
@@ -75,6 +80,10 @@ workflow {
 
     // Mix SE/PE channels
 
+    // TODO: update aggregate_allele_matrices to decouple core allele filtering
+    stats_data = run_mapping_stats(variant_data, reference_fp)
+    allele_matrix_data = run_allele_matrices(variant_data.bams, stats_data.snp_sites, stats_data.passing, reference_data.fasta)
+
     merge_run = false
     if (merge_run) {
       // Tasks:
@@ -86,16 +95,13 @@ workflow {
       //   - mapping stats
       //     - merge and recompute ingroup/outgroup
       //   - allele matrices
-      //     - merge and then calculate core alleles
-      //stats_data = run_mapping_stats(variant_data, reference_fp)
-      //allele_matrix_data = run_allele_matrices(variant_data.bams, stats_data.snp_sites, stats_data.passing, reference_data.fasta)
+      //     - merge only (filter later)
 
       // For now all data from previous run will be copied and source directory untouched
       //   - user to manually delete
-    } else {
-      stats_data = run_mapping_stats(variant_data, reference_fp)
-      allele_matrix_data = run_allele_matrices(variant_data.bams, stats_data.snp_sites, stats_data.passing, reference_data.fasta)
     }
+
+    // TODO: process here to filter core SNPs
 
     determine_coding_consequences(allele_matrix_data.matrices, reference_fp)
 
