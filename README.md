@@ -45,16 +45,22 @@
 
 
 ## TODO
+* Do we need so much separation in workflows?
+    - can they be placed back into the main workflow?
+    - need to properly consider sub-workflow organisation
+        - particularly in context of SE/PE
+        - I think merge workflow is okay for now
+            - could improve the number of arguments passed
+            - some more work on naming for the run\_post/post\_analysis
 * Implement merge processes
     - fastqc is difficult - no processing just copying
         - might instead be best to reorganise files in groovy and then just run a multiqc process
         - publishing all inputs (must avoid using glob to capture these)
 * Update process names in config
-    - also rename wokrflow modules e.g. mapping\_stats, allele\_matrix, post\_analysis
+    - also rename workflow modules e.g. call\_variats\_pe mapping\_stats, allele\_matrix, post\_analysis
 * For se isolate mapping stats read count will need adjustment
     - should be able to maintain single process but with a small amount of conditional execution
-* Need to check indexing here
-    - are we indexing correctly at bin/create\_coverage\_depth\_matrices.py#L62
+* Need to check indexing here at bin/create\_coverage\_depth\_matrices.py#L62
 * Automate comparison of test output data
 * Order mapping stats by isolate name SNPs (prior to pass/fail and ingroup/outgroup order)
 * MultiQC/FastQC seems to give wrong phred score for second isolate in read simulation run

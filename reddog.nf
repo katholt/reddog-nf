@@ -68,7 +68,7 @@ merge_source_mapping_stats = Channel.fromPath(merge_source_dir / '*mapping_stats
 merge_source_allele_matrices = Channel.fromPath(merge_source_dir / '*alleles.tsv')
 
 
-// Run workflow - this unnamed will be implicity executed
+// Run workflow - this unnamed workflow will be implicity executed
 workflow {
   // TODO: investigate whether processes can access variables above scope
   // need to provide reference name for saving files to many processes - currently a little messy
@@ -90,7 +90,7 @@ workflow {
     // Execute merge run if required, otherwise run post analysis as normal
     if (merge_run) {
       // TODO: this is a lot of argument verbiage, think about a better approach
-      // We could mix here to half the number of arguments?
+      // We could `mix` here to half the number of arguments?
       merge_data = run_merge_results(read_data.fastqc, merge_source_fastqc,
                                      stats_data.gene_coverage, merge_source_gene_coverage,
                                      stats_data.gene_depth, merge_source_gene_depth,
