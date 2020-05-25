@@ -45,6 +45,7 @@
 
 
 ## TODO
+* Update process names in config
 * Need to check indexing here
     - are we indexing correctly at bin/create\_coverage\_depth\_matrices.py#L62
 * Automate comparison of test output data

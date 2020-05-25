@@ -175,26 +175,12 @@ if (on_massive && ! profile_explicit) {
 }
 
 
+include preprocess_reads from './src/modules/read_preprocessing.nf'
+include call_variants from './src/modules/variant_calling.nf'
+include run_mapping_stats from './src/modules/mapping_stats.nf'
+include run_allele_matrices from './src/modules/allele_matrices.nf'
 
-include { prepare_reference;
-          create_read_quality_reports;
-          aggregate_read_quality_reports;
-          subsample_reads;
-          create_mpileups;
-          calculate_gene_coverage_depth;
-          calculate_mapping_statistics;
-          aggregate_mapping_statistics;
-          aggregate_snp_sites;
-          create_allele_matrix;
-          aggregate_allele_matrices;
-          create_snp_alignment;
-          determine_coding_consequences;
-          infer_phylogeny } from './workflows/common.nf'
-
-include { align_reads_to_reference;
-          call_snps } from './workflows/paired_reads.nf'
-
-
+include { prepare_reference; determine_coding_consequences; create_snp_alignment; infer_phylogeny } from './src/processes/common.nf'
 
 
 workflow {
@@ -206,103 +192,23 @@ workflow {
   // need to provide reference name for saving files to many processes
   // params seem to work but only if they're set during start up i.e. in config/cmdline
 
-  // TODO: work flow for paired-end run, single-end run, and merge run
-  // conditionally branch here
-
   main:
-    reference = prepare_reference(reference_fp)
-
-    if (run_read_subsample) {
-      ch_read_sets = subsample_reads(ch_read_sets)
-    }
-
-    if (run_quality_assessment) {
-      fastqc_reports = create_read_quality_reports(ch_read_sets)
-      aggregate_read_quality_reports(fastqc_reports.output.collect())
-    }
-
-    reads_aligned = align_reads_to_reference(ch_read_sets, reference.fasta, reference.bt2_index)
-    mpileups = create_mpileups(reads_aligned.bams)
-
-    bams_and_mpileups = reads_aligned.bams.join(mpileups.output)
-    snps = call_snps(bams_and_mpileups, reference.fasta, reference.samtools_index)
-
-
-    // TODO: place this into a function
-    bams_vcfs_stats_and_metrics = reads_aligned.bams
-      .join(snps.vcfs)
-      .join(snps.coverage_depth)
-      .join(reads_aligned.metrics)
-
-
-    mapping_stats = calculate_mapping_statistics(bams_vcfs_stats_and_metrics)
-    mapping_stats_aggregated = aggregate_mapping_statistics(mapping_stats.output.collect(), reference.name)
-
-    snp_sites = aggregate_snp_sites(snps.sites.collect(), mapping_stats_aggregated.isolate_replicons)
-
-    gene_coverage_depth = calculate_gene_coverage_depth(mpileups.output_noid.collect(), reference_fp)
-
-
-    // TODO: place this into a function
-    // Read in isolates the replicons that passed and generate a channel to emit [isolate_id, replicon_ids]
-    // Where replicon_ids is a string with each replicon_id separated by a single space
-    // Also get count of passing isolates so we can scale resource allocation if using SLURM executor
-    isolate_replicons_passing = mapping_stats_aggregated.isolate_replicons.flatMap { filepath ->
-        filepath.readLines().collect { line ->
-          tokens = line.tokenize('\t')
-          [tokens[0], tokens[1..-1].join(' ')]
-        }
-      }
-    isolate_passing_count = isolate_replicons_passing.count()
-
-    // Remove isolates that have no replicons that pass mapping criteria and then add SNP site file to each BAM
-    // We perform this here so that we do not run jobs for isolates that have no passing replicons
-    bams_and_sites = reads_aligned.bams.join(isolate_replicons_passing).combine(snp_sites.output)
-
-
-    allele_matrices = create_allele_matrix(bams_and_sites, reference.fasta)
-
-
-    // TODO: place this into a function
-    // Create a channel that emits allele matrices arranged by replicon_id
-    //   - input of [isolate_id, list(isolate_allele_matrices)]
-    //     - nextflow returns a list for multiple files or single object for one file
-    //     - check for different object types and process accordingly
-    //   - use isolate_id to robustly get replicon_id from allele matrix filename
-    //   - flat emit [replicon_id, isolate_allele_matrix] for each file
-    //   - group each matrix by replicon_id to emit [replicon_id, list(isolate_allele_matrices)]
-    replicon_allele_matrices = allele_matrices.output.flatMap { isolate_id, filepaths ->
-        if (! (filepaths instanceof List)) {
-          replicon_id = filepaths.getName().minus("_${isolate_id}_alleles.tsv")
-          return [[replicon_id, filepaths]]
-        } else {
-          return filepaths.collect { filepath ->
-              replicon_id = filepath.getName().minus("_${isolate_id}_alleles.tsv")
-              [replicon_id, filepath]
-            }
-        }
-      }.groupTuple()
-
-    allele_matrices_aggregated = aggregate_allele_matrices(replicon_allele_matrices, snp_sites.output, reference.name)
-
-
-    // TODO: place this into a function
-    // Filter matrices that have no alleles so we don't needlessly execute downstream processes
-    allele_matrices_filtered = allele_matrices_aggregated.output.filter { replicon_id, fp ->
-        // Read first two lines of allele matrix and determine if we have data
-        has_alleles = true
-        fh = fp.newReader()
-        for (int i = 0; i < 2; i++) { has_alleles = fh.readLine() != null }
-        return has_alleles
-      }
-
-    determine_coding_consequences(allele_matrices_filtered, reference_fp)
+    // TODO: work flow for paired-end run, single-end run, and merge run
+    // conditionally branch here
+    ch_read_sets = preprocess_reads(ch_read_sets, run_read_subsample, run_quality_assessment)
+    reference_data = prepare_reference(reference_fp)
+    variant_data = call_variants(ch_read_sets, reference_data.fasta, reference_data.bt2_index, reference_data.samtools_index)
+    stats_data = run_mapping_stats(variant_data, reference_gbk_fp)
+    allele_matrix_data = run_allele_matrices(variant_data.bams, stats_data.snp_sites,
+                                              stats_data.isolate_replicons_passing, reference_data.fasta)
 
     // TODO: restore isolate_count and run_phylogeny logic
     isolate_count = 500
 
-    snp_alignment = create_snp_alignment(allele_matrices_filtered, reference.name)
+    snp_alignment = create_snp_alignment(allele_matrix_data.matrices, reference_data.name)
     if (isolate_count <= 1000 | run_phylogeny) {
-      infer_phylogeny(snp_alignment, reference.name)
+      infer_phylogeny(snp_alignment, reference_data.name)
     }
+
+    determine_coding_consequences(allele_matrix_data.matrices, reference_fp)
 }
