@@ -122,7 +122,7 @@ def check_input_files(Object workflow, Object params) {
 def check_output_dir(Object params) {
   // Do not run if output exists and contains files other than the run info directory (which is created by this point)
   output_dir_files = []
-  output_dir = file("${params.output_dir}")
+  output_dir = file(params.output_dir)
   output_dir.eachFile { output_dir_files.add(it.name) }
   run_info_dirname = file(params.run_info_dir).simpleName
   output_dir_files.remove(run_info_dirname)

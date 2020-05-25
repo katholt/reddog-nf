@@ -8,10 +8,11 @@ include preprocess_reads from './src/modules/read_preprocessing.nf'
 include call_variants from './src/modules/variant_calling.nf'
 include run_mapping_stats from './src/modules/mapping_stats.nf'
 include run_allele_matrices from './src/modules/allele_matrices.nf'
+include run_merge_results from './src/modules/merge_results.nf'
+include run_post from './src/modules/post_analysis.nf'
 
 // Processes used in main workflow - separated for readability
 include prepare_reference from './src/processes/common.nf'
-include determine_coding_consequences from './src/processes/common.nf'
 include { create_snp_alignment; infer_phylogeny } from './src/processes/common.nf'
 
 // Utility - separated for readability
@@ -29,15 +30,11 @@ check_host(workflow)
 
 
 // Require optional stage variables to be boolean
-// We must check and change values if needed. The param variables are immutable so instead we declare new ones
+// We must check and change values if needed. The global param variables are immutable so instead we declare new ones
 run_read_subsample = check_boolean_option(params.subsample_reads, 'subsample_reads')
 run_quality_assessment = check_boolean_option(params.quality_assessment, 'quality_assessment')
 run_phylogeny = check_boolean_option(params.force_tree, 'force_tree')
-merge_run = check_boolean_option(params.force_tree, 'merge_run')
-
-
-// Validate merge run options and files in previous run
-// TODO: implement this
+merge_run = check_boolean_option(params.merge_run, 'merge_run')
 
 
 // Check integer params
@@ -49,7 +46,7 @@ if (run_read_subsample & params.subsample_read_count.getClass() != java.lang.Int
 
 
 // Create file objects from input parameters
-reference_fp = file("${params.reference}")
+reference_fp = file(params.reference)
 Channel.fromFilePairs(params.reads, flat: true)
   .ifEmpty { exit 1, "error: did not find any read files value '${params.reads}'" }
   .set { ch_read_sets }
@@ -61,54 +58,46 @@ if (! reference_fp.exists()) {
 }
 
 
+// TODO: check merge inputs exist and are complete i.e. no missing isolates
+// TODO: ensure collisions in filename space between new and previous datasets
+merge_source_dir = file(params.previous_run_dir)
+merge_source_fastqc = Channel.fromPath(merge_source_dir / 'fastqc/individual_reports/*')
+merge_source_gene_depth = Channel.fromPath(merge_source_dir / '*gene_depth.tsv')
+merge_source_gene_coverage = Channel.fromPath(merge_source_dir / '*gene_coverage.tsv')
+merge_source_mapping_stats = Channel.fromPath(merge_source_dir / '*mapping_stats.tsv')
+merge_source_allele_matrices = Channel.fromPath(merge_source_dir / '*alleles.tsv')
+
+
 // Run workflow - this unnamed will be implicity executed
 workflow {
-  // NOTE: this do not necessarily have to be nested in this scope
-  // Create file objects from input parameters
-
   // TODO: investigate whether processes can access variables above scope
-  // need to provide reference name for saving files to many processes
+  // need to provide reference name for saving files to many processes - currently a little messy
   // params seem to work but only if they're set during start up i.e. in config/cmdline
 
   main:
     reference_data = prepare_reference(reference_fp)
 
-    // Branch for SE/PE inputs
-    // We can process both in a single run - configuration would need to be very clear
-    ch_read_sets = preprocess_reads(ch_read_sets, run_read_subsample, run_quality_assessment)
-    variant_data = call_variants(ch_read_sets, reference_data.fasta, reference_data.bt2_index, reference_data.samtools_index)
+    // Branch for SE/PE inputs here
+    // NOTE: we can process both concurrently in one run - configuration would need to be very clear
+    read_data = preprocess_reads(ch_read_sets, run_read_subsample, run_quality_assessment)
+    variant_data = call_variants(read_data.reads, reference_data.fasta, reference_data.bt2_index, reference_data.samtools_index)
 
-    // Mix SE/PE channels
-
-    // TODO: update aggregate_allele_matrices to decouple core allele filtering
+    // Mix SE/PE channels here
+    // NOTE: just use the `mix` channel op
     stats_data = run_mapping_stats(variant_data, reference_fp)
     allele_matrix_data = run_allele_matrices(variant_data.bams, stats_data.snp_sites, stats_data.passing, reference_data.fasta)
 
-    merge_run = false
+    // Execute merge run if required, otherwise run post analysis as normal
     if (merge_run) {
-      // Tasks:
-      //   - read quality reports
-      //     - determine if both runs have reports
-      //     - run multiqc again
-      //   - gene coverage, depth
-      //     - merge only
-      //   - mapping stats
-      //     - merge and recompute ingroup/outgroup
-      //   - allele matrices
-      //     - merge only (filter later)
-
-      // For now all data from previous run will be copied and source directory untouched
-      //   - user to manually delete
-    }
-
-    // TODO: process here to filter core SNPs
-
-    determine_coding_consequences(allele_matrix_data.matrices, reference_fp)
-
-    // TODO: restore isolate_count logic - issues with channel->int in DSL2
-    isolate_count = 500
-    snp_alignment = create_snp_alignment(allele_matrix_data.matrices, reference_data.name)
-    if (isolate_count <= 1000 | run_phylogeny) {
-      infer_phylogeny(snp_alignment, reference_data.name)
+      // TODO: this is a lot of argument verbiage, think about a better approach
+      // We could mix here to half the number of arguments?
+      merge_data = run_merge_results(read_data.fastqc, merge_source_fastqc,
+                                     stats_data.gene_coverage, merge_source_gene_coverage,
+                                     stats_data.gene_depth, merge_source_gene_depth,
+                                     stats_data.stats, merge_source_mapping_stats,
+                                     allele_matrix_data.matrices, merge_source_allele_matrices)
+      //run_post(merge_data.fastqc, merge_data.allele_matrices, reference_fp, run_phylogeny)
+    } else {
+      run_post(read_data.fastqc, allele_matrix_data.matrices, reference_fp, run_phylogeny)
     }
 }

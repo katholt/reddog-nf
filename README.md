@@ -45,7 +45,12 @@
 
 
 ## TODO
+* Implement merge processes
+    - fastqc is difficult - no processing just copying
+        - might instead be best to reorganise files in groovy and then just run a multiqc process
+        - publishing all inputs (must avoid using glob to capture these)
 * Update process names in config
+    - also rename wokrflow modules e.g. mapping\_stats, allele\_matrix, post\_analysis
 * For se isolate mapping stats read count will need adjustment
     - should be able to maintain single process but with a small amount of conditional execution
 * Need to check indexing here
