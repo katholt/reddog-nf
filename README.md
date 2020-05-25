@@ -46,6 +46,8 @@
 
 ## TODO
 * Update process names in config
+* For se isolate mapping stats read count will need adjustment
+    - should be able to maintain single process but with a small amount of conditional execution
 * Need to check indexing here
     - are we indexing correctly at bin/create\_coverage\_depth\_matrices.py#L62
 * Automate comparison of test output data

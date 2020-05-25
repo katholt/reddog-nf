@@ -66,22 +66,43 @@ workflow {
   // params seem to work but only if they're set during start up i.e. in config/cmdline
 
   main:
-    // TODO: work flow for paired-end run, single-end run, and merge run
-    // conditionally branch here
-    ch_read_sets = preprocess_reads(ch_read_sets, run_read_subsample, run_quality_assessment)
     reference_data = prepare_reference(reference_fp)
+
+    // Branch for SE/PE inputs
+    // We can process both in a single run - configuration would need to be very clear
+    ch_read_sets = preprocess_reads(ch_read_sets, run_read_subsample, run_quality_assessment)
     variant_data = call_variants(ch_read_sets, reference_data.fasta, reference_data.bt2_index, reference_data.samtools_index)
-    stats_data = run_mapping_stats(variant_data, reference_fp)
-    allele_matrix_data = run_allele_matrices(variant_data.bams, stats_data.snp_sites,
-                                              stats_data.isolate_replicons_passing, reference_data.fasta)
+
+    // Mix SE/PE channels
+
+    merge_run = false
+    if (merge_run) {
+      // Tasks:
+      //   - read quality reports
+      //     - determine if both runs have reports
+      //     - run multiqc again
+      //   - gene coverage, depth
+      //     - merge only
+      //   - mapping stats
+      //     - merge and recompute ingroup/outgroup
+      //   - allele matrices
+      //     - merge and then calculate core alleles
+      //stats_data = run_mapping_stats(variant_data, reference_fp)
+      //allele_matrix_data = run_allele_matrices(variant_data.bams, stats_data.snp_sites, stats_data.passing, reference_data.fasta)
+
+      // For now all data from previous run will be copied and source directory untouched
+      //   - user to manually delete
+    } else {
+      stats_data = run_mapping_stats(variant_data, reference_fp)
+      allele_matrix_data = run_allele_matrices(variant_data.bams, stats_data.snp_sites, stats_data.passing, reference_data.fasta)
+    }
+
+    determine_coding_consequences(allele_matrix_data.matrices, reference_fp)
 
     // TODO: restore isolate_count logic - issues with channel->int in DSL2
     isolate_count = 500
-
     snp_alignment = create_snp_alignment(allele_matrix_data.matrices, reference_data.name)
     if (isolate_count <= 1000 | run_phylogeny) {
       infer_phylogeny(snp_alignment, reference_data.name)
     }
-
-    determine_coding_consequences(allele_matrix_data.matrices, reference_fp)
 }
