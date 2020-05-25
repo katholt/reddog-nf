@@ -96,7 +96,7 @@ def check_arguments(Object params) {
 }
 
 
-def validate_inputs(Object workflow, Object params) {
+def check_input_files(Object workflow, Object params) {
   // Validate reference
   script = 'validate_reference.py'
   validate_command = "${workflow.projectDir}/bin/${script} --reference_fp ${params.reference}"

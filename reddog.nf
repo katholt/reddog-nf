@@ -2,6 +2,7 @@
 // Enable DSL2
 nextflow.preview.dsl=2
 
+
 // Workflows
 include preprocess_reads from './src/modules/read_preprocessing.nf'
 include call_variants from './src/modules/variant_calling.nf'
@@ -15,14 +16,14 @@ include { create_snp_alignment; infer_phylogeny } from './src/processes/common.n
 
 // Utility - separated for readability
 include { print_splash; print_help } from './src/utilities.nf'
-include { check_arguments; validate_inputs; check_output_dir } from './src/utilities.nf'
+include { check_arguments; check_input_files; check_output_dir } from './src/utilities.nf'
 include { check_host; check_boolean_option } from './src/utilities.nf'
 
 
 // Check configuration
 print_splash()
 check_arguments(params)
-validate_inputs(workflow, params)
+check_input_files(workflow, params)
 check_output_dir(params)
 check_host(workflow)
 
