@@ -4,6 +4,7 @@ process merge_gene_depth {
   input:
   path file1, stageAs: 'file_1.tsv'
   path file2, stageAs: 'file_2.tsv'
+  val reference_name
 
   output:
   path 'gene_depth.tsv'
@@ -21,6 +22,7 @@ process merge_gene_coverage {
   input:
   path file1, stageAs: 'file_1.tsv'
   path file2, stageAs: 'file_2.tsv'
+  val reference_name
 
   output:
   path 'gene_coverage.tsv'
@@ -37,6 +39,7 @@ process merge_allele_matrix {
 
   input:
   tuple replicon_id, path(files)
+  val reference_name
 
   output:
   tuple val(replicon_id), path('output.tsv')
@@ -55,6 +58,7 @@ process merge_mapping_stats {
 
   input:
   tuple replicon_id, path(files)
+  val reference_name
 
   output:
   path 'output.tsv'

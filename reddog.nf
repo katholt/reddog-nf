@@ -164,21 +164,22 @@ workflow {
       }
 
       // Merge gene stats tables
-      merge_gene_depth(gene_coverage_depth.depth, merge_source_gene_depth)
-      merge_gene_coverage(gene_coverage_depth.coverage, merge_source_gene_coverage)
+      merge_gene_depth(gene_coverage_depth.depth, merge_source_gene_depth, reference_data.name)
+      merge_gene_coverage(gene_coverage_depth.coverage, merge_source_gene_coverage, reference_data.name)
 
       // Merge mapping stats
+      // NOTE: reference_fp.simpleName is required as execution is immediate - reference_data may not be available
       merge_source_mapping_stats = get_replicon_id(merge_source_mapping_stats, '_mapping_stats.tsv', reference_fp.simpleName)
       mapping_stats = stats_aggregated_data.stats.map { [it.getName().minus('_mapping_stats.tsv'), it] }
       ch_mapping_stats_merge = mapping_stats.mix(merge_source_mapping_stats).groupTuple()
-      merge_mapping_stats(ch_mapping_stats_merge)
+      merge_mapping_stats(ch_mapping_stats_merge, reference_data.name)
 
       // TODO: catch where an allele matrix is create for a replicon in one run but not another
       //       just skip merging for these tables and send straight to filter channel
       // Merge allele matrices and update channel
       merge_source_allele_matrices = get_replicon_id(merge_source_allele_matrices, '_alleles.tsv', reference_fp.simpleName)
       ch_allele_matrices_merge = ch_allele_matrices.mix(merge_source_allele_matrices).groupTuple()
-      ch_allele_matrices = merge_allele_matrix(ch_allele_matrices_merge)
+      ch_allele_matrices = merge_allele_matrix(ch_allele_matrices_merge, reference_data.name)
     }
 
     if (run_quality_assessment) {
