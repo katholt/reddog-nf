@@ -105,7 +105,7 @@ workflow {
     }
 
     if (run_quality_assessment) {
-      fastqc_data = create_read_quality_reports(ch_read_sets)
+      ch_fastqc = create_read_quality_reports(ch_read_sets).output
     }
 
     align_data = align_reads(ch_read_sets, reference_data.fasta, reference_data.bt2_index)
@@ -135,11 +135,30 @@ workflow {
     replicon_allele_matrices = sort_allele_matrices(matrix_data.output)
     matrix_aggregate_data = aggregate_allele_matrices(replicon_allele_matrices, sites_data.output, reference_data.name)
 
-    allele_matrices = filter_empty_allele_matrices(matrix_aggregate_data.output)
+    ch_allele_matrices = filter_empty_allele_matrices(matrix_aggregate_data.output)
 
-    aggregate_read_quality_reports(fastqc_data.output.collect())
+    // Merge previous run data if requested
+    if (merge_run) {
+      // TODO: currently have three separate branches just for quality assessed. can we do better?
+      if (run_quality_assessment) {
+        // Symlink in previous FastQC reports
+        fastqc_individual_output_dir = file(params.output_dir) / 'fastqc/individual_reports/'
+        merge_source_fastqc.map { filepath_src ->
+          filepath_dst = fastqc_individual_output_dir / filepath_src.getName()
+          if (! filepath_dst.exists()) {
+            java.nio.file.Files.createSymbolicLink(filepath_dst, filepath_src)
+          }
+        }
+        // Filter for zip files and add these to existing channel
+        ch_fastqc = ch_fastqc.flatten().mix(merge_source_fastqc.filter { it.name.endsWith('zip') })
+      }
+    }
 
-    allele_matrices_core = filter_allele_matrix(allele_matrices, reference_data.name)
+    if (run_quality_assessment) {
+      aggregate_read_quality_reports(ch_fastqc.collect())
+    }
+
+    allele_matrices_core = filter_allele_matrix(ch_allele_matrices, reference_data.name)
 
     determine_coding_consequences(allele_matrices_core, reference_fp)
 
@@ -149,20 +168,4 @@ workflow {
     if (isolate_count <= 1000 | run_phylogeny) {
       infer_phylogeny(snp_alignment, reference_data.name)
     }
-
-    /*
-    // Execute merge run if required, otherwise run post analysis as normal
-    if (merge_run) {
-      // TODO: this is a lot of argument verbiage, think about a better approach
-      // We could `mix` here to half the number of arguments?
-      merge_data = run_merge_results(read_data.fastqc, merge_source_fastqc,
-                                     stats_data.gene_coverage, merge_source_gene_coverage,
-                                     stats_data.gene_depth, merge_source_gene_depth,
-                                     stats_data.stats, merge_source_mapping_stats,
-                                     allele_matrix_data.matrices, merge_source_allele_matrices)
-      //run_post(merge_data.fastqc, merge_data.allele_matrices, reference_fp, run_phylogeny)
-    } else {
-      run_post(read_data.fastqc, allele_matrix_data.matrices, reference_fp, run_phylogeny)
-    }
-    */
 }
