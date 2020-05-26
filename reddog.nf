@@ -150,6 +150,9 @@ workflow {
       if (run_quality_assessment) {
         // Symlink in previous FastQC reports
         fastqc_individual_output_dir = file(params.output_dir) / 'fastqc/individual_reports/'
+        if (! fastqc_individual_output_dir.exists()) {
+          fastqc_individual_output_dir.mkdirs()
+        }
         merge_source_fastqc.map { filepath_src ->
           filepath_dst = fastqc_individual_output_dir / filepath_src.getName()
           if (! filepath_dst.exists()) {
