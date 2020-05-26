@@ -31,6 +31,18 @@
 
 
 ## TODO
+* Implement se mapping
+    - custom code to pair reads and create channels
+        - could hand off to existing python code
+        - create channel from results - some processing in groovy
+    - branch for se/pe alignment
+    - rejoin immediately afterwards with mix, run remainin as normal
+    - accomodate se in read subsampling
+        - this needs an overhaul also - make faster not non-exact (but still accurate)
+    - refactor fastqc for se
+        - change process to accept one read file at a time
+        - feed channel that flattens and combines se and pe files
+* Read validation as process using a local executor?
 * Coding consequences currently only examines each SNP individually
     - report coding result when multiple SNPs are in one codon
     - this probably should replace looking at SNPs individually

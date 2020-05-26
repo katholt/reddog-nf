@@ -4,24 +4,19 @@ nextflow.preview.dsl=2
 
 
 // NOTE: imports separated for readability
-// Read preprocessing processes
-include subsample_reads from './src/processes/paired_reads.nf'
-include create_read_quality_reports from './src/processes/paired_reads.nf'
-
-// Variant calling processes
-include align_reads from './src/processes/paired_reads.nf'
-include call_snps from './src/processes/paired_reads.nf'
-include create_mpileups from './src/processes/common.nf'
+// Alignment and variant calling processes
+include align_reads_pe from './src/processes/alignment.nf'
+include call_snps from './src/processes/variant_calling.nf'
 
 // Mapping stats processes
-include calculate_gene_coverage_depth from './src/processes/common.nf'
-include calculate_mapping_statistics from './src/processes/common.nf'
-include aggregate_mapping_statistics from './src/processes/common.nf'
-include aggregate_snp_sites from './src/processes/common.nf'
+include calculate_gene_coverage_depth from './src/processes/mapping_stats.nf'
+include calculate_mapping_statistics from './src/processes/mapping_stats.nf'
+include aggregate_mapping_statistics from './src/processes/mapping_stats.nf'
 
 // Allele matrix processes
-include create_allele_matrix from './src/processes/common.nf'
-include aggregate_allele_matrices from './src/processes/common.nf'
+include create_allele_matrix from './src/processes/allele_matrix.nf'
+include aggregate_allele_matrices from './src/processes/allele_matrix.nf'
+include filter_allele_matrix from './src/processes/allele_matrix.nf'
 
 // Merge processes
 include merge_gene_depth from './src/processes/merge.nf'
@@ -30,12 +25,15 @@ include merge_allele_matrix from './src/processes/merge.nf'
 include merge_mapping_stats from './src/processes/merge.nf'
 
 // Other processes
-include prepare_reference from './src/processes/common.nf'
-include aggregate_read_quality_reports from './src/processes/common.nf'
-include filter_allele_matrix from './src/processes/common.nf'
-include determine_coding_consequences from './src/processes/common.nf'
-include create_snp_alignment from './src/processes/common.nf'
-include infer_phylogeny from './src/processes/common.nf'
+include prepare_reference from './src/processes/misc.nf'
+include subsample_reads from './src/processes/misc.nf'
+include create_read_quality_reports from './src/processes/misc.nf'
+include create_mpileups from './src/processes/misc.nf'
+include aggregate_read_quality_reports from './src/processes/misc.nf'
+include determine_coding_consequences from './src/processes/misc.nf'
+include create_snp_alignment from './src/processes/misc.nf'
+include infer_phylogeny from './src/processes/misc.nf'
+include aggregate_snp_sites from './src/processes/misc.nf'
 
 // Channel helper functions
 include collect_passing_isolate_replicons from './src/channel_helpers.nf'
@@ -77,6 +75,8 @@ if (run_read_subsample & params.subsample_read_count.getClass() != java.lang.Int
 }
 
 
+// TODO: custom code to pair reads and get read_id - allowing mixing of se and pe
+//       create one channel for each read type and treat accordingly in the workflow
 // Create file objects from input parameters
 reference_fp = file(params.reference)
 Channel.fromFilePairs(params.reads, flat: true)
@@ -90,10 +90,19 @@ if (! reference_fp.exists()) {
 }
 
 
-// TODO: check merge inputs exist and are complete i.e. no missing isolates
+// TODO: check merge inputs exist and are complete
+//       - no missing isolates
+//       - reference is the same - size, genes, names, replicons
+//       - configure is the same - thresholds, bowtie2 mapping params
 // TODO: ensure collisions in filename space between new and previous datasets
 if (merge_run) {
+  if (params.previous_run_dir.isEmpty()) {
+    exit 1, "error: a merge run requires previous_run_dir to be set"
+  }
   merge_source_dir = file(params.previous_run_dir)
+  if (! merge_source_dir.exists()) {
+    exit 1, "error: directory for previous_run_dir (${params.previous_run_dir}) does not exist"
+  }
   merge_source_fastqc = Channel.fromPath(merge_source_dir / 'fastqc/individual_reports/*')
   merge_source_gene_depth = Channel.fromPath(merge_source_dir / '*gene_depth.tsv')
   merge_source_gene_coverage = Channel.fromPath(merge_source_dir / '*gene_coverage.tsv')
@@ -108,14 +117,18 @@ workflow {
     reference_data = prepare_reference(reference_fp)
 
     if (run_read_subsample) {
+      // TODO: mix pe and se
       ch_read_sets = subsample_reads(ch_read_sets)
     }
 
     if (run_quality_assessment) {
+      // TODO: mix pe and se
       ch_fastqc = create_read_quality_reports(ch_read_sets).output
     }
 
-    align_data = align_reads(ch_read_sets, reference_data.fasta, reference_data.bt2_index)
+    // TODO: Branch for pe and se here
+    align_data = align_reads_pe(ch_read_sets, reference_data.fasta, reference_data.bt2_index)
+    // TODO: new channel that mixes results or se and pe mapping
 
     mpileup_data = create_mpileups(align_data.bams)
 
