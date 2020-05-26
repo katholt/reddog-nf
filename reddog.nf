@@ -23,6 +23,12 @@ include aggregate_snp_sites from './src/processes/common.nf'
 include create_allele_matrix from './src/processes/common.nf'
 include aggregate_allele_matrices from './src/processes/common.nf'
 
+// Merge processes
+include merge_gene_depth from './src/processes/merge.nf'
+include merge_gene_coverage from './src/processes/merge.nf'
+include merge_allele_matrices from './src/processes/merge.nf'
+include merge_mapping_stats from './src/processes/merge.nf'
+
 // Other processes
 include prepare_reference from './src/processes/common.nf'
 include aggregate_read_quality_reports from './src/processes/common.nf'
@@ -35,6 +41,7 @@ include infer_phylogeny from './src/processes/common.nf'
 include collect_passing_isolate_replicons from './src/channel_helpers.nf'
 include sort_allele_matrices from './src/channel_helpers.nf'
 include filter_empty_allele_matrices from './src/channel_helpers.nf'
+include get_replicon_id from './src/channel_helpers.nf'
 
 // Utility functions
 include print_splash from './src/utilities.nf'
@@ -150,8 +157,24 @@ workflow {
           }
         }
         // Filter for zip files and add these to existing channel
-        ch_fastqc = ch_fastqc.flatten().mix(merge_source_fastqc.filter { it.name.endsWith('zip') })
+        ch_fastqc = ch_fastqc.flatten().mix(merge_source_fastqc.filter { it.getName().endsWith('zip') })
       }
+
+      // Merge gene stats tables
+      merge_gene_depth(gene_coverage_depth.depth, merge_source_gene_depth)
+      merge_gene_coverage(gene_coverage_depth.coverage, merge_source_gene_coverage)
+
+      // TODO: check if publishing this output with same filename overwrites without issue
+      // Merge mapping stats
+      merge_source_mapping_stats = get_replicon_id(merge_source_mapping_stats, '_mapping_stats.tsv', reference_fp.simpleName)
+      mapping_stats = stats_aggregated_data.stats.map { [it.getName().minus('_mapping_stats.tsv'), it] }
+      ch_mapping_stats_merge = mapping_stats.mix(merge_source_mapping_stats).groupTuple()
+      merge_mapping_stats(ch_mapping_stats_merge)
+
+      // Merge allele matrices and update channel
+      merge_source_allele_matrices = get_replicon_id(merge_source_allele_matrices, '_alleles.tsv', reference_fp.simpleName)
+      ch_allele_matrices_merge = ch_allele_matrices.mix(merge_source_allele_matrices).groupTuple()
+      ch_allele_matrices = merge_allele_matrices(ch_allele_matrices_merge)
     }
 
     if (run_quality_assessment) {

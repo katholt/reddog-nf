@@ -43,3 +43,11 @@ def filter_empty_allele_matrices(Object ch) {
       return has_alleles
     }
 }
+
+
+def get_replicon_id(Object ch, Object pattern, Object reference_name) {
+  return ch.map { filepath ->
+    replicon_id = filepath.getName().minus(pattern).minus(reference_name + '_')
+    [replicon_id, filepath]
+  }
+}
