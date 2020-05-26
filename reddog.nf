@@ -171,6 +171,8 @@ workflow {
       ch_mapping_stats_merge = mapping_stats.mix(merge_source_mapping_stats).groupTuple()
       merge_mapping_stats(ch_mapping_stats_merge)
 
+      // TODO: catch where an allele matrix is create for a replicon in one run but not another
+      //       just skip merging for these tables and send straight to filter channel
       // Merge allele matrices and update channel
       merge_source_allele_matrices = get_replicon_id(merge_source_allele_matrices, '_alleles.tsv', reference_fp.simpleName)
       ch_allele_matrices_merge = ch_allele_matrices.mix(merge_source_allele_matrices).groupTuple()
