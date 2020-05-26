@@ -146,7 +146,7 @@ workflow {
 
     // Merge previous run data if requested
     if (merge_run) {
-      // TODO: currently have three separate branches just for quality assessed. can we do better?
+      // TODO: currently have three separate branches just for quality assessment, can we do better?
       if (run_quality_assessment) {
         // Symlink in previous FastQC reports
         fastqc_individual_output_dir = file(params.output_dir) / 'fastqc/individual_reports/'
@@ -164,7 +164,6 @@ workflow {
       merge_gene_depth(gene_coverage_depth.depth, merge_source_gene_depth)
       merge_gene_coverage(gene_coverage_depth.coverage, merge_source_gene_coverage)
 
-      // TODO: check if publishing this output with same filename overwrites without issue
       // Merge mapping stats
       merge_source_mapping_stats = get_replicon_id(merge_source_mapping_stats, '_mapping_stats.tsv', reference_fp.simpleName)
       mapping_stats = stats_aggregated_data.stats.map { [it.getName().minus('_mapping_stats.tsv'), it] }
