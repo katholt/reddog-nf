@@ -26,7 +26,7 @@ include aggregate_allele_matrices from './src/processes/common.nf'
 // Merge processes
 include merge_gene_depth from './src/processes/merge.nf'
 include merge_gene_coverage from './src/processes/merge.nf'
-include merge_allele_matrices from './src/processes/merge.nf'
+include merge_allele_matrix from './src/processes/merge.nf'
 include merge_mapping_stats from './src/processes/merge.nf'
 
 // Other processes
@@ -176,7 +176,7 @@ workflow {
       // Merge allele matrices and update channel
       merge_source_allele_matrices = get_replicon_id(merge_source_allele_matrices, '_alleles.tsv', reference_fp.simpleName)
       ch_allele_matrices_merge = ch_allele_matrices.mix(merge_source_allele_matrices).groupTuple()
-      ch_allele_matrices = merge_allele_matrices(ch_allele_matrices_merge)
+      ch_allele_matrices = merge_allele_matrix(ch_allele_matrices_merge)
     }
 
     if (run_quality_assessment) {

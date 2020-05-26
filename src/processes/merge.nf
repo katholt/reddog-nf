@@ -32,7 +32,7 @@ process merge_gene_coverage {
 }
 
 
-process merge_allele_matrices {
+process merge_allele_matrix {
   publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${replicon_id}_alleles.tsv" }
 
   input:
