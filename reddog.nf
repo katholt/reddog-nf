@@ -3,6 +3,7 @@
 nextflow.preview.dsl=2
 
 
+// Import processes, workflows, channel helpers, and utility functions
 // NOTE: imports separated for readability
 // Alignment and variant calling processes
 include align_reads_se from './src/processes/alignment.nf'
@@ -99,10 +100,6 @@ reads_se = reads_se.map {
 }
 
 
-// Additionally create channel which contains all read filepaths (used for FastQC)
-reads_all_fps = reads_pe.map { it[1..-1] }.mix(reads_se.map { it[1..-1] }).flatten()
-
-
 // Create file object for reference and check it exists
 reference_fp = file(params.reference)
 if (! reference_fp.exists()) {
@@ -141,6 +138,8 @@ workflow {
     }
 
     if (run_quality_assessment) {
+      // Create flat channel containing only readset filepaths
+      reads_all_fps = reads_pe.map { it[1..-1] }.mix(reads_se.map { it[1..-1] }).flatten()
       ch_fastqc = create_read_quality_reports(reads_all_fps).output
     }
 

@@ -47,7 +47,7 @@ def print_help() {
 
 
 // Execute a command and capture standard streams along with return code
-def execute_command(String command) {
+def execute_command(Object command) {
   stdout = new StringBuilder()
   stderr = new StringBuilder()
   process = command.execute()

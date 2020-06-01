@@ -31,6 +31,14 @@
 
 ## TODO
 * Add checks for merge run
+    - check all data is present from previous run
+        - no missing isolates
+    - must provide a basic reort of configuration during each run
+    - compare configurations during merge run
+        - reference should be a focus (and any other task params we add to config later, e.g. bt2 -X)
+            - get md5sum of reference
+            - replicon names and sizes
+        - refactor reference validation groovy and python code to return required data
 * Replace sort\_allele\_matrix list/string handling with
     `var instanceof List ? var : [var]`
 * Ingroup/outgroup logic is found in two places, should we use a library at this point?
