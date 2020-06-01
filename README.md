@@ -30,7 +30,6 @@
 
 
 ## TODO
-* Place merge run logic into workflow
 * Add checks for merge run
 * Replace sort\_allele\_matrix list/string handling with
     `var instanceof List ? var : [var]`

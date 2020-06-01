@@ -182,19 +182,19 @@ workflow {
     if (run_merge) {
       // NOTE: reference_fp.simpleName is used over reference_data.name as the latter may not yet be evaluated
       merge_data = merge(
-                              ch_fastqc,
-                              merge_source_fastqc,
-                              gene_coverage_depth.depth,
-                              merge_source_gene_depth,
-                              gene_coverage_depth.coverage,
-                              merge_source_gene_coverage,
-                              stats_aggregated_data.stats,
-                              merge_source_mapping_stats,
-                              ch_allele_matrices,
-                              merge_source_allele_matrices,
-                              run_quality_assessment,
-                              reference_fp.simpleName,
-                            )
+                           ch_fastqc,
+                           merge_source_fastqc,
+                           gene_coverage_depth.depth,
+                           merge_source_gene_depth,
+                           gene_coverage_depth.coverage,
+                           merge_source_gene_coverage,
+                           stats_aggregated_data.stats,
+                           merge_source_mapping_stats,
+                           ch_allele_matrices,
+                           merge_source_allele_matrices,
+                           run_quality_assessment,
+                           reference_fp.simpleName,
+                        )
       ch_fastqc = merge_data.fastqc
       ch_allele_matrices = merge_data.allele_matrices
     }
@@ -207,10 +207,6 @@ workflow {
 
     determine_coding_consequences(allele_matrices_core, reference_fp)
 
-    // TODO: restore isolate_count logic - issues with channel->int in DSL2
-    isolate_count = 500
     snp_alignment = create_snp_alignment(allele_matrices_core, reference_data.name)
-    if (isolate_count <= 1000 | run_phylogeny) {
-      infer_phylogeny(snp_alignment, reference_data.name)
-    }
+    infer_phylogeny(snp_alignment, reference_data.name, isolate_replicons_passing.count(), run_phylogeny)
 }

@@ -180,9 +180,14 @@ process infer_phylogeny {
   input:
   tuple replicon_id, path(alignment_fp)
   val reference_name
+  val pass_count
+  val run_phylogeny
 
   output:
   path '*.tree'
+
+  when:
+  pass_count <= 1000 | run_phylogeny
 
   script:
   """
