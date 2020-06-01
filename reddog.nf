@@ -100,6 +100,10 @@ reads_se.map {
 }
 
 
+// Additionally create channel which contains all read filepaths
+reads_all_fps = reads_pe.map { it[1..-1] }.mix(reads_se.map { it[1..-1] }).flatten()
+
+
 // Create file object for reference and check it exists
 reference_fp = file(params.reference)
 if (! reference_fp.exists()) {
@@ -134,18 +138,17 @@ workflow {
     reference_data = prepare_reference(reference_fp)
 
     if (run_read_subsample) {
-      // TODO: mix pe and se
-      ch_read_sets = subsample_reads(ch_read_sets)
+      reads_se = subsample_reads_se(reads_se)
+      reads_pe = subsample_reads_pe(reads_pe)
     }
 
     if (run_quality_assessment) {
-      // TODO: mix pe and se
-      ch_fastqc = create_read_quality_reports(ch_read_sets).output
+      ch_fastqc = create_read_quality_reports(reads_all_fps).output
     }
 
-    // TODO: Branch for pe and se here
-    align_data = align_reads_pe(ch_read_sets, reference_data.fasta, reference_data.bt2_index)
-    // TODO: new channel that mixes results or se and pe mapping
+    align_data_se = align_reads_se(reads_se, reference_data.fasta, reference_data.bt2_index)
+    align_data_pe = align_reads_pe(reads_pe, reference_data.fasta, reference_data.bt2_index)
+    align_data = align_data_se.mix(align_data_pe)
 
     mpileup_data = create_mpileups(align_data.bams)
 

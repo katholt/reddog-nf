@@ -18,7 +18,7 @@ process create_read_quality_reports {
   publishDir "${params.output_dir}/fastqc/individual_reports/"
 
   input:
-  tuple isolate_id, path(reads_fwd), path(reads_rev)
+  path reads_fp
 
   output:
   path '*html'
@@ -26,7 +26,7 @@ process create_read_quality_reports {
 
   script:
   """
-  fastqc -o . -t 1 -q -f fastq ${reads_fwd} ${reads_rev}
+  fastqc -o . -t 1 -q -f fastq ${reads_fp}
   """
 }
 
