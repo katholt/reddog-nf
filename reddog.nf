@@ -25,11 +25,11 @@ include subsample_reads_se from './src/processes/misc.nf'
 include subsample_reads_pe from './src/processes/misc.nf'
 include create_read_quality_reports from './src/processes/misc.nf'
 include create_mpileups from './src/processes/misc.nf'
+include aggregate_snp_sites from './src/processes/misc.nf'
 include aggregate_read_quality_reports from './src/processes/misc.nf'
 include determine_coding_consequences from './src/processes/misc.nf'
 include create_snp_alignment from './src/processes/misc.nf'
 include infer_phylogeny from './src/processes/misc.nf'
-include aggregate_snp_sites from './src/processes/misc.nf'
 
 // Channel helper functions
 include get_read_prefix_and_type from './src/channel_helpers.nf'
@@ -39,7 +39,6 @@ include filter_empty_allele_matrices from './src/channel_helpers.nf'
 
 // Utility functions
 include print_splash from './src/utilities.nf'
-include print_help from './src/utilities.nf'
 include check_arguments from './src/utilities.nf'
 include check_input_files from './src/utilities.nf'
 include check_output_dir from './src/utilities.nf'
