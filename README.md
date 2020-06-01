@@ -29,6 +29,13 @@
     - AllStats
 
 
+## Important note
+* Not currently using a strand bias cutoff
+    - this is only used in reddog when the runType is set to PE
+    - though runType is only ever set to phylogeny or pangenome
+    - it may be that runType should be replaced with readType in rr
+
+
 ## TODO
 * Remove argument types from functions (groovy allows args wo types)
 * Add checks for merge run
@@ -45,6 +52,7 @@
 * Ingroup/outgroup logic is found in two places, should we use a library at this point?
     - implemented once during mapping stats aggregation and again for merge mapping stats tables
 * Read validation as process using a local executor?
+* Numerical argument checking for python scripts
 * Subsampling approach is too slow when subsampling down to a large number
     - subsampling to 5 million reads takes ~10 minutes
     - likely a result of hash collisons during set operations
