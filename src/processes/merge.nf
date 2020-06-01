@@ -1,4 +1,4 @@
-process merge_gene_depth {
+process gene_depth {
   publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }
 
   input:
@@ -16,7 +16,7 @@ process merge_gene_depth {
 }
 
 
-process merge_gene_coverage {
+process gene_coverage {
   publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }
 
   input:
@@ -34,7 +34,7 @@ process merge_gene_coverage {
 }
 
 
-process merge_allele_matrix {
+process allele_matrix {
   publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${replicon_id}_alleles.tsv" }
 
   input:
@@ -53,7 +53,7 @@ process merge_allele_matrix {
 }
 
 
-process merge_mapping_stats {
+process mapping_stats {
   publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${replicon_id}_mapping_stats.tsv" }
 
   input:

@@ -19,12 +19,6 @@ include create_allele_matrix from './src/processes/allele_matrix.nf'
 include aggregate_allele_matrices from './src/processes/allele_matrix.nf'
 include filter_allele_matrix from './src/processes/allele_matrix.nf'
 
-// Merge processes
-include merge_gene_depth from './src/processes/merge.nf'
-include merge_gene_coverage from './src/processes/merge.nf'
-include merge_allele_matrix from './src/processes/merge.nf'
-include merge_mapping_stats from './src/processes/merge.nf'
-
 // Other processes
 include prepare_reference from './src/processes/misc.nf'
 include subsample_reads_se from './src/processes/misc.nf'
@@ -42,7 +36,6 @@ include get_read_prefix_and_type from './src/channel_helpers.nf'
 include collect_passing_isolate_replicons from './src/channel_helpers.nf'
 include sort_allele_matrices from './src/channel_helpers.nf'
 include filter_empty_allele_matrices from './src/channel_helpers.nf'
-include get_replicon_id from './src/channel_helpers.nf'
 
 // Utility functions
 include print_splash from './src/utilities.nf'
@@ -52,6 +45,9 @@ include check_input_files from './src/utilities.nf'
 include check_output_dir from './src/utilities.nf'
 include check_host from './src/utilities.nf'
 include check_boolean_option from './src/utilities.nf'
+
+// Workflows
+include merge from './src/merge_workflow.nf'
 
 
 // Check configuration
@@ -184,43 +180,25 @@ workflow {
 
     ch_allele_matrices = filter_empty_allele_matrices(matrix_aggregate_data.output)
 
-    // TODO: readability will improve if merge logic is nested in a workflow
     // Merge previous run data if requested
     if (merge_run) {
-      // TODO: currently have three separate branches just for quality assessment, can we do better?
-      if (run_quality_assessment) {
-        // Symlink in previous FastQC reports
-        fastqc_individual_output_dir = file(params.output_dir) / 'fastqc/individual_reports/'
-        if (! fastqc_individual_output_dir.exists()) {
-          fastqc_individual_output_dir.mkdirs()
-        }
-        merge_source_fastqc.map { filepath_src ->
-          filepath_dst = fastqc_individual_output_dir / filepath_src.getName()
-          if (! filepath_dst.exists()) {
-            java.nio.file.Files.createSymbolicLink(filepath_dst, filepath_src)
-          }
-        }
-        // Filter for zip files and add these to existing channel
-        ch_fastqc = ch_fastqc.flatten().mix(merge_source_fastqc.filter { it.getName().endsWith('zip') })
-      }
-
-      // Merge gene stats tables
-      merge_gene_depth(gene_coverage_depth.depth, merge_source_gene_depth, reference_data.name)
-      merge_gene_coverage(gene_coverage_depth.coverage, merge_source_gene_coverage, reference_data.name)
-
-      // Merge mapping stats
-      // NOTE: reference_fp.simpleName is required as execution is immediate - reference_data may not be available here
-      merge_source_mapping_stats = get_replicon_id(merge_source_mapping_stats, '_mapping_stats.tsv', reference_fp.simpleName)
-      mapping_stats = stats_aggregated_data.stats.map { [it.getName().minus('_mapping_stats.tsv'), it] }
-      ch_mapping_stats_merge = mapping_stats.mix(merge_source_mapping_stats).groupTuple()
-      merge_mapping_stats(ch_mapping_stats_merge, reference_data.name)
-
-      // TODO: catch where an allele matrix is create for a replicon in one run but not another
-      //       just skip merging for these tables and send straight to filter channel
-      // Merge allele matrices and update channel
-      merge_source_allele_matrices = get_replicon_id(merge_source_allele_matrices, '_alleles.tsv', reference_fp.simpleName)
-      ch_allele_matrices_merge = ch_allele_matrices.mix(merge_source_allele_matrices).groupTuple()
-      ch_allele_matrices = merge_allele_matrix(ch_allele_matrices_merge, reference_data.name)
+      // NOTE: reference_fp.simpleName is used over reference_data.name as the latter may not yet be evaluated
+      merge_data = merge(
+                              ch_fastqc,
+                              merge_source_fastqc,
+                              gene_coverage_depth.depth,
+                              merge_source_gene_depth,
+                              gene_coverage_depth.coverage,
+                              merge_source_gene_coverage,
+                              stats_aggregated_data.stats,
+                              merge_source_mapping_stats,
+                              ch_allele_matrices,
+                              merge_source_allele_matrices,
+                              run_quality_assessment,
+                              reference_fp.simpleName,
+                            )
+      ch_fastqc = merge_data.fastqc
+      ch_allele_matrices = merge_data.allele_matrices
     }
 
     if (run_quality_assessment) {
