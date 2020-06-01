@@ -19,7 +19,7 @@ process calculate_gene_coverage_depth {
 
 
 // Calculate mapping statistics
-//   - get total reads from mapping metrics file
+//   - get unmapped reads from unmapped reads BAM
 //   - coverage and mapped read counts previously calculated from mpileups
 //   - get SNP, INDEL, and heterzygous SNP counts from VCFs
 //   - calculate appropriate statisitics
@@ -27,14 +27,14 @@ process calculate_gene_coverage_depth {
 //   - additionally for the largest replicon, require that at least 50% reads mapped
 process calculate_mapping_statistics {
   input:
-  tuple isolate_id, path(bam_fp), path(bam_index_fp), path(vcf_q30_fp), path(vcf_hets_fp), path(coverage_depth_fp), path(mapping_metrics_fp)
+  tuple isolate_id, path(bam_fp), path(bam_index_fp), path(bam_unmapped_fp), path(vcf_q30_fp), path(vcf_hets_fp), path(coverage_depth_fp)
 
   output:
   path "${isolate_id}_mapping_stats.tsv", emit: output
 
   script:
   """
-  calculate_mapping_stats.py --bam_fp ${bam_fp} --vcf_q30_fp ${vcf_q30_fp} --vcf_hets_fp ${vcf_hets_fp} --coverage_depth_fp ${coverage_depth_fp} --mapping_metrics_fp ${mapping_metrics_fp} > ${isolate_id}_mapping_stats.tsv
+  calculate_mapping_stats.py --bam_fp ${bam_fp} --vcf_q30_fp ${vcf_q30_fp} --vcf_hets_fp ${vcf_hets_fp} --coverage_depth_fp ${coverage_depth_fp} --bam_unmapped_fp ${bam_unmapped_fp} > ${isolate_id}_mapping_stats.tsv
   """
 }
 
@@ -64,6 +64,3 @@ process aggregate_mapping_statistics {
   get_passing_isolate_replicons.awk ${mapping_stats_fps} > isolate_replicons_passing.tsv
   """
 }
-
-
-

@@ -31,12 +31,6 @@
 
 
 ## TODO
-* Implement se mapping
-    - MUST look at mapping stats and metric file to ensure we get correct number of input reads
-        - previously for pe data we multipled the read count value from the mapping metrics file
-        - this will likely need to be conditionally done
-    - accommodate se in read subsampling
-        - this needs an overhaul also - make faster not non-exact (but still accurate)
 * Replace sort\_allele\_matrix list/string handling with
     `var instanceof List ? var : [var]`
 * Ingroup/outgroup logic is found in two places, should we use a library at this point?

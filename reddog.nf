@@ -154,17 +154,18 @@ workflow {
     align_data_se = align_reads_se(reads_se, reference_data.fasta, reference_data.bt2_index)
     align_data_pe = align_reads_pe(reads_pe, reference_data.fasta, reference_data.bt2_index)
     align_data_bams = align_data_se.bams.mix(align_data_pe.bams)
-    align_data_metrics = align_data_se.metrics.mix(align_data_pe.metrics)
+    align_data_bams_unmapped = align_data_se.bams_unmapped.mix(align_data_pe.bams_unmapped)
 
     mpileup_data = create_mpileups(align_data_bams)
 
     bams_and_mpileups = align_data_bams.join(mpileup_data.output)
     snp_data = call_snps(bams_and_mpileups, reference_data.fasta, reference_data.samtools_index)
 
-    bams_vcfs_stats_and_metrics = align_data_bams.join(snp_data.vcfs)
+    bams_vcfs_and_stats = align_data_bams.join(align_data_bams_unmapped)
+      .join(snp_data.vcfs)
       .join(snp_data.coverage_depth)
-      .join(align_data_metrics)
-    stats_data = calculate_mapping_statistics(bams_vcfs_stats_and_metrics)
+
+    stats_data = calculate_mapping_statistics(bams_vcfs_and_stats)
 
     stats_aggregated_data = aggregate_mapping_statistics(stats_data.collect(), reference_data.name)
 
@@ -208,7 +209,7 @@ workflow {
       merge_gene_coverage(gene_coverage_depth.coverage, merge_source_gene_coverage, reference_data.name)
 
       // Merge mapping stats
-      // NOTE: reference_fp.simpleName is required as execution is immediate - reference_data may not be available
+      // NOTE: reference_fp.simpleName is required as execution is immediate - reference_data may not be available here
       merge_source_mapping_stats = get_replicon_id(merge_source_mapping_stats, '_mapping_stats.tsv', reference_fp.simpleName)
       mapping_stats = stats_aggregated_data.stats.map { [it.getName().minus('_mapping_stats.tsv'), it] }
       ch_mapping_stats_merge = mapping_stats.mix(merge_source_mapping_stats).groupTuple()

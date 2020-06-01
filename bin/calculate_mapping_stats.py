@@ -23,8 +23,8 @@ def get_arguments():
             help='Hets VCF filepath', action=CheckInput)
     parser.add_argument('--coverage_depth_fp', required=True, type=pathlib.Path,
             help='Coverage depth metrics filepath', action=CheckInput)
-    parser.add_argument('--mapping_metrics_fp', required=True, type=pathlib.Path,
-            help='Mapping metrics filepath', action=CheckInput)
+    parser.add_argument('--bam_unmapped_fp', required=True, type=pathlib.Path,
+            help='unmapped reads BAM filepath', action=CheckInput)
 
     parser.add_argument('--min_depth', type=float, default=10,
             help='Minimum depth to pass')
@@ -39,20 +39,16 @@ def main():
     # Get command line arguments
     args = get_arguments()
 
-    # Get total reads
-    with args.mapping_metrics_fp.open('r') as fh:
-        line_token_gen = (line.rstrip().split('\t') for line in fh)
-        header_tokens = next(line_token_gen)
-        # Get last line
-        for line_tokens in line_token_gen:
-            pass
-    metrics = {metric.lower(): value for metric, value in zip(header_tokens, line_tokens)}
-    total_reads = int(metrics['read']) * 2
+    # Get unmapped total reads
+    total_unmapped = unmapped_read_count(args.bam_unmapped_fp)
 
     # Get coverage and depth, and mapped read counts
     print('Calculating coverage and average depth', file=sys.stderr)
     depth_average, coverage, replicon_sizes = get_depth_coverage_and_sizes(args.coverage_depth_fp)
     total_mapped, replicon_mapped = get_read_counts(args.bam_fp)
+
+    # Calculate total mapped
+    total_reads = total_mapped + total_unmapped
 
     # Get count of SNPs, INDELS, and heterozygous SNPs
     print('Collecting SNPs, INDELs, and heterozygous counts', file=sys.stderr)
@@ -115,6 +111,13 @@ def main():
 
         # Print
         print(replicon, *stats.values(), sep='\t')
+
+
+def unmapped_read_count(bam_fp):
+    # Execute command
+    command = f'samtools view {bam_fp} | wc -l'
+    result = execute_command(command)
+    return int(result.stdout.rstrip())
 
 
 def get_depth_coverage_and_sizes(coverage_depth_fp):

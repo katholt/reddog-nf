@@ -4,11 +4,8 @@ BEGIN {
 }
 
 {
-  # Count mapped reads for each replicon - ummapped flag not set
-  if (and($2, 0x4) != 0x4) {
-    mapped_replicon[$3]++
-    mapped_total++
-  }
+  mapped_replicon[$3]++
+  mapped_total++
 }
 
 END {
