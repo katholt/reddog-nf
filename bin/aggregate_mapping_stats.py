@@ -48,6 +48,8 @@ def get_arguments():
             help='Replicon stats filepaths', nargs='+')
     parser.add_argument('--output_dir', required=True, type=pathlib.Path,
             help='Output directory')
+    parser.add_argument('--stddev_mod', default=2, type=float,
+            help='Modifier for outgroup designation')
     args = parser.parse_args()
     for rep_stats_fp in args.rep_stats_fps:
         if not rep_stats_fp.exists():
@@ -83,7 +85,7 @@ def main():
         if len(stats_pass) > 1:
             ratio_stddev = statistics.stdev(stats.ratio for stats in stats_pass)
             ratio_mean = statistics.mean(stats.ratio for stats in stats_pass)
-            ratio_max = ratio_mean + ratio_stddev * 2
+            ratio_max = ratio_mean + ratio_stddev * args.stddev_mod
             for stats in stats_pass:
                 stats.phylogeny_group = 'i' if stats.ratio <= ratio_max else 'o'
         # Write to file, order by fail, outgroup, and then ingroup

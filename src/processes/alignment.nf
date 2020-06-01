@@ -18,7 +18,7 @@ process align_reads_pe {
 
   script:
   """
-  bowtie2 --sensitive-local -x ${reference_fp} -1 ${reads_fwd} -2 ${reads_rev} -X 2000 | \
+  bowtie2 ${params.bt2_mode} -x ${reference_fp} -1 ${reads_fwd} -2 ${reads_rev} -X ${params.bt2_max_frag_len} | \
     split_mapped_unmapped_reads.awk -v mapped_fp=${isolate_id}.bam -v unmapped_fp=${isolate_id}_unmapped.bam
   samtools index ${isolate_id}.bam
   """
@@ -45,7 +45,7 @@ process align_reads_se {
 
   script:
   """
-  bowtie2 --sensitive-local -x ${reference_fp} -U ${reads_fp} -X 2000 | \
+  bowtie2 ${params.bt2_mode} -x ${reference_fp} -U ${reads_fp} -X ${params.bt2_max_frag_len} | \
     split_mapped_unmapped_reads.awk -v mapped_fp=${isolate_id}.bam -v unmapped_fp=${isolate_id}_unmapped.bam
   samtools index ${isolate_id}.bam
   """

@@ -34,7 +34,10 @@ process calculate_mapping_statistics {
 
   script:
   """
-  calculate_mapping_stats.py --bam_fp ${bam_fp} --vcf_q30_fp ${vcf_q30_fp} --vcf_hets_fp ${vcf_hets_fp} --coverage_depth_fp ${coverage_depth_fp} --bam_unmapped_fp ${bam_unmapped_fp} > ${isolate_id}_mapping_stats.tsv
+  calculate_mapping_stats.py --bam_fp ${bam_fp} --vcf_q30_fp ${vcf_q30_fp} --vcf_hets_fp ${vcf_hets_fp} \
+    --coverage_depth_fp ${coverage_depth_fp} --bam_unmapped_fp ${bam_unmapped_fp} \
+    --min_depth ${params.mapping_depth_min} --min_coverage ${params.mapping_cover_min} \
+    --min_mapped_reads ${params.mapping_mapped_min} > ${isolate_id}_mapping_stats.tsv
   """
 }
 
@@ -60,7 +63,7 @@ process aggregate_mapping_statistics {
 
   script:
   """
-  aggregate_mapping_stats.py --rep_stats_fps ${mapping_stats_fps} --output_dir ./
+  aggregate_mapping_stats.py --rep_stats_fps ${mapping_stats_fps} --output_dir ./ --stddev_mod ${params.outgroup_mod}
   get_passing_isolate_replicons.awk ${mapping_stats_fps} > isolate_replicons_passing.tsv
   """
 }

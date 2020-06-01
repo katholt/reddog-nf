@@ -58,7 +58,7 @@ process filter_allele_matrix {
 
   script:
   """
-  filter_allele_matrix.py --allele_fp ${allele_fp} > ${replicon_id}_alleles_core.tsv
+  filter_allele_matrix.py --allele_fp ${allele_fp} --conservation ${params.allele_matrix_cons} > ${replicon_id}_alleles_core.tsv
   """
 }
 

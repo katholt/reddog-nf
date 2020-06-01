@@ -7,6 +7,8 @@ def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--allele_fp', required=True, type=pathlib.Path,
             help='Input allele matrix filepath')
+    parser.add_argument('--conservation', default=95, type=int,
+            help='Minimum isolates required to have a known allele at a given site (0-100)')
     args = parser.parse_args()
     if not args.allele_fp.exists():
         parser.error(f'Input file {args.allele_fp} does not exist')
@@ -31,9 +33,9 @@ def main():
             alleles_unique.add(allele_ref)
             if len(alleles_unique) == 1:
                 continue
-            # Remove SNPs with fewer than 95% known alleles
+            # Remove SNPs with fewer than n% known alleles
             alleles_known_pct = (1 - allele_isolates.count('-') / isolate_count) * 100
-            if alleles_known_pct < 95:
+            if alleles_known_pct < args.conservation:
                 continue
             # Print passing alleles
             print(position, allele_ref, *allele_isolates, sep='\t')

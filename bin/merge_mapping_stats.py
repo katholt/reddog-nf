@@ -24,6 +24,8 @@ def get_arguments():
             help='First filepath')
     parser.add_argument('--fp_2', required=True, type=pathlib.Path,
             help='Second filepath')
+    parser.add_argument('--stddev_mod', default=2, type=float,
+            help='Modifier for outgroup designation')
     args = parser.parse_args()
     if not args.fp_1.exists():
         parser.error('Input file {args.fp_1} does not exist')
@@ -49,7 +51,7 @@ def main():
     if len(ratios) > 1:
         ratio_stddev = statistics.stdev(ratios)
         ratio_mean = statistics.mean(ratios)
-        ratio_max = ratio_mean + ratio_stddev * 2
+        ratio_max = ratio_mean + ratio_stddev * args.stddev_mod
     # Apply groups
     for record in records:
         if not record.ratio:

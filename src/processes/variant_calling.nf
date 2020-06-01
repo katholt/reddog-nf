@@ -3,7 +3,7 @@
 //   - call variants in consensus caller mode
 //   - get average depth of each replicon
 //   - filter variants - additional to defaults, require:
-//     - minimum depth of 5
+//     - minimum depth as specified by user
 //     - minimum RMS mapping quality of 30
 //     - maximum depth of mean replicon depth * 2
 //   - split variants into homozygous SNPs and heterzygous SNPs
@@ -34,7 +34,7 @@ process call_snps {
   while read -a data; do
     replicon_id=\${data[0]};
     depth_max=\${data[1]};
-    bcftools view -r \${replicon_id} ${isolate_id}_raw.bcf | vcfutils.pl varFilter -d5 -D\${depth_max} -Q30 > ${isolate_id}_\${replicon_id}.vcf
+    bcftools view -r \${replicon_id} ${isolate_id}_raw.bcf | vcfutils.pl varFilter -d${params.var_depth_min} -D\${depth_max} -Q30 > ${isolate_id}_\${replicon_id}.vcf
   done < <(awk '{print \$1, \$2 * 2}' ${isolate_id}_coverage_depth.tsv)
   cat ${isolate_id}*vcf | filter_variants.awk -v snp_fp=${isolate_id}_q30.vcf -v het_fp=${isolate_id}_hets.vcf
   # Get SNP sites

@@ -67,6 +67,6 @@ process mapping_stats {
   file1 = files[0]
   file2 = files[1]
   """
-  merge_mapping_stats.py --fp_1 ${file1} --fp_2 ${file2} > output.tsv
+  merge_mapping_stats.py --fp_1 ${file1} --fp_2 ${file2} --stddev_mod ${params.outgroup_mod} > output.tsv
   """
 }
