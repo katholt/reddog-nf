@@ -30,6 +30,7 @@
 
 
 ## TODO
+* Remove argument types from functions (groovy allows args wo types)
 * Add checks for merge run
     - check all data is present from previous run
         - no missing isolates
@@ -44,10 +45,6 @@
 * Ingroup/outgroup logic is found in two places, should we use a library at this point?
     - implemented once during mapping stats aggregation and again for merge mapping stats tables
 * Read validation as process using a local executor?
-* Coding consequences currently only examines each SNP individually
-    - report coding result when multiple SNPs are in one codon
-    - this probably should replace looking at SNPs individually
-    - would require reworking a large amount of `determine_coding_consequences.py`
 * Subsampling approach is too slow when subsampling down to a large number
     - subsampling to 5 million reads takes ~10 minutes
     - likely a result of hash collisons during set operations
@@ -98,8 +95,6 @@
     - modify from highest to lowest position
     - no need to correct offsets
     - assuming only single nucleotide INDELs
-* Probably can remove mapped flag check in `get_reads_mapped.awk`
-    - was previously passing unfiltered bam
 * For `get_snp_sites.awk`, check that the input ref and alt allele can be the same (i.e. not use of '.')
 
 
@@ -108,9 +103,6 @@
     - vcfutils varFilter: >= 30 RMS mapping quaility
     - python script: >= 30 mapping quality
     - these are different statistics but is the raw mapping quality filter sufficient?
-* Do we need unmapped reads?
-    - currently removing all unmapped reads from BAMs
-    - this could be produced optionally
 * Ingroup defined as:
     - m = total\_reads / replicon\_coverage / 100
     - isolate's m <= (stddev all isolate's m) * 2
