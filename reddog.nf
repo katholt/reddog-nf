@@ -63,7 +63,7 @@ check_host(workflow)
 run_read_subsample = check_boolean_option(params.subsample_reads, 'subsample_reads')
 run_quality_assessment = check_boolean_option(params.quality_assessment, 'quality_assessment')
 run_phylogeny = check_boolean_option(params.force_tree, 'force_tree')
-merge_run = check_boolean_option(params.merge_run, 'merge_run')
+run_merge = check_boolean_option(params.merge_run, 'merge_run')
 
 
 // Check integer params
@@ -85,7 +85,6 @@ reads = Channel.fromPath(params.reads).ifEmpty {
 }
 reads_se = reads.single.map { it[1..-1] }.groupTuple()
 reads_pe = reads.paired.map { it[1..-1] }.groupTuple()
-
 // Check that we have the expected number of reads for each prefix in pe and se channels and flatten tuple
 reads_pe = reads_pe.map {
   if (it[1].size() != 2) {
@@ -101,7 +100,7 @@ reads_se = reads_se.map {
 }
 
 
-// Additionally create channel which contains all read filepaths
+// Additionally create channel which contains all read filepaths (used for FastQC)
 reads_all_fps = reads_pe.map { it[1..-1] }.mix(reads_se.map { it[1..-1] }).flatten()
 
 
@@ -117,7 +116,7 @@ if (! reference_fp.exists()) {
 //       - reference is the same - size, genes, names, replicons
 //       - configure is the same - thresholds, bowtie2 mapping params
 // TODO: ensure collisions in filename space between new and previous datasets
-if (merge_run) {
+if (run_merge) {
   if (params.previous_run_dir.isEmpty()) {
     exit 1, "error: a merge run requires previous_run_dir to be set"
   }
@@ -125,7 +124,7 @@ if (merge_run) {
   if (! merge_source_dir.exists()) {
     exit 1, "error: directory for previous_run_dir (${params.previous_run_dir}) does not exist"
   }
-  merge_source_fastqc = Channel.fromPath(merge_source_dir / 'fastqc/individual_reports/*.{html,zip}')
+  merge_source_fastqc = Channel.fromPath(merge_source_dir / 'fastqc/individual_reports/*')
   merge_source_gene_depth = Channel.fromPath(merge_source_dir / '*gene_depth.tsv')
   merge_source_gene_coverage = Channel.fromPath(merge_source_dir / '*gene_coverage.tsv')
   merge_source_mapping_stats = Channel.fromPath(merge_source_dir / '*mapping_stats.tsv')
@@ -133,7 +132,6 @@ if (merge_run) {
 }
 
 
-// Run workflow - this unnamed workflow will be implicity executed
 workflow {
   main:
     reference_data = prepare_reference(reference_fp)
@@ -181,7 +179,7 @@ workflow {
     ch_allele_matrices = filter_empty_allele_matrices(matrix_aggregate_data.output)
 
     // Merge previous run data if requested
-    if (merge_run) {
+    if (run_merge) {
       // NOTE: reference_fp.simpleName is used over reference_data.name as the latter may not yet be evaluated
       merge_data = merge(
                               ch_fastqc,
