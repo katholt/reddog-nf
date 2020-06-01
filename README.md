@@ -12,8 +12,7 @@
 * Isolates in replicon statistics file are ordered as failed, outgroup, ingroup
 * The coding consequences process additionally provides a list of affected isolates
 * Filtering BAMs in single-shot while mapping
-    - unmapped read statistic taken from bowtie2 metrics file
-    - no unfiltered BAM intermediate file
+    - reads from bt2 streamed into awk script and placed in either mapped or unmapped bam
 * Using `bcftools mpileup` rather than `samtools mpileup` for variant calling
     - `bcftools mpileup` has built in filtering criteria causing difference in numbers of SNP calls
 * Using Kat's approach to determine alleles at high quality SNP sites
@@ -31,6 +30,8 @@
 
 
 ## TODO
+* Place merge run logic into workflow
+* Add checks for merge run
 * Replace sort\_allele\_matrix list/string handling with
     `var instanceof List ? var : [var]`
 * Ingroup/outgroup logic is found in two places, should we use a library at this point?
