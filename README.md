@@ -42,6 +42,8 @@
     - refactor fastqc for se
         - change process to accept one read file at a time
         - feed channel that flattens and combines se and pe files
+* Replace sort\_allele\_matrix list/string handling with
+    `var instanceof List ? var : [var]`
 * Ingroup/outgroup logic is found in two places, should we use a library at this point?
     - implemented once during mapping stats aggregation and again for merge mapping stats tables
 * Read validation as process using a local executor?

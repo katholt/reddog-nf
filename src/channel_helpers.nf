@@ -1,3 +1,23 @@
+// Get the prefix for an input readset and whether it is pe or se
+def get_read_prefix_and_type(filepath) {
+  // NOTE: nf requires escaping '$'
+  regex_se = "^(.+?).fastq(?:.gz)?\$"
+  regex_pe = "^(.+?)_(?:_001_)?R?[12].fastq(?:.gz)?\$"
+
+  java.util.regex.Matcher matcher;
+  String read_type;
+
+  if ((matcher = (filepath.getName() =~ /$regex_pe/))) {
+    read_type = 'pe'
+  } else if ((matcher = (filepath.getName() =~ /$regex_se/))) {
+    read_type = 'se'
+  } else {
+    exit 1, "error: could not get prefix from readset ${filepath}"
+  }
+  return [read_type, matcher.group(1), filepath]
+}
+
+
 // Read in isolates the replicons that passed and generate a channel to emit [isolate_id, replicon_ids]
 // Where replicon_ids is a string with each replicon_id separated by a single space
 // Also get count of passing isolates so we can scale resource allocation if using SLURM executor

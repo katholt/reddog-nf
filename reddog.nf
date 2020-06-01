@@ -36,6 +36,7 @@ include infer_phylogeny from './src/processes/misc.nf'
 include aggregate_snp_sites from './src/processes/misc.nf'
 
 // Channel helper functions
+include get_read_prefix_and_type from './src/channel_helpers.nf'
 include collect_passing_isolate_replicons from './src/channel_helpers.nf'
 include sort_allele_matrices from './src/channel_helpers.nf'
 include filter_empty_allele_matrices from './src/channel_helpers.nf'
@@ -75,16 +76,32 @@ if (run_read_subsample & params.subsample_read_count.getClass() != java.lang.Int
 }
 
 
-// TODO: custom code to pair reads and get read_id - allowing mixing of se and pe
-//       create one channel for each read type and treat accordingly in the workflow
-// Create file objects from input parameters
+// Get reads and seperate into pe and se channels based on prefix
+reads = Channel.fromPath(params.reads).ifEmpty {
+    exit 1, "error: did not find any read files value '${params.reads}'"
+  }.map {
+    get_read_prefix_and_type(it)
+  }.branch {
+    paired: it[0] == 'pe'
+    single: it[0] == 'se'
+}
+reads_se = reads.single.map { it[1..-1] }.groupTuple()
+reads_pe = reads.paired.map { it[1..-1] }.groupTuple()
+// Check that we have the expected number of reads for each prefix in pe and se channels
+reads_pe.map {
+  if (it[1].size() != 2) {
+    exit 1, "error: didn't get exactly two readsets prefixed with ${it[0]}:\n${it[1]}"
+  }
+}
+reads_se.map {
+  if (it[1].size() != 1) {
+    exit 1, "error: didn't get exactly one readset prefixed with ${it[0]}:\n${it[1]}"
+  }
+}
+
+
+// Create file object for reference and check it exists
 reference_fp = file(params.reference)
-Channel.fromFilePairs(params.reads, flat: true)
-  .ifEmpty { exit 1, "error: did not find any read files value '${params.reads}'" }
-  .set { ch_read_sets }
-
-
-// Check reference exists
 if (! reference_fp.exists()) {
   exit 1, "error: reference input '${reference_fp}' does not exist"
 }
