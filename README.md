@@ -32,16 +32,11 @@
 
 ## TODO
 * Implement se mapping
-    - custom code to pair reads and create channels
-        - could hand off to existing python code
-        - create channel from results - some processing in groovy
-    - branch for se/pe alignment
-    - rejoin immediately afterwards with mix, run remainin as normal
-    - accomodate se in read subsampling
+    - MUST look at mapping stats and metric file to ensure we get correct number of input reads
+        - previously for pe data we multipled the read count value from the mapping metrics file
+        - this will likely need to be conditionally done
+    - accommodate se in read subsampling
         - this needs an overhaul also - make faster not non-exact (but still accurate)
-    - refactor fastqc for se
-        - change process to accept one read file at a time
-        - feed channel that flattens and combines se and pe files
 * Replace sort\_allele\_matrix list/string handling with
     `var instanceof List ? var : [var]`
 * Ingroup/outgroup logic is found in two places, should we use a library at this point?

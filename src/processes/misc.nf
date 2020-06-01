@@ -1,5 +1,20 @@
 // Subsample reads
-process subsample_reads {
+process subsample_reads_se {
+  input:
+  tuple isolate_id, path(reads_fp)
+
+  output:
+  tuple isolate_id, path('*subsampled*'), emit: output
+
+  script:
+  """
+  subsample_reads.py --single_fp ${reads_fp} --subsample_reads ${params.subsample_read_count} --output ./
+  """
+}
+
+
+// Subsample reads
+process subsample_reads_pe {
   input:
   tuple isolate_id, path(reads_fwd), path(reads_rev)
 

@@ -5,6 +5,7 @@ nextflow.preview.dsl=2
 
 // NOTE: imports separated for readability
 // Alignment and variant calling processes
+include align_reads_se from './src/processes/alignment.nf'
 include align_reads_pe from './src/processes/alignment.nf'
 include call_snps from './src/processes/variant_calling.nf'
 
@@ -26,7 +27,8 @@ include merge_mapping_stats from './src/processes/merge.nf'
 
 // Other processes
 include prepare_reference from './src/processes/misc.nf'
-include subsample_reads from './src/processes/misc.nf'
+include subsample_reads_se from './src/processes/misc.nf'
+include subsample_reads_pe from './src/processes/misc.nf'
 include create_read_quality_reports from './src/processes/misc.nf'
 include create_mpileups from './src/processes/misc.nf'
 include aggregate_read_quality_reports from './src/processes/misc.nf'
@@ -78,7 +80,7 @@ if (run_read_subsample & params.subsample_read_count.getClass() != java.lang.Int
 
 // Get reads and seperate into pe and se channels based on prefix
 reads = Channel.fromPath(params.reads).ifEmpty {
-    exit 1, "error: did not find any read files value '${params.reads}'"
+    exit 1, "error: did not find any read files with '${params.reads}'"
   }.map {
     get_read_prefix_and_type(it)
   }.branch {
@@ -87,16 +89,19 @@ reads = Channel.fromPath(params.reads).ifEmpty {
 }
 reads_se = reads.single.map { it[1..-1] }.groupTuple()
 reads_pe = reads.paired.map { it[1..-1] }.groupTuple()
-// Check that we have the expected number of reads for each prefix in pe and se channels
-reads_pe.map {
+
+// Check that we have the expected number of reads for each prefix in pe and se channels and flatten tuple
+reads_pe = reads_pe.map {
   if (it[1].size() != 2) {
     exit 1, "error: didn't get exactly two readsets prefixed with ${it[0]}:\n${it[1]}"
   }
+  [it[0], *it[1]]
 }
-reads_se.map {
+reads_se = reads_se.map {
   if (it[1].size() != 1) {
     exit 1, "error: didn't get exactly one readset prefixed with ${it[0]}:\n${it[1]}"
   }
+  [it[0], *it[1]]
 }
 
 
@@ -124,7 +129,7 @@ if (merge_run) {
   if (! merge_source_dir.exists()) {
     exit 1, "error: directory for previous_run_dir (${params.previous_run_dir}) does not exist"
   }
-  merge_source_fastqc = Channel.fromPath(merge_source_dir / 'fastqc/individual_reports/*')
+  merge_source_fastqc = Channel.fromPath(merge_source_dir / 'fastqc/individual_reports/*.{html,zip}')
   merge_source_gene_depth = Channel.fromPath(merge_source_dir / '*gene_depth.tsv')
   merge_source_gene_coverage = Channel.fromPath(merge_source_dir / '*gene_coverage.tsv')
   merge_source_mapping_stats = Channel.fromPath(merge_source_dir / '*mapping_stats.tsv')
@@ -148,16 +153,17 @@ workflow {
 
     align_data_se = align_reads_se(reads_se, reference_data.fasta, reference_data.bt2_index)
     align_data_pe = align_reads_pe(reads_pe, reference_data.fasta, reference_data.bt2_index)
-    align_data = align_data_se.mix(align_data_pe)
+    align_data_bams = align_data_se.bams.mix(align_data_pe.bams)
+    align_data_metrics = align_data_se.metrics.mix(align_data_pe.metrics)
 
-    mpileup_data = create_mpileups(align_data.bams)
+    mpileup_data = create_mpileups(align_data_bams)
 
-    bams_and_mpileups = align_data.bams.join(mpileup_data.output)
+    bams_and_mpileups = align_data_bams.join(mpileup_data.output)
     snp_data = call_snps(bams_and_mpileups, reference_data.fasta, reference_data.samtools_index)
 
-    bams_vcfs_stats_and_metrics = align_data.bams.join(snp_data.vcfs)
+    bams_vcfs_stats_and_metrics = align_data_bams.join(snp_data.vcfs)
       .join(snp_data.coverage_depth)
-      .join(align_data.metrics)
+      .join(align_data_metrics)
     stats_data = calculate_mapping_statistics(bams_vcfs_stats_and_metrics)
 
     stats_aggregated_data = aggregate_mapping_statistics(stats_data.collect(), reference_data.name)
@@ -169,7 +175,7 @@ workflow {
     // Remove isolates that have no replicons that pass mapping criteria and then add SNP site file to each BAM
     // We perform this here so that we do not run jobs for isolates that have no passing replicons
     isolate_replicons_passing = collect_passing_isolate_replicons(stats_aggregated_data.isolate_replicons)
-    bams_and_sites = align_data.bams.join(isolate_replicons_passing).combine(sites_data.output)
+    bams_and_sites = align_data_bams.join(isolate_replicons_passing).combine(sites_data.output)
     matrix_data = create_allele_matrix(bams_and_sites, reference_data.fasta)
 
     replicon_allele_matrices = sort_allele_matrices(matrix_data.output)
@@ -177,6 +183,7 @@ workflow {
 
     ch_allele_matrices = filter_empty_allele_matrices(matrix_aggregate_data.output)
 
+    // TODO: readability will improve if merge logic is nested in a workflow
     // Merge previous run data if requested
     if (merge_run) {
       // TODO: currently have three separate branches just for quality assessment, can we do better?
