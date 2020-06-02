@@ -37,13 +37,7 @@
 
 
 ## TODO
-* First complete run config output
-    - integrate new reference validation script
-    - output parameters
-    - do this with blocking code
-* Add checks for merge run
-    - compare parameter configurations during merge run
-        - thresholds, other program parameters
+* Validate some input readsets
 * Handle merge targets that have not been generated
     - allele matrices, mapping stats
 * Warn when read quality assessment is requested on merge run but merge has fastqc data
