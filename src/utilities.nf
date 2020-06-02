@@ -47,7 +47,7 @@ def print_help() {
 
 
 // Execute a command and capture standard streams along with return code
-def execute_command(Object command) {
+def execute_command(command) {
   stdout = new StringBuilder()
   stderr = new StringBuilder()
   process = command.execute()
@@ -58,7 +58,7 @@ def execute_command(Object command) {
 
 // For an optional stage param variable, check that it is either a Boolean or String
 // If it is a string and either 'true' or 'false', return the boolean equivalent
-def check_boolean_option(Object option, String name) {
+def check_boolean_option(option, name) {
   if (option.getClass() == java.lang.Boolean) {
     return option
   } else if (option.getClass() == java.lang.String) {
@@ -72,7 +72,7 @@ def check_boolean_option(Object option, String name) {
 }
 
 
-def check_arguments(Object params) {
+def check_arguments(params) {
   // Check required input and outputs
   if (params.help) {
     print_help()
@@ -96,7 +96,7 @@ def check_arguments(Object params) {
 }
 
 
-def check_input_files(Object workflow, Object params) {
+def check_input_files(workflow, params) {
   // Validate reference
   script = 'validate_reference.py'
   validate_command = "${workflow.projectDir}/bin/${script} --reference_fp ${params.reference}"
@@ -124,7 +124,7 @@ def check_input_files(Object workflow, Object params) {
 }
 
 
-def check_output_dir(Object params) {
+def check_output_dir(params) {
   // Do not run if output exists and contains files other than the run info directory (which is created by this point)
   output_dir_files = []
   output_dir = file(params.output_dir)
@@ -137,7 +137,7 @@ def check_output_dir(Object params) {
 }
 
 
-def check_host(Object workflow) {
+def check_host(workflow) {
   // Do not run on MASSIVE unless user specifies profile to use to avoid inadvertently using a local executor
   massive_hostnames = ['m3-login1', 'm3-login2']
   on_massive = massive_hostnames.contains(InetAddress.getLocalHost().getHostName())
