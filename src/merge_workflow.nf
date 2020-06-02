@@ -7,9 +7,14 @@ include mapping_stats from './processes/merge.nf'
 // Channel helper functions
 include get_replicon_id from './channel_helpers.nf'
 
+// Utility functions
+include symlink_merge_data from './utilities.nf'
+
 
 workflow merge {
     take:
+        merge_source_bams
+        merge_source_vcfs
         ch_fastqc
         merge_source_fastqc
         gene_depth
@@ -24,19 +29,16 @@ workflow merge {
         reference_name
 
     main:
+        // Symlink BAMs and VCFs
+        bam_output_dir = file(params.output_dir) / 'bams/'
+        vcf_output_dir = file(params.output_dir) / 'vcfs/'
+        symlink_merge_data(merge_source_bams, bam_output_dir)
+        symlink_merge_data(merge_source_vcfs, vcf_output_dir)
+
+        // Symlink FastQC reports, then add zip output to existing channel
         if (run_quality_assessment) {
-            // Symlink previous FastQC reports into new output directory
             fastqc_individual_output_dir = file(params.output_dir) / 'fastqc/individual_reports/'
-            if (! fastqc_individual_output_dir.exists()) {
-                fastqc_individual_output_dir.mkdirs()
-            }
-            merge_source_fastqc.map { filepath_src ->
-                filepath_dst = fastqc_individual_output_dir / filepath_src.getName()
-                if (! filepath_dst.exists()) {
-                java.nio.file.Files.createSymbolicLink(filepath_dst, filepath_src)
-                }
-            }
-            // Filter for zip files and add these to existing channel
+            symlink_merge_data(merge_source_fastqc, fastqc_individual_output_dir)
             ch_fastqc = ch_fastqc.flatten().mix(merge_source_fastqc.filter { it.getName().endsWith('zip') })
         }
 

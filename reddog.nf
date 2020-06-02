@@ -120,7 +120,9 @@ if (run_merge) {
   if (! merge_source_dir.exists()) {
     exit 1, "error: directory for previous_run_dir (${params.previous_run_dir}) does not exist"
   }
-  merge_source_fastqc = Channel.fromPath(merge_source_dir / 'fastqc/individual_reports/*')
+  merge_source_bams = Channel.fromPath(merge_source_dir / 'bams/*.bam')
+  merge_source_vcfs = Channel.fromPath(merge_source_dir / 'vcfs/*.vcf')
+  merge_source_fastqc = Channel.fromPath(merge_source_dir / 'fastqc/individual_reports/*{zip,html}')
   merge_source_gene_depth = Channel.fromPath(merge_source_dir / '*gene_depth.tsv')
   merge_source_gene_coverage = Channel.fromPath(merge_source_dir / '*gene_coverage.tsv')
   merge_source_mapping_stats = Channel.fromPath(merge_source_dir / '*mapping_stats.tsv')
@@ -180,6 +182,8 @@ workflow {
     if (run_merge) {
       // NOTE: reference_fp.simpleName is used over reference_data.name as the latter may not yet be evaluated
       merge_data = merge(
+                           merge_source_bams,
+                           merge_source_vcfs,
                            ch_fastqc,
                            merge_source_fastqc,
                            gene_coverage_depth.depth,
