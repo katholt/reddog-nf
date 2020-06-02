@@ -24,7 +24,7 @@ process calculate_gene_coverage_depth {
 //   - get SNP, INDEL, and heterzygous SNP counts from VCFs
 //   - calculate appropriate statisitics
 //   - fail isolates on depth or coverage
-//   - additionally for the largest replicon, require that at least 50% reads mapped
+//   - additionally for the largest replicon, require that at least some proportion of reads mapped
 process calculate_mapping_statistics {
   input:
   tuple isolate_id, path(bam_fp), path(bam_index_fp), path(bam_unmapped_fp), path(vcf_q30_fp), path(vcf_hets_fp), path(coverage_depth_fp)
@@ -45,7 +45,7 @@ process calculate_mapping_statistics {
 // Aggregate mapping statistics
 //   - read in all records and aggregate by replicon
 //   - for passing isolates, calculate phylogeny group using the ratio of 'total reads mapped' : 'coverage' / 100
-//     - set maximum ratio for ingroup as 'ratio mean' + 'ratio stddev' * 2
+//     - set maximum ratio for ingroup as 'ratio mean' + 'ratio stddev' * 'modifier specified by user'
 //   - write aggregate stats to file, in the order of 'fail', 'outgroup', 'ingroup'
 //   - get a list of isolates that pass mapping on at least one replicon
 //   - get a list of replicons that have any passing isolate

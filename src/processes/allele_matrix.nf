@@ -45,7 +45,8 @@ process aggregate_allele_matrices {
 
 // Filter allele matrices
 //   - remove invariant sites; sites with only one allele (excluding '-')
-//   - remove site if more than 5% of alleles are unknown (indicated by '-')
+//   - remove site if more than n% of alleles are unknown (indicated by '-')
+//     - n% value specified by user in config
 process filter_allele_matrix {
   publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }
 

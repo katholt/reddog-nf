@@ -166,7 +166,6 @@ def validate_merge_data(merge_ignore_errors) {
         log.warn(msg)
     }
   }
-
 }
 
 

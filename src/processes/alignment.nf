@@ -1,6 +1,6 @@
 // Align PE reads and apply some post-processing
 //   - align with bowtie2
-//     - minimum fragment length set to 2000, default of 500 too restrictive
+//     - minimum fragment length set to user specified value
 //   - split reads into mapped or unmapped BAMs
 //     - sort reads in the mapped reads BAM during split
 //   - index mapped reads BAM
@@ -27,7 +27,7 @@ process align_reads_pe {
 
 // Align SE reads and apply some post-processing
 //   - align with bowtie2
-//     - minimum fragment length set to 2000, default of 500 too restrictive
+//     - minimum fragment length set to user specified value
 //   - filtered unmapped reads
 //   - sort reads
 //   - index resulting BAM file
