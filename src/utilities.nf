@@ -68,7 +68,7 @@ def check_boolean_option(Object option, String name) {
       return false
     }
   }
-  exit 1, "error: ${name} option must be true or false"
+  exit 1, "ERROR: ${name} option must be true or false"
 }
 
 
@@ -81,17 +81,17 @@ def check_arguments(Object params) {
   if (! params.reads) {
     print_help()
     println "‌‌"
-    exit 1, "error: option --reads is required"
+    exit 1, "ERROR: option --reads is required"
   }
   if (! params.reference) {
     print_help()
     println "‌‌"
-    exit 1, "error: option --reference is required"
+    exit 1, "ERROR: option --reference is required"
   }
   if (! params.output_dir) {
     print_help()
     println "‌‌"
-    exit 1, "error: option --output_dir is required"
+    exit 1, "ERROR: option --output_dir is required"
   }
 }
 
@@ -102,7 +102,12 @@ def check_input_files(Object workflow, Object params) {
   validate_command = "${workflow.projectDir}/bin/${script} --reference_fp ${params.reference}"
   (return_code, stdout, stderr) = execute_command(validate_command)
   if (return_code != 0) {
-    exit 1, "error: validation of reference failed and exited with the following message:\n\n${stderr}"
+    exit 1, "ERROR: validation of reference failed and exited with the following message:\n\n${stderr}"
+  }
+
+  // Disallow non-standard '{' and '}' in globs
+  if (params.reads.contains('{') & params.reads.contains('}')) {
+    exit 1, 'ERROR: input glob should not contain \'{\' or \'}\''
   }
 
   // TODO: add process and use local executor
@@ -113,7 +118,7 @@ def check_input_files(Object workflow, Object params) {
   validate_command = "${workflow.projectDir}/bin/${script} --reads_fps ${ch_read_set_fps.val.join(' ')}"
   (return_code, stdout, stderr) = execute_command(validate_command)
   if (return_code != 0) {
-    exit 1, "error: validation of first ten reads failed and exited with the following message:\n\n${stderr}"
+    exit 1, "ERROR: validation of first ten reads failed and exited with the following message:\n\n${stderr}"
   }
   */
 }
@@ -127,7 +132,7 @@ def check_output_dir(Object params) {
   run_info_dirname = file(params.run_info_dir).simpleName
   output_dir_files.remove(run_info_dirname)
   if (output_dir_files.size() > 0 && ! params.force) {
-    exit 1, "error: output directory '${output_dir}' already exists and contains other files, remove or use --force to overwrite"
+    exit 1, "ERROR: output directory '${output_dir}' already exists and contains other files, remove or use --force to overwrite"
   }
 }
 
@@ -138,8 +143,28 @@ def check_host(Object workflow) {
   on_massive = massive_hostnames.contains(InetAddress.getLocalHost().getHostName())
   profile_explicit = workflow.commandLine.tokenize(' ').contains('-profile')
   if (on_massive && ! profile_explicit) {
-    exit 1, "error: to run on MASSIVE you must explicitly set -profile"
+    exit 1, "ERROR: to run on MASSIVE you must explicitly set -profile"
   }
+}
+
+
+def validate_merge_data(merge_ignore_errors) {
+  script = 'validate_merge_data.py'
+  validate_command = "${workflow.projectDir}/bin/${script} --src_dir ${params.previous_run_dir} --dst_dir ${params.output_dir} --reference_fp ${params.reference} --read_globs ${params.reads}"
+  (return_code, stdout, stderr) = execute_command(validate_command)
+  if (return_code != 0) {
+    if (! merge_ignore_errors) {
+        msg = "ERROR: validation of merge data failed and exited with the following message:\n\n${stderr}\n"
+        msg = msg + 'To ignore these errors at your own peril, re-run with --merge_ignore_errors'
+        exit 1, msg
+    } else {
+        msg = 'validation of merge data failed and exited with the following message '
+        msg = msg + '(proceeding due to --merge_ignore_errors):'
+        msg = msg + "\n\n${stderr}"
+        log.warn(msg)
+    }
+  }
+
 }
 
 

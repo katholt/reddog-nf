@@ -45,6 +45,7 @@ include check_input_files from './src/utilities.nf'
 include check_output_dir from './src/utilities.nf'
 include check_host from './src/utilities.nf'
 include check_boolean_option from './src/utilities.nf'
+include validate_merge_data from './src/utilities.nf'
 
 // Workflows
 include merge from './src/merge_workflow.nf'
@@ -58,25 +59,26 @@ check_output_dir(params)
 check_host(workflow)
 
 
-// Require optional stage variables to be boolean
+// Require some variables to be boolean
 // We must check and change values if needed. The global param variables are immutable so instead we declare new ones
 run_read_subsample = check_boolean_option(params.subsample_reads, 'subsample_reads')
 run_quality_assessment = check_boolean_option(params.quality_assessment, 'quality_assessment')
 run_phylogeny = check_boolean_option(params.force_tree, 'force_tree')
 run_merge = check_boolean_option(params.merge_run, 'merge_run')
+merge_ignore_errors = check_boolean_option(params.merge_ignore_errors, 'merge_ignore_errors')
 
 
 // Check integer params
 if (run_read_subsample & params.subsample_read_count.getClass() != java.lang.Integer) {
   if (! params.subsample_read_count.isInteger()) {
-    exit 1, "error: subsample_read_count must be an integer, got {params.subsample_read_count}"
+    exit 1, "ERROR: subsample_read_count must be an integer, got {params.subsample_read_count}"
   }
 }
 
 
 // Get reads and seperate into pe and se channels based on prefix
 reads = Channel.fromPath(params.reads).ifEmpty {
-    exit 1, "error: did not find any read files with '${params.reads}'"
+    exit 1, "ERROR: did not find any read files with '${params.reads}'"
   }.map {
     get_read_prefix_and_type(it)
   }.branch {
@@ -88,13 +90,13 @@ reads_pe = reads.paired.map { it[1..-1] }.groupTuple()
 // Check that we have the expected number of reads for each prefix in pe and se channels and flatten tuple
 reads_pe = reads_pe.map {
   if (it[1].size() != 2) {
-    exit 1, "error: didn't get exactly two readsets prefixed with ${it[0]}:\n${it[1]}"
+    exit 1, "ERROR: didn't get exactly two readsets prefixed with ${it[0]}:\n${it[1]}"
   }
   [it[0], *it[1]]
 }
 reads_se = reads_se.map {
   if (it[1].size() != 1) {
-    exit 1, "error: didn't get exactly one readset prefixed with ${it[0]}:\n${it[1]}"
+    exit 1, "ERROR: didn't get exactly one readset prefixed with ${it[0]}:\n${it[1]}"
   }
   [it[0], *it[1]]
 }
@@ -103,23 +105,21 @@ reads_se = reads_se.map {
 // Create file object for reference and check it exists
 reference_fp = file(params.reference)
 if (! reference_fp.exists()) {
-  exit 1, "error: reference input '${reference_fp}' does not exist"
+  exit 1, "ERROR: reference input '${reference_fp}' does not exist"
 }
 
 
-// TODO: check merge inputs exist and are complete
-//       - no missing isolates
-//       - reference is the same - size, genes, names, replicons
-//       - configure is the same - thresholds, bowtie2 mapping params
-// TODO: ensure collisions in filename space between new and previous datasets
 if (run_merge) {
+  // Validate data to be merged
   if (params.previous_run_dir.isEmpty()) {
-    exit 1, "error: a merge run requires previous_run_dir to be set"
+    exit 1, "ERROR: a merge run requires previous_run_dir to be set"
   }
   merge_source_dir = file(params.previous_run_dir)
   if (! merge_source_dir.exists()) {
-    exit 1, "error: directory for previous_run_dir (${params.previous_run_dir}) does not exist"
+    exit 1, "ERROR: directory for previous_run_dir (${params.previous_run_dir}) does not exist"
   }
+  validate_merge_data(merge_ignore_errors)
+  // Create channels for merge data
   merge_source_bams = Channel.fromPath(merge_source_dir / 'bams/*.bam')
   merge_source_vcfs = Channel.fromPath(merge_source_dir / 'vcfs/*.vcf')
   merge_source_fastqc = Channel.fromPath(merge_source_dir / 'fastqc/individual_reports/*{zip,html}')
