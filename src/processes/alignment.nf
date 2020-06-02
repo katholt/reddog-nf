@@ -5,7 +5,7 @@
 //     - sort reads in the mapped reads BAM during split
 //   - index mapped reads BAM
 process align_reads_pe {
-  publishDir "${params.output_dir}/bams/", pattern: '*.bam'
+  publishDir "${params.output_dir}/bams/", pattern: "${isolate_id}.bam"
 
   input:
   tuple isolate_id, path(reads_fwd), path(reads_rev)
@@ -32,7 +32,7 @@ process align_reads_pe {
 //   - sort reads
 //   - index resulting BAM file
 process align_reads_se {
-  publishDir "${params.output_dir}/bams/", pattern: '*.bam'
+  publishDir "${params.output_dir}/bams/", pattern: "${isolate_id}.bam"
 
   input:
   tuple isolate_id, path(reads_fp)
