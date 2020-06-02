@@ -32,8 +32,11 @@ def main():
     return_code = 0
     args = get_arguments()
 
+    # TODO: validate configuration
+
     # Get reference data from run config and compare
-    return_code, merge_ref_name, merge_rep_names = compare_references(args.src_dir, args.dst_dir)
+    return_code_func, merge_ref_name, merge_rep_names = compare_references(args.src_dir, args.dst_dir)
+    return_code |= return_code_func
 
     # Using BAMs as ground truth - this could be changed to something else
     # Require at least one BAM
@@ -85,14 +88,16 @@ def main():
         return_code = 1
 
     # Check isolate names from mapping stats
-    return_code, isolate_names_stats = get_isolate_names_from_mapping_stats(args.src_dir, merge_rep_names, merge_ref_name)
+    return_code_func, isolate_names_stats = get_isolate_names_from_mapping_stats(args.src_dir, merge_rep_names, merge_ref_name)
+    return_code |= return_code_func
     for replicon_name, isolate_names in isolate_names_stats['all'].items():
         if isolate_names != isolate_names_bam:
             print(f'error: isolate names in mapping stats ({replicon_name}) and BAMs differ', file=sys.stderr)
             return_code = 1
 
     # Get isolates from allele matrices and compare
-    return_code, isolate_names_allele = get_isolate_names_from_allele_matrices(args.src_dir, merge_rep_names, merge_ref_name)
+    return_code_func, isolate_names_allele = get_isolate_names_from_allele_matrices(args.src_dir, merge_rep_names, merge_ref_name)
+    return_code |= return_code_func
     allele_names = set(isolate_names_allele)
     stat_names = set(isolate_names_stats['pass'])
     missing_stats = allele_names.difference(stat_names)
