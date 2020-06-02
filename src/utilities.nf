@@ -98,34 +98,6 @@ def check_arguments(params) {
 }
 
 
-def check_input_files(workflow, params) {
-  // Validate reference
-  script = 'validate_reference.py'
-  validate_command = "${workflow.projectDir}/bin/${script} --reference_fp ${params.reference}"
-  (return_code, stdout, stderr) = execute_command(validate_command)
-  if (return_code != 0) {
-    exit 1, "ERROR: validation of reference failed and exited with the following message:\n\n${stderr}"
-  }
-
-  // Disallow non-standard '{' and '}' in globs
-  if (params.reads.contains('{') & params.reads.contains('}')) {
-    exit 1, 'ERROR: input glob should not contain \'{\' or \'}\''
-  }
-
-  // TODO: add process and use local executor
-  /*
-  // Validate first 10 readsets
-  script = 'validate_reads.py'
-  ch_read_set_fps = ch_read_sets.take(10).flatMap { it -> it[1..2] }.collect()
-  validate_command = "${workflow.projectDir}/bin/${script} --reads_fps ${ch_read_set_fps.val.join(' ')}"
-  (return_code, stdout, stderr) = execute_command(validate_command)
-  if (return_code != 0) {
-    exit 1, "ERROR: validation of first ten reads failed and exited with the following message:\n\n${stderr}"
-  }
-  */
-}
-
-
 def check_output_dir(params) {
   // Do not run if output exists and contains files other than the run info directory (which is created by this point)
   output_dir_files = []
@@ -150,10 +122,34 @@ def check_host(workflow) {
 }
 
 
+def write_reference_data_to_run_config() {
+  script = 'collect_reference_data.py'
+  command = "${workflow.projectDir}/bin/${script} --reference_fp ${params.reference} > ${params.output_dir}/run_config.tsv"
+  command_fq = ["/bin/bash",  '-c', command]
+  (return_code, stdout, stderr) = execute_command(command_fq)
+  if (return_code != 0) {
+    exit 1, "ERROR: failed to collect reference data, producing this error:\n\n${stderr}"
+  }
+}
+
+
+def write_param_data_to_run_config() {
+    File run_info_fh = new File("${params.output_dir}/run_config.tsv")
+    run_info_fh.append("bt2_max_frag_len\t${params.bt2_max_frag_len}\n")
+    run_info_fh.append("bt2_mode\t${params.bt2_mode}\n")
+    run_info_fh.append("var_depth_min\t${params.var_depth_min}\n")
+    run_info_fh.append("mapping_cover_min\t${params.mapping_cover_min}\n")
+    run_info_fh.append("mapping_depth_min\t${params.mapping_depth_min}\n")
+    run_info_fh.append("mapping_mapped_min\t${params.mapping_mapped_min}\n")
+    run_info_fh.append("outgroup_mod\t${params.outgroup_mod}\n")
+    run_info_fh.append("allele_matrix_cons\t${params.allele_matrix_cons}\n")
+}
+
+
 def validate_merge_data(merge_ignore_errors) {
   script = 'validate_merge_data.py'
-  validate_command = "${workflow.projectDir}/bin/${script} --src_dir ${params.previous_run_dir} --dst_dir ${params.output_dir} --reference_fp ${params.reference} --read_globs ${params.reads}"
-  (return_code, stdout, stderr) = execute_command(validate_command)
+  command = "${workflow.projectDir}/bin/${script} --src_dir ${params.previous_run_dir} --dst_dir ${params.output_dir} --reference_fp ${params.reference} --read_globs ${params.reads}"
+  (return_code, stdout, stderr) = execute_command(command)
   if (return_code != 0) {
     if (! merge_ignore_errors) {
         msg = "ERROR: validation of merge data failed and exited with the following message:\n\n${stderr}\n"

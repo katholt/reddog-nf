@@ -41,10 +41,11 @@ include filter_empty_allele_matrices from './src/channel_helpers.nf'
 // Utility functions
 include print_splash from './src/utilities.nf'
 include check_arguments from './src/utilities.nf'
-include check_input_files from './src/utilities.nf'
 include check_output_dir from './src/utilities.nf'
 include check_host from './src/utilities.nf'
 include check_boolean_option from './src/utilities.nf'
+include write_reference_data_to_run_config from './src/utilities.nf'
+include write_param_data_to_run_config from './src/utilities.nf'
 include validate_merge_data from './src/utilities.nf'
 
 // Workflows
@@ -54,7 +55,6 @@ include merge from './src/merge_workflow.nf'
 // Check configuration
 print_splash()
 check_arguments(params)
-check_input_files(workflow, params)
 check_output_dir(params)
 check_host(workflow)
 
@@ -107,6 +107,11 @@ reference_fp = file(params.reference)
 if (! reference_fp.exists()) {
   exit 1, "ERROR: reference input '${reference_fp}' does not exist"
 }
+
+
+// Create run config output file
+write_reference_data_to_run_config()
+write_param_data_to_run_config()
 
 
 if (run_merge) {
