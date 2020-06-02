@@ -52,9 +52,7 @@ include merge from './src/merge_workflow.nf'
 
 
 // Check configuration
-log.info('----------------------------------------------------------------------------------')
 print_splash()
-log.info('----------------------------------------------------------------------------------')
 check_arguments(params)
 check_input_files(workflow, params)
 check_output_dir(params)
@@ -131,7 +129,9 @@ if (run_merge) {
   merge_source_allele_matrices = Channel.fromPath(merge_source_dir / '*alleles.tsv')
 }
 
+
 log.info('----------------------------------------------------------------------------------')
+
 
 workflow {
   main:
@@ -142,6 +142,7 @@ workflow {
       reads_pe = subsample_reads_pe(reads_pe)
     }
 
+    ch_fastqc = Channel.empty()
     if (run_quality_assessment) {
       // Create flat channel containing only readset filepaths
       reads_all_fps = reads_pe.map { it[1..-1] }.mix(reads_se.map { it[1..-1] }).flatten()

@@ -1,4 +1,5 @@
 def print_splash() {
+  log.info('----------------------------------------------------------------------------------')
   log.info """
   ‌‌
 
@@ -15,6 +16,7 @@ def print_splash() {
 
   ‌‌
   """.stripIndent()
+  log.info('----------------------------------------------------------------------------------')
 }
 
 
@@ -173,15 +175,15 @@ def validate_merge_data(merge_ignore_errors) {
 //       exists. I can't see how this is avoidable right now, so I just catch the exception and
 //       continue with execution.
 def symlink_merge_data(ch, target_dir) {
-    if (! target_dir.exists()) {
-        target_dir.mkdirs()
+  if (! target_dir.exists()) {
+      target_dir.mkdirs()
+  }
+  ch.map { filepath_src ->
+    filepath_dst = target_dir / filepath_src.getName()
+    try {
+        java.nio.file.Files.createSymbolicLink(filepath_dst, filepath_src)
+    } catch (java.nio.file.FileAlreadyExistsException ex) {
+        // Ignore fails if file already exists
     }
-    ch.map { filepath_src ->
-        filepath_dst = target_dir / filepath_src.getName()
-        try {
-            java.nio.file.Files.createSymbolicLink(filepath_dst, filepath_src)
-        } catch (java.nio.file.FileAlreadyExistsException ex) {
-            // Ignore fails if file already exists
-        }
-    }
+  }
 }
