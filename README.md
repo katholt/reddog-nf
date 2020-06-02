@@ -37,12 +37,13 @@
 
 
 ## TODO
+* First complete run config output
+    - integrate new reference validation script
+    - output parameters
+    - do this with blocking code
 * Add checks for merge run
-    - compare configurations during merge run
-        - reference should be a focus (and any other task params we add to config later, e.g. bt2 -X)
-            - get md5sum of reference
-            - replicon names and sizes
-        - refactor reference validation groovy and python code to return required data
+    - compare parameter configurations during merge run
+        - thresholds, other program parameters
 * Handle merge targets that have not been generated
     - allele matrices, mapping stats
 * Warn when read quality assessment is requested on merge run but merge has fastqc data
