@@ -32,7 +32,9 @@ def main():
     return_code = 0
     args = get_arguments()
 
-    # TODO: validate configuration
+    # Validate configuration
+    return_code_func = compare_run_configs(args.src_dir, args.dst_dir)
+    return_code |= return_code_func
 
     # Get reference data from run config and compare
     return_code_func, merge_ref_name, merge_rep_names = compare_references(args.src_dir, args.dst_dir)
@@ -133,6 +135,66 @@ def main():
     sys.exit(return_code)
 
 
+def compare_run_configs(src_dir, dst_dir):
+    return_code = 0
+    merge_rc, merge_data = collect_run_config_data(src_dir)
+    new_rc, new_data = collect_run_config_data(dst_dir)
+    return_code |= merge_rc
+    return_code |= new_rc
+    if not new_data or not merge_data:
+        return 1
+    shared_vars = set(merge_data) & set(new_data)
+    for var in shared_vars:
+        if merge_data[var] != new_data[var]:
+            msg = f'error: merge run and current run have different settings for {var}:'
+            msg += f' merge: {merge_data[var]}; new: {new_data[var]}'
+            print(msg, file=sys.stderr)
+            return_code = 1
+    return return_code
+
+
+def collect_run_config_data(src_dir):
+    return_code = 0
+    run_config_fp = src_dir / 'run_config.tsv'
+    if not run_config_fp.exists():
+        print(f'error: run config could not be found at {run_config_fp}', file=sys.stderr)
+        return
+    entries_skip = {
+            'reference_name',
+            'reference_replicon_names',
+            'reference_replicon_sizes',
+            'reference_replicon_md5hashes'
+        }
+    entries_retain = {
+            'bt2_max_frag_len',
+            'bt2_mode',
+            'var_depth_min',
+            'mapping_cover_min',
+            'mapping_depth_min',
+            'mapping_mapped_min',
+            'outgroup_mod',
+            'allele_matrix_cons'
+        }
+    run_config = dict()
+    with run_config_fp.open('r') as fh:
+        line_token_gen = (line.rstrip().split('\t') for line in fh)
+        for var, val in line_token_gen:
+            if var in entries_skip:
+                continue
+            elif var in entries_retain:
+                assert var not in run_config
+                run_config[var] = val
+            else:
+                print(f'error: unexpected item in run_config {var}', file=sys.stderr)
+                return_code = 1
+    entries_missing = set(run_config) ^ entries_retain
+    if entries_missing:
+        entries_missing_str = ','.join(entries_missing)
+        print(f'error: {run_config_fp} has missing entries: {entries_missing_str}', file=sys.stderr)
+        return_code = 1
+    return return_code, run_config
+
+
 def compare_references(src_dir, dst_dir):
     return_code = 0
     merge_data = collect_reference_info(src_dir)
@@ -178,7 +240,6 @@ def collect_reference_info(data_dir):
     run_config_fp = data_dir / 'run_config.tsv'
     if not run_config_fp.exists():
         print(f'error: run config could not be found at {run_config_fp}', file=sys.stderr)
-        return_code = 1
         return
     # Using different top level vars for robustness
     name = str()
