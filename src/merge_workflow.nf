@@ -50,14 +50,21 @@ workflow merge {
         merge_source_mapping_stats = get_replicon_id(merge_source_mapping_stats, '_mapping_stats.tsv', reference_name)
         mapping_stats = stats_data.map { [it.getName().minus('_mapping_stats.tsv'), it] }
         ch_mapping_stats_merge = mapping_stats.mix(merge_source_mapping_stats).groupTuple()
+        // Filter replicon stats which only had output in one of the two runs
+        ch_mapping_stats_merge = ch_mapping_stats_merge.filter { replicon_id, fps -> fps.size() == 2 }
         mapping_stats(ch_mapping_stats_merge, reference_name)
 
-        // TODO: catch where an allele matrix is create for a replicon in one run but not another
-        //       just skip merging for these tables and send straight to filter channel
         // Merge allele matrices and update channel
         merge_source_allele_matrices = get_replicon_id(merge_source_allele_matrices, '_alleles.tsv', reference_name)
         ch_allele_matrices_merge = ch_allele_matrices.mix(merge_source_allele_matrices).groupTuple()
-        allele_matrices = allele_matrix(ch_allele_matrices_merge, reference_name)
+        // Split replicon matrices by number of files found
+        ch_allele_matrices_merge = ch_allele_matrices_merge.branch { replicon_id, fps ->
+                multiple: fps.size() > 1
+                single: fps.size() == 1
+            }
+        allele_matrices = allele_matrix(ch_allele_matrices_merge.multiple, reference_name)
+        // Add non-merged matrices to output channel
+        allele_matrices = allele_matrices.mix(ch_allele_matrices_merge.single)
 
     emit:
         fastqc = ch_fastqc
