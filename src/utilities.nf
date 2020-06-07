@@ -1,6 +1,6 @@
 def print_splash() {
   log.info('----------------------------------------------------------------------------------')
-  log.info """
+  log.info("""
   ‌‌
 
                                 d8b           d8b
@@ -15,36 +15,8 @@ def print_splash() {
                                                                     `?8888P
 
   ‌‌
-  """.stripIndent()
+  """.stripIndent())
   log.info('----------------------------------------------------------------------------------')
-}
-
-
-def print_help() {
-  log.info """
-  ==========================================================================
-  reddog-nf: reddog nextflow implementation
-  ==========================================================================
-  Homepage (original pipeline): https://github.com/katholt/RedDog
-  Homepage (nextflow implementation): https://github.com/scwatts/reddog-nf
-
-  Required:
-  --------------------
-    --reads               Input reads (paired, gzip compressed)
-
-    --reference           Reference genbank
-
-    --output_dir          Output directory
-  --------------------
-
-  Other:
-  --------------------
-    --help                Displays this help message
-  --------------------
-
-  ==========================================================================
-
-  """.stripIndent()
 }
 
 
@@ -76,24 +48,14 @@ def check_boolean_option(option, name) {
 
 def check_arguments(params) {
   // Check required input and outputs
-  if (params.help) {
-    print_help()
-    exit 0
-  }
   if (! params.reads) {
-    print_help()
-    println "‌‌"
-    exit 1, "ERROR: option --reads is required"
+    exit 1, "ERROR: option 'reads' must be set in nextflow.config"
   }
   if (! params.reference) {
-    print_help()
-    println "‌‌"
-    exit 1, "ERROR: option --reference is required"
+    exit 1, "ERROR: option 'reference' must be set in nextflow.configrequired"
   }
   if (! params.output_dir) {
-    print_help()
-    println "‌‌"
-    exit 1, "ERROR: option --output_dir is required"
+    exit 1, "ERROR: option 'output_dir' must be set in nextflow.configrequired"
   }
 }
 
