@@ -72,20 +72,22 @@ def main():
     gene_coverage_fp = args.src_dir / f'{merge_ref_name}_gene_coverage.tsv'
     if not gene_depth_fp.exists():
         print(f'error: gene depth file {gene_depth_fp} does not exist', file=sys.stderr)
+        isolate_names_depth = set()
         return_code = 1
     else:
         with gene_depth_fp.open('r') as fh:
             isolate_names_depth = set(fh.readline().rstrip().split('\t')[2:])
     if not gene_coverage_fp.exists():
         print(f'error: gene coverage file {gene_coverage_fp} does not exist', file=sys.stderr)
+        isolate_names_coverage = set()
         return_code = 1
     else:
         with gene_coverage_fp.open('r') as fh:
             isolate_names_coverage = set(fh.readline().rstrip().split('\t')[2:])
-    if isolate_names_depth != isolate_names_bam:
+    if isolate_names_depth and isolate_names_depth != isolate_names_bam:
         print(f'error: isolate names in gene depth and BAMs differ', file=sys.stderr)
         return_code = 1
-    if isolate_names_coverage != isolate_names_bam:
+    if isolate_names_coverage and isolate_names_coverage != isolate_names_bam:
         print(f'error: isolate names in coverage depth and BAMs differ', file=sys.stderr)
         return_code = 1
 
@@ -327,7 +329,7 @@ def get_isolate_names_from_allele_matrices(src_dir, merge_rep_names, merge_ref_n
             isolates = set(fh.readline().rstrip().split('\t')[2:])
             isolate_names[name] = isolates
     if fps_count < 1:
-        print('error: did not find any mapping stats file in merge directory', file=sys.stderr)
+        print('error: did not find any allele matrices file in merge directory', file=sys.stderr)
         return_code = 1
     return return_code, isolate_names
 
