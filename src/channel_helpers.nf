@@ -45,9 +45,9 @@ def sort_allele_matrices(Object ch) {
       return [[replicon_id, filepaths]]
     } else {
       return filepaths.collect { filepath ->
-          replicon_id = filepath.getName().minus("_${isolate_id}_alleles.tsv")
-          [replicon_id, filepath]
-        }
+        replicon_id = filepath.getName().minus("_${isolate_id}_alleles.tsv")
+        [replicon_id, filepath]
+      }
     }
   }.groupTuple()
 }
@@ -56,12 +56,12 @@ def sort_allele_matrices(Object ch) {
 // Filter matrices that have no alleles so we don't needlessly execute downstream processes
 def filter_empty_allele_matrices(Object ch) {
   return ch.filter { replicon_id, fp ->
-      // Read first two lines of allele matrix and determine if we have data
-      has_alleles = true
-      fh = fp.newReader()
-      for (int i = 0; i < 2; i++) { has_alleles = fh.readLine() != null }
-      return has_alleles
-    }
+    // Read first two lines of allele matrix and determine if we have data
+    has_alleles = true
+    fh = fp.newReader()
+    for (int i = 0; i < 2; i++) { has_alleles = fh.readLine() != null }
+    return has_alleles
+  }
 }
 
 

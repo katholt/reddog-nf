@@ -96,15 +96,15 @@ def write_reference_data_to_run_config() {
 
 
 def write_param_data_to_run_config() {
-    File run_info_fh = new File("${params.output_dir}/run_config.tsv")
-    run_info_fh.append("bt2_max_frag_len\t${params.bt2_max_frag_len}\n")
-    run_info_fh.append("bt2_mode\t${params.bt2_mode}\n")
-    run_info_fh.append("var_depth_min\t${params.var_depth_min}\n")
-    run_info_fh.append("mapping_cover_min\t${params.mapping_cover_min}\n")
-    run_info_fh.append("mapping_depth_min\t${params.mapping_depth_min}\n")
-    run_info_fh.append("mapping_mapped_min\t${params.mapping_mapped_min}\n")
-    run_info_fh.append("outgroup_mod\t${params.outgroup_mod}\n")
-    run_info_fh.append("allele_matrix_cons\t${params.allele_matrix_cons}\n")
+  File run_info_fh = new File("${params.output_dir}/run_config.tsv")
+  run_info_fh.append("bt2_max_frag_len\t${params.bt2_max_frag_len}\n")
+  run_info_fh.append("bt2_mode\t${params.bt2_mode}\n")
+  run_info_fh.append("var_depth_min\t${params.var_depth_min}\n")
+  run_info_fh.append("mapping_cover_min\t${params.mapping_cover_min}\n")
+  run_info_fh.append("mapping_depth_min\t${params.mapping_depth_min}\n")
+  run_info_fh.append("mapping_mapped_min\t${params.mapping_mapped_min}\n")
+  run_info_fh.append("outgroup_mod\t${params.outgroup_mod}\n")
+  run_info_fh.append("allele_matrix_cons\t${params.allele_matrix_cons}\n")
 }
 
 
@@ -114,14 +114,14 @@ def validate_merge_data(merge_ignore_errors) {
   (return_code, stdout, stderr) = execute_command(command)
   if (return_code != 0) {
     if (! merge_ignore_errors) {
-        msg = "ERROR: validation of merge data failed and exited with the following message:\n\n${stderr}\n"
-        msg = msg + 'To ignore these errors at your own peril, re-run with --merge_ignore_errors'
-        exit 1, msg
+      msg = "ERROR: validation of merge data failed and exited with the following message:\n\n${stderr}\n"
+      msg = msg + 'To ignore these errors at your own peril, re-run with --merge_ignore_errors'
+      exit 1, msg
     } else {
-        msg = 'validation of merge data failed and exited with the following message '
-        msg = msg + '(proceeding due to --merge_ignore_errors):'
-        msg = msg + "\n\n${stderr}"
-        log.warn(msg)
+      msg = 'validation of merge data failed and exited with the following message '
+      msg = msg + '(proceeding due to --merge_ignore_errors):'
+      msg = msg + "\n\n${stderr}"
+      log.warn(msg)
     }
   }
 }
@@ -133,14 +133,14 @@ def validate_merge_data(merge_ignore_errors) {
 //       continue with execution.
 def symlink_merge_data(ch, target_dir) {
   if (! target_dir.exists()) {
-      target_dir.mkdirs()
+    target_dir.mkdirs()
   }
   ch.map { filepath_src ->
     filepath_dst = target_dir / filepath_src.getName()
     try {
-        java.nio.file.Files.createSymbolicLink(filepath_dst, filepath_src)
+      java.nio.file.Files.createSymbolicLink(filepath_dst, filepath_src)
     } catch (java.nio.file.FileAlreadyExistsException ex) {
-        // Ignore fails if file already exists
+      // Ignore file exists exceptions
     }
   }
 }

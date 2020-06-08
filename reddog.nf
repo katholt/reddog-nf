@@ -62,7 +62,7 @@ check_host(workflow)
 // Require some variables to be boolean
 // We must check and change values if needed. The global param variables are immutable so instead we declare new ones
 run_read_subsample = check_boolean_option(params.subsample_reads, 'subsample_reads')
-run_quality_assessment = check_boolean_option(params.quality_assessment, 'quality_assessment')
+run_read_quality_report = check_boolean_option(params.read_quality_report, 'read_quality_report')
 run_phylogeny = check_boolean_option(params.force_tree, 'force_tree')
 run_merge = check_boolean_option(params.merge_run, 'merge_run')
 merge_ignore_errors = check_boolean_option(params.merge_ignore_errors, 'merge_ignore_errors')
@@ -148,7 +148,7 @@ workflow {
     }
 
     ch_fastqc = Channel.empty()
-    if (run_quality_assessment) {
+    if (run_read_quality_report) {
       // Create flat channel containing only readset filepaths
       reads_all_fps = reads_pe.map { it[1..-1] }.mix(reads_se.map { it[1..-1] }).flatten()
       ch_fastqc = create_read_quality_reports(reads_all_fps).output
@@ -191,26 +191,26 @@ workflow {
     if (run_merge) {
       // NOTE: reference_fp.simpleName is used over reference_data.name as the latter may not yet be evaluated
       merge_data = merge(
-                           merge_source_bams,
-                           merge_source_vcfs,
-                           ch_fastqc,
-                           merge_source_fastqc,
-                           gene_coverage_depth.depth,
-                           merge_source_gene_depth,
-                           gene_coverage_depth.coverage,
-                           merge_source_gene_coverage,
-                           stats_aggregated_data.stats,
-                           merge_source_mapping_stats,
-                           ch_allele_matrices,
-                           merge_source_allele_matrices,
-                           run_quality_assessment,
-                           reference_fp.simpleName,
-                        )
+        merge_source_bams,
+        merge_source_vcfs,
+        ch_fastqc,
+        merge_source_fastqc,
+        gene_coverage_depth.depth,
+        merge_source_gene_depth,
+        gene_coverage_depth.coverage,
+        merge_source_gene_coverage,
+        stats_aggregated_data.stats,
+        merge_source_mapping_stats,
+        ch_allele_matrices,
+        merge_source_allele_matrices,
+        run_read_quality_report,
+        reference_fp.simpleName,
+      )
       ch_fastqc = merge_data.fastqc
       ch_allele_matrices = merge_data.allele_matrices
     }
 
-    if (run_quality_assessment) {
+    if (run_read_quality_report) {
       aggregate_read_quality_reports(ch_fastqc.collect())
     }
 
