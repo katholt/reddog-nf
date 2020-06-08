@@ -37,12 +37,11 @@
 
 
 ## TODO
-* Validate some input readsets
-* Handle merge targets that have not been generated
-    - allele matrices, mapping stats
-* Warn when read quality assessment is requested on merge run but merge has fastqc data
-* Replace sort\_allele\_matrix list/string handling with
-    `var instanceof List ? var : [var]`
+* Investigate use of async non-nf process code so we can:
+    * Validate some input readsets
+    * Warn when read quality assessment is requested on merge run but merge has fastqc data
+* Mapping stats column rename for total\_reads?
+    * I think this should read replicon\_total\_reads or equivalent
 * Ingroup/outgroup logic is found in two places, should we use a library at this point?
     - implemented once during mapping stats aggregation and again for merge mapping stats tables
 * Read validation as process using a local executor?
@@ -120,6 +119,7 @@
 
 ## Items to be closely tested
 * Merged outputs
+    - duplicate ingroup/outgroup calling code, must check
 * Ingroup/output calling, large dataset with many unknown SNPs
     - ratio calculation and equality comparison
 * Output of gene\_coverage\_depth process
