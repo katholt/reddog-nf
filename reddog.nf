@@ -14,6 +14,7 @@ include call_snps from './src/processes/variant_calling.nf'
 include calculate_gene_coverage_depth from './src/processes/mapping_stats.nf'
 include calculate_mapping_statistics from './src/processes/mapping_stats.nf'
 include aggregate_mapping_statistics from './src/processes/mapping_stats.nf'
+include get_passing_replicons from './src/processes/mapping_stats.nf'
 
 // Allele matrix processes
 include create_allele_matrix from './src/processes/allele_matrix.nf'
@@ -36,7 +37,7 @@ include infer_phylogeny from './src/processes/misc.nf'
 include get_read_prefix_and_type from './src/channel_helpers.nf'
 include collect_passing_isolate_replicons from './src/channel_helpers.nf'
 include sort_allele_matrices from './src/channel_helpers.nf'
-include filter_empty_allele_matrices from './src/channel_helpers.nf'
+include remove_empty_allele_matrices from './src/channel_helpers.nf'
 
 // Utility functions
 include print_splash from './src/utilities.nf'
@@ -168,28 +169,20 @@ workflow {
       .join(snp_data.vcfs)
       .join(snp_data.coverage_depth)
 
+    gene_coverage_depth = calculate_gene_coverage_depth(mpileup_data.output_noid.collect(), reference_fp)
+
     stats_data = calculate_mapping_statistics(bams_vcfs_and_stats)
 
     stats_aggregated_data = aggregate_mapping_statistics(stats_data.collect(), reference_data.name)
 
-    sites_data = aggregate_snp_sites(snp_data.sites.collect(), stats_aggregated_data.isolate_replicons)
-
-    gene_coverage_depth = calculate_gene_coverage_depth(mpileup_data.output_noid.collect(), reference_fp)
-
-    // Remove isolates that have no replicons that pass mapping criteria and then add SNP site file to each BAM
-    // We perform this here so that we do not run jobs for isolates that have no passing replicons
-    isolate_replicons_passing = collect_passing_isolate_replicons(stats_aggregated_data.isolate_replicons)
-    bams_and_sites = align_data_bams.join(isolate_replicons_passing).combine(sites_data.output)
-    matrix_data = create_allele_matrix(bams_and_sites, reference_data.fasta)
-
-    replicon_allele_matrices = sort_allele_matrices(matrix_data.output)
-    matrix_aggregate_data = aggregate_allele_matrices(replicon_allele_matrices, sites_data.output, reference_data.name)
-
-    ch_allele_matrices = filter_empty_allele_matrices(matrix_aggregate_data.output)
+    // These channels are created so that if we're doing a merge run they will be modified inplace
+    ch_mapping_stats = stats_aggregated_data.stats
+    ch_snp_sites = snp_data.sites
+    ch_bams = align_data_bams
 
     // Merge previous run data if requested
     if (run_merge) {
-      // NOTE: reference_fp.simpleName is used over reference_data.name as the latter may not yet be evaluated
+      // NOTE: reference_fp.simpleName is used over reference_data.name we need it immediately in some functions
       merge_data = merge(
         merge_source_bams,
         merge_source_vcfs,
@@ -201,20 +194,36 @@ workflow {
         merge_source_gene_coverage,
         stats_aggregated_data.stats,
         merge_source_mapping_stats,
-        ch_allele_matrices,
         merge_source_allele_matrices,
         run_read_quality_report,
         reference_fp.simpleName,
       )
       ch_fastqc = merge_data.fastqc
-      ch_allele_matrices = merge_data.allele_matrices
+      ch_snp_sites = ch_snp_sites.mix(merge_data.snp_sites)
+      ch_mapping_stats = merge_data.mapping_stats
+      ch_bams = ch_bams.mix(merge_data.bams)
     }
 
     if (run_read_quality_report) {
       aggregate_read_quality_reports(ch_fastqc.collect())
     }
 
-    allele_matrices_core = filter_allele_matrix(ch_allele_matrices, reference_data.name)
+    isolate_replicon_data = get_passing_replicons(ch_mapping_stats.collect())
+
+    sites_data = aggregate_snp_sites(ch_snp_sites.collect(), isolate_replicon_data.output)
+
+    // For each isolate get replicons that passing mapping stats criteria and have at least one SNP
+    // This list is used to filter downstream channels so we don't pointless execute processes
+    isolate_replicons_passing = collect_passing_isolate_replicons(isolate_replicon_data.output)
+
+    bams_and_sites = align_data_bams.join(isolate_replicons_passing).combine(sites_data.output)
+    allele_matrix_data = create_allele_matrix(bams_and_sites, reference_data.fasta)
+
+    allele_matrices_by_replicon = sort_allele_matrices(allele_matrix_data.output)
+    allele_matrix_aggregate_data = aggregate_allele_matrices(allele_matrices_by_replicon, sites_data.output, reference_data.name)
+    allele_matrix_aggregate_data = remove_empty_allele_matrices(allele_matrix_aggregate_data.output)
+
+    allele_matrices_core = filter_allele_matrix(allele_matrix_aggregate_data, reference_data.name)
 
     determine_coding_consequences(allele_matrices_core, reference_fp)
 

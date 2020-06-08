@@ -121,14 +121,14 @@ process create_mpileups {
 process aggregate_snp_sites {
   input:
   path snp_sites_fps
-  path isolate_replicons_passing_fp
+  path replicons_passing_fp
 
   output:
   path 'snp_sites.tsv', emit: output
 
   script:
   """
-  aggregate_snp_sites.py --sites_fps ${snp_sites_fps} --isolate_replicons_passing_fp ${isolate_replicons_passing_fp} > snp_sites.tsv
+  aggregate_snp_sites.py --sites_fps ${snp_sites_fps} --replicons_passing_fp ${replicons_passing_fp} > snp_sites.tsv
   """
 }
 

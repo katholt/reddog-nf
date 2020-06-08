@@ -59,11 +59,25 @@ process aggregate_mapping_statistics {
 
   output:
   path '*_mapping_stats.tsv', emit: stats
-  path 'isolate_replicons_passing.tsv', emit: isolate_replicons
 
   script:
   """
   aggregate_mapping_stats.py --rep_stats_fps ${mapping_stats_fps} --output_dir ./ --stddev_mod ${params.outgroup_mod}
-  get_passing_isolate_replicons.awk ${mapping_stats_fps} > isolate_replicons_passing.tsv
+  """
+}
+
+
+process get_passing_replicons {
+  executor 'local'
+
+  input:
+  path stats_fps
+
+  output:
+  path 'passing_isolate_replicons.tsv', emit: output
+
+  script:
+  """
+  get_passing_isolate_replicons.awk ${stats_fps} > passing_isolate_replicons.tsv
   """
 }
