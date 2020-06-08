@@ -216,7 +216,7 @@ workflow {
     // This list is used to filter downstream channels so we don't pointless execute processes
     isolate_replicons_passing = collect_passing_isolate_replicons(isolate_replicon_data.output)
 
-    bams_and_sites = align_data_bams.join(isolate_replicons_passing).combine(sites_data.output)
+    bams_and_sites = ch_bams.join(isolate_replicons_passing).combine(sites_data.output)
     allele_matrix_data = create_allele_matrix(bams_and_sites, reference_data.fasta)
 
     allele_matrices_by_replicon = sort_allele_matrices(allele_matrix_data.output)

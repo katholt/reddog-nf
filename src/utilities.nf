@@ -86,7 +86,7 @@ def check_host(workflow) {
 
 def write_reference_data_to_run_config() {
   script = 'collect_reference_data.py'
-  command = "${workflow.projectDir}/bin/${script} --reference_fp ${params.reference} > ${params.output_dir}/run_config.tsv"
+  command = "${workflow.projectDir}/bin/${script} --reference_fp ${params.reference} > ${params.run_info_dir}/run_config.tsv"
   command_fq = ["/bin/bash",  '-c', command]
   (return_code, stdout, stderr) = execute_command(command_fq)
   if (return_code != 0) {
@@ -96,7 +96,7 @@ def write_reference_data_to_run_config() {
 
 
 def write_param_data_to_run_config() {
-  File run_info_fh = new File("${params.output_dir}/run_config.tsv")
+  File run_info_fh = new File("${params.run_info_dir}/run_config.tsv")
   run_info_fh.append("bt2_max_frag_len\t${params.bt2_max_frag_len}\n")
   run_info_fh.append("bt2_mode\t${params.bt2_mode}\n")
   run_info_fh.append("var_depth_min\t${params.var_depth_min}\n")

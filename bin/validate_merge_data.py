@@ -157,10 +157,10 @@ def compare_run_configs(src_dir, dst_dir):
 
 def collect_run_config_data(src_dir):
     return_code = 0
-    run_config_fp = src_dir / 'run_config.tsv'
+    run_config_fp = src_dir / 'run_info/run_config.tsv'
     if not run_config_fp.exists():
-        print(f'error: run config could not be found at {run_config_fp}', file=sys.stderr)
-        return
+        print(f'error: aborting comparison: run config could not be found at {run_config_fp}', file=sys.stderr)
+        sys.exit(1)
     entries_skip = {
             'reference_name',
             'reference_replicon_names',
@@ -239,7 +239,7 @@ def compare_references(src_dir, dst_dir):
 
 
 def collect_reference_info(data_dir):
-    run_config_fp = data_dir / 'run_config.tsv'
+    run_config_fp = data_dir / 'run_info/run_config.tsv'
     if not run_config_fp.exists():
         print(f'error: run config could not be found at {run_config_fp}', file=sys.stderr)
         return
