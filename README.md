@@ -37,6 +37,10 @@
 
 
 ## TODO
+* Refuse to run if user specifies certain arguments on commandline
+    - specify output current causes issues with run\_info
+    - there could be a work around to correctly set this
+    - otherwise, just check command string for arguments and abort if present
 * Investigate use of async non-nf process code so we can:
     * Validate some input readsets
     * Warn when read quality assessment is requested on merge run but merge has fastqc data
