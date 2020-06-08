@@ -37,6 +37,10 @@
 
 
 ## TODO
+* Automate test data comparison
+    - python script, create objects for each entry in each output file
+    - use objects to compare
+    - try to generalise as far as possible re objects/classes
 * Refuse to run if user specifies certain arguments on commandline
     - specify output current causes issues with run\_info
     - there could be a work around to correctly set this
@@ -76,7 +80,6 @@
     - this is a little messy tbh, hopefuly can do better
 * Need to check indexing here at bin/create\_coverage\_depth\_matrices.py#L62
 * MultiQC/FastQC seems to give wrong phred score for second isolate in read simulation run
-* Automate comparison of test output data
 * Tests specifically for scripts
     - not unit tests, just test against verified inputs-\>outputs
 * Add ingroup/outgroups test isolates to test spec
