@@ -36,7 +36,7 @@ workflow merge {
     symlink_merge_data(merge_source_vcfs, vcf_output_dir)
 
     // Symlink FastQC reports, then add zip output to existing channel
-    if (run_quality_assessment) {
+    if (run_read_quality_report) {
       fastqc_individual_output_dir = file(params.output_dir) / 'fastqc/individual_reports/'
       symlink_merge_data(merge_source_fastqc, fastqc_individual_output_dir)
       ch_fastqc = ch_fastqc.flatten().mix(merge_source_fastqc.filter { it.getName().endsWith('zip') })
