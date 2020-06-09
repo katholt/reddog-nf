@@ -37,10 +37,16 @@
 
 
 ## TODO
-* Automate test data comparison
-    - python script, create objects for each entry in each output file
-    - use objects to compare
-    - try to generalise as far as possible re objects/classes
+* Create slides detailing approach
+* Clean up merge validation python code
+    - it's spaghetti rn
+    - making more procedural and compartmentalizing will help
+* Use proper testing suite
+    - use to create tests for all scripts
+        - including awk scripts
+    - also integrate simulation test
+* For intergenic SNPs in coding consequence output, add affected isolates
+    - update test script to use this data
 * Refuse to run if user specifies certain arguments on commandline
     - specify output current causes issues with run\_info
     - there could be a work around to correctly set this
@@ -50,6 +56,9 @@
     * Warn when read quality assessment is requested on merge run but merge has fastqc data
 * Mapping stats column rename for total\_reads?
     * I think this should read replicon\_total\_reads or equivalent
+    * change average depth to mean depth
+        - thoroughly check all scripts that this affects
+        - most should raise an error. if there are that do not, change so they will in the future
 * Ingroup/outgroup logic is found in two places, should we use a library at this point?
     - implemented once during mapping stats aggregation and again for merge mapping stats tables
 * Read validation as process using a local executor?
