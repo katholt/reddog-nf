@@ -1,24 +1,27 @@
 #!/usr/bin/env python3
 import argparse
 import pathlib
-import statistics
 import sys
+
+
+import utility
 
 
 class Stats:
 
-    fields = {'replicon': str,
-              'isolate': str,
-              'replicon_coverage': float,
-              'replicon_average_depth': float,
-              'replicon_reads_mapped': float,
-              'total_mapped_reads': float,
-              'total_reads': int,
-              'snps': int,
-              'snps_heterozygous': int,
-              'indels': int,
-              'pass_fail': str
-             }
+    fields = {
+        'replicon': str,
+        'isolate': str,
+        'replicon_coverage': float,
+        'replicon_average_depth': float,
+        'replicon_reads_mapped': float,
+        'total_mapped_reads': float,
+        'total_reads': int,
+        'snps': int,
+        'snps_heterozygous': int,
+        'indels': int,
+        'pass_fail': str
+    }
 
     fields_out = [field for field in fields if field != 'replicon'] + ['phylogeny_group']
 
@@ -26,15 +29,8 @@ class Stats:
     def __init__(self, values):
         for value, (attr, attr_type) in zip(values, self.fields.items()):
             setattr(self, attr, attr_type(value))
-        self._ratio = float()
+        self.ratio = float()
         self.phylogeny_group = 'n/a'
-
-
-    @property
-    def ratio(self):
-        if not self._ratio:
-            self._ratio = self.total_reads / self.replicon_coverage / 100
-        return self._ratio
 
 
     def __str__(self):
@@ -77,17 +73,8 @@ def main():
 
     # Calculate ingroup/outgroup for each
     for replicon, stats_all in replicon_stats.items():
-        # Get all passing entries and set to undetermined
-        stats_pass = [stats for stats in stats_all if stats.pass_fail == 'p']
-        for stats in stats_pass:
-            stats.phylogeny_group = 'undetermined'
-        # If we have sufficient entries, calculate ingroup/outgroups
-        if len(stats_pass) > 1:
-            ratio_stddev = statistics.stdev(stats.ratio for stats in stats_pass)
-            ratio_mean = statistics.mean(stats.ratio for stats in stats_pass)
-            ratio_max = ratio_mean + ratio_stddev * args.stddev_mod
-            for stats in stats_pass:
-                stats.phylogeny_group = 'i' if stats.ratio <= ratio_max else 'o'
+        # Assign ingroup/outgroup to each record
+        stats_all = utility.assign_ingroup_outgroup(stats_all, args.stddev_mod)
         # Write to file, order by fail, outgroup, and then ingroup
         output_fp = args.output_dir / f'{replicon}_mapping_stats.tsv'
         with output_fp.open('w') as fh:

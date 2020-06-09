@@ -1,21 +1,39 @@
 #!/usr/bin/env python3
 import argparse
 import pathlib
-import statistics
+
+
+import utility
 
 
 class Record:
 
-    fields = None
+    fields = {
+        'isolate': str,
+        'replicon_coverage': float,
+        'replicon_average_depth': float,
+        'replicon_reads_mapped': float,
+        'total_mapped_reads': float,
+        'total_reads': int,
+        'snps': int,
+        'snps_heterozygous': int,
+        'indels': int,
+        'pass_fail': str,
+        'phylogeny_group': str,
+    }
+
 
     def __init__(self, data):
         assert self.fields
         for attr, value in zip(self.fields, data):
             setattr(self, attr, value)
         self.ratio = float()
+        self.phylogeny_group = 'n/a'
+
 
     def __str__(self):
-        return '\t'.join(getattr(self, attr) for attr in self.fields)
+        token_gen = (getattr(self, attr) for attr in self.fields)
+        return '\t'.join(str(value) for value in token_gen)
 
 
 def get_arguments():
@@ -40,28 +58,9 @@ def main():
 
     # Read data into memory and recalculate ingroup/outgroup
     records = read_data(args.fp_1, args.fp_2)
-    # Ratios for all passing isolates
-    ratios = list()
-    for record in records:
-        if record.pass_fail != 'p':
-            continue
-        record.ratio = int(record.total_reads) / float(record.replicon_coverage) / 100
-        ratios.append(record.ratio)
-    # If we have sufficient entries, calculate ingroup/outgroup threshold
-    if len(ratios) > 1:
-        ratio_stddev = statistics.stdev(ratios)
-        ratio_mean = statistics.mean(ratios)
-        ratio_max = ratio_mean + ratio_stddev * args.stddev_mod
-    # Apply groups
-    for record in records:
-        if not record.ratio:
-            continue
-        if len(ratios) <= 1:
-            record.phylogeny_group = 'undetermined'
-        elif record.ratio <= ratio_max:
-            record.phylogeny_group = 'i'
-        elif record.ratio > ratio_max:
-            record.phylogeny_group = 'o'
+
+    # Assign ingroup or outgroup to records
+    records = utility.assign_ingroup_outgroup(records, args.stddev_mod)
 
     # Sort and print data
     print(*Record.fields, sep='\t')
