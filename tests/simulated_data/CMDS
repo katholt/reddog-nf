@@ -5,6 +5,7 @@
 ./scripts/simulate_reads.py --reference_fp data/reference.gbk --spec_fp data/dataset_specification.tsv --output_dir reads/
 
 # Run nextflow mapping pipeline
+conda-init
 conda activate ../../conda_env/
 ../../reddog.nf --reads 'reads/*fastq' --reference data/reference.gbk --output_dir output/
 
