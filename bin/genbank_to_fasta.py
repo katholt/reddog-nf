@@ -15,7 +15,7 @@ def get_arguments():
             help='Output file fasta file')
     args = parser.parse_args()
     if not args.input_fp.exists():
-        parser.error('Input file {args.input_fp} does not exist')
+        parser.error(f'Input file {args.input_fp} does not exist')
     return args
 
 

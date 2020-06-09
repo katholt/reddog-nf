@@ -19,11 +19,11 @@ def get_arguments():
     args = parser.parse_args()
     for mpileup_fp in args.mpileup_fps:
         if not mpileup_fp.exists():
-            parser.error('Input file {mpileup_fp} does not exist')
+            parser.error(f'Input file {mpileup_fp} does not exist')
     if not args.reference_fp.exists():
-        parser.error('Input file {args.reference_fp} does not exist')
+        parser.error(f'Input file {args.reference_fp} does not exist')
     if not args.output_dir.exists():
-        parser.error('Output directory {args.output_dir} does not exist')
+        parser.error(f'Output directory {args.output_dir} does not exist')
     return args
 
 

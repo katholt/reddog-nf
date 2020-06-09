@@ -53,7 +53,7 @@ def main():
         isolate_names_vcf.add(vcf_fp.stem.replace('_q30', ''))
 
     if isolate_names_bam != isolate_names_vcf:
-        print(f'error: isolate names for BAMs and VCFs differ', file=sys.stderr)
+        print('error: isolate names for BAMs and VCFs differ', file=sys.stderr)
         return_code = 1
 
     # Compare to fastqc if we have any
@@ -64,7 +64,7 @@ def main():
         assert re_result
         isolate_names_fqc.add(re_result.group(1))
     if isolate_names_fqc and isolate_names_fqc != isolate_names_bam:
-        print(f'error: isolate names in FastQC reports and BAMs differ', file=sys.stderr)
+        print('error: isolate names in FastQC reports and BAMs differ', file=sys.stderr)
         return_code = 1
 
     # Check isolate names from gene coverage and depth
@@ -85,10 +85,10 @@ def main():
         with gene_coverage_fp.open('r') as fh:
             isolate_names_coverage = set(fh.readline().rstrip().split('\t')[2:])
     if isolate_names_depth and isolate_names_depth != isolate_names_bam:
-        print(f'error: isolate names in gene depth and BAMs differ', file=sys.stderr)
+        print('error: isolate names in gene depth and BAMs differ', file=sys.stderr)
         return_code = 1
     if isolate_names_coverage and isolate_names_coverage != isolate_names_bam:
-        print(f'error: isolate names in coverage depth and BAMs differ', file=sys.stderr)
+        print('error: isolate names in coverage depth and BAMs differ', file=sys.stderr)
         return_code = 1
 
     # Check isolate names from mapping stats

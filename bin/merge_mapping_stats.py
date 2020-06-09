@@ -28,9 +28,9 @@ def get_arguments():
             help='Modifier for outgroup designation')
     args = parser.parse_args()
     if not args.fp_1.exists():
-        parser.error('Input file {args.fp_1} does not exist')
+        parser.error(f'Input file {args.fp_1} does not exist')
     if not args.fp_1.exists():
-        parser.error('Input file {args.fp_2} does not exist')
+        parser.error(f'Input file {args.fp_2} does not exist')
     return args
 
 
@@ -80,7 +80,7 @@ def main():
         elif record.phylogeny_group == 'i':
             records_ingroup.append(record)
         else:
-            raise ValueError('could not sort entry into an output group:\n{stats}')
+            raise ValueError(f'could not sort entry into an output group:\n{stats}')
     print(*records_failed, *records_undetermined, *records_outgroup, *records_ingroup, sep='\n')
 
 

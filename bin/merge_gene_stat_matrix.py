@@ -11,9 +11,9 @@ def get_arguments():
             help='Second filepath')
     args = parser.parse_args()
     if not args.fp_1.exists():
-        parser.error('Input file {args.fp_1} does not exist')
+        parser.error(f'Input file {args.fp_1} does not exist')
     if not args.fp_1.exists():
-        parser.error('Input file {args.fp_2} does not exist')
+        parser.error(f'Input file {args.fp_2} does not exist')
     return args
 
 

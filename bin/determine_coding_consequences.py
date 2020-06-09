@@ -110,9 +110,9 @@ def get_arguments():
             help='Name of replicon')
     args = parser.parse_args()
     if not args.reference_fp.exists():
-        parser.error('Input file {args.reference_fp} does not exist')
+        parser.error(f'Input file {args.reference_fp} does not exist')
     if not args.allele_fp.exists():
-        parser.error('Input file {args.allele_fp} does not exist')
+        parser.error(f'Input file {args.allele_fp} does not exist')
     return args
 
 
@@ -198,7 +198,7 @@ def main():
                                 'as the gene has a compound location')
                         print(msg, file=sys.stderr)
                         consequence.change_type = 'not assessed'
-                        consequence.notes = 'allele falls within compound location of {locus_tag}'
+                        consequence.notes = f'allele falls within compound location of {locus_tag}'
                         print(consequence)
                     else:
                         # Get consequence

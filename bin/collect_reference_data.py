@@ -14,7 +14,7 @@ def get_arguments():
             help='Reference filepath')
     args = parser.parse_args()
     if not args.reference_fp.exists():
-        parser.error('Input file {args.reference_fp} does not exist')
+        parser.error(f'Input file {args.reference_fp} does not exist')
     return args
 
 

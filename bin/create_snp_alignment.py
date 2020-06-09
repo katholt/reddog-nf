@@ -10,7 +10,7 @@ def get_arguments():
             help='Input allele matrix filepath')
     args = parser.parse_args()
     if not args.allele_fp.exists():
-        parser.error('Input file {args.allele_fp} does not exist')
+        parser.error(f'Input file {args.allele_fp} does not exist')
     return args
 
 

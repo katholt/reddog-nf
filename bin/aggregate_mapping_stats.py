@@ -106,7 +106,7 @@ def main():
                 elif stats.phylogeny_group == 'i':
                     stats_ingroup.append(stats)
                 else:
-                    raise ValueError('could not sort entry into an output group:\n{stats}')
+                    raise ValueError(f'could not sort entry into an output group:\n{stats}')
             print(*Stats.fields_out, sep='\t', file=fh)
             print(*stats_failed, *stats_undetermined, *stats_outgroup, *stats_ingroup, sep='\n', file=fh)
 
