@@ -1,16 +1,8 @@
-DONE
-NOTES
 .idea/
 .nextflow*
 __pycache__/
 conda_env/
-output/
 output*/
-!tests/reddog_run/output/
-tests/3_simulated_reads/reads/
-prev/
+tests/simulated_data/reads/
 reddog/
-testing/
 work/
-script_*
-delete/
