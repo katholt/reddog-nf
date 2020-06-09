@@ -7,3 +7,6 @@
 # Run nextflow mapping pipeline
 conda activate ../../conda_env/
 ../../reddog.nf --reads 'reads/*fastq' --reference data/reference.gbk --output_dir output/
+
+# Test output data
+./scripts/compare_data.py --run_dir output/ --spec_fp data/dataset_specification.tsv --test_data_dir data/run_data/
