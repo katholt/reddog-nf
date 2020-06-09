@@ -2,6 +2,7 @@ DONE
 NOTES
 .idea/
 .nextflow*
+__pycache__/
 conda_env/
 output/
 output*/
