@@ -132,9 +132,6 @@ def read_consequences(filepath):
         line_token_gen = (line.rstrip().split('\t') for line in fh)
         header_tokens = next(line_token_gen)
         for line_tokens in line_token_gen:
-            # We currently have to skip intergenic
-            if line_tokens[3] == 'intergenic':
-                continue
             data = {var: val for var, val in zip(header_tokens, line_tokens)}
             data['position'] = int(data['position'])
             # Must order affected isolates
@@ -188,24 +185,25 @@ def run_spec_data_comparison(spec_isolates, spec_info, data_input):
             # Homozygous SNPs
             for snp_data in variant_data.homs:
                 # Do not compare intergenic or SNPs that are filtered
-                if snp_data['note'] == 'intergenic':
-                    continue
                 if snp_data['note'].endswith('filtered'):
                     continue
                 # Get consequence data
                 position = int(snp_data['position'])
                 cons_data = consequence_data[replicon_id][isolate_data.name][position]
                 # Get mutation data from spec file
-                re_result = mutation_re.match(snp_data['note'])
-                assert re_result
-                mutation = re_result.groupdict()
-                mutation_type = 'non-synonymous' if mutation['ref'] != mutation['alt'] else 'synonymous'
-                # Compare mutation spec data and consequence output data
-                assert cons_data['change_type'] == mutation_type
+                if snp_data['note'] == 'intergenic':
+                    assert cons_data['change_type'] == 'intergenic'
+                else:
+                    re_result = mutation_re.match(snp_data['note'])
+                    assert re_result
+                    mutation = re_result.groupdict()
+                    mutation_type = 'non-synonymous' if mutation['ref'] != mutation['alt'] else 'synonymous'
+                    # Compare mutation spec data and consequence output data
+                    assert cons_data['change_type'] == mutation_type
+                    assert mutation['ref'] == cons_data['ref_aa']
+                    assert mutation['alt'] == cons_data['alt_aa']
+                    assert mutation['pos'] == cons_data['gene_codon_position']
                 assert snp_data['alt'].upper() == cons_data['alt']
-                assert mutation['ref'] == cons_data['ref_aa']
-                assert mutation['alt'] == cons_data['alt_aa']
-                assert mutation['pos'] == cons_data['gene_codon_position']
                 # Compare spec data to allele table output data
                 assert snp_data['alt'].upper() == allele_tables[replicon_id][isolate_data.name][position]
             # Unknown alleles/ missing data ('-')
