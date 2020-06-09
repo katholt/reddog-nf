@@ -24,10 +24,10 @@ file_patterns = {
 
 def get_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--run_dir', required=True, type=pathlib.Path,
-            help='Run directory path')
     parser.add_argument('--spec_fp', required=True, type=pathlib.Path,
             help='Dataset specification filepath')
+    parser.add_argument('--run_dir', required=True, type=pathlib.Path,
+            help='Run directory path')
     parser.add_argument('--test_data_dir', type=pathlib.Path,
             help='Test data directory path')
     args = parser.parse_args()
