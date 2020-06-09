@@ -137,7 +137,9 @@ def read_consequences(filepath):
                 continue
             data = {var: val for var, val in zip(header_tokens, line_tokens)}
             data['position'] = int(data['position'])
-            for isolate in data['isolates'].split(','):
+            # Must order affected isolates
+            data['isolates'] = sorted(data['isolates'].split(','))
+            for isolate in data['isolates']:
                 if isolate not in consequences:
                     consequences[isolate] = dict()
                 assert data['position'] not in consequences[isolate]
