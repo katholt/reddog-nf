@@ -45,8 +45,9 @@
     - use to create tests for all scripts
         - including awk scripts
     - also integrate simulation test
-* For intergenic SNPs in coding consequence output, add affected isolates
-    - update test script to use this data
+* Add code to shared 'library' in bin
+    - ingroup/outgroup logic
+    - some snp filtering logic?
 * Refuse to run if user specifies certain arguments on commandline
     - specify output current causes issues with run\_info
     - there could be a work around to correctly set this
@@ -59,8 +60,6 @@
     * change average depth to mean depth
         - thoroughly check all scripts that this affects
         - most should raise an error. if there are that do not, change so they will in the future
-* Ingroup/outgroup logic is found in two places, should we use a library at this point?
-    - implemented once during mapping stats aggregation and again for merge mapping stats tables
 * Read validation as process using a local executor?
 * Numerical argument checking for python scripts
 * Subsampling approach is too slow when subsampling down to a large number
