@@ -43,11 +43,13 @@
     - making more procedural and compartmentalizing will help
 * Use proper testing suite
     - use to create tests for all scripts
+    - possibly unit tests (see point about a 'library' file)
         - including awk scripts
     - also integrate simulation test
 * Add code to shared 'library' in bin
-    - ingroup/outgroup logic
+    - when could move this to ./lib/?
     - some snp filtering logic?
+    - or we could place code that calculates metrics in here for unit testing
 * Refuse to run if user specifies certain arguments on commandline
     - specify output current causes issues with run\_info
     - there could be a work around to correctly set this
@@ -60,7 +62,8 @@
     * change average depth to mean depth
         - thoroughly check all scripts that this affects
         - most should raise an error. if there are that do not, change so they will in the future
-* Read validation as process using a local executor?
+            - looking at code just now, some classes presume header tokens
+            - for these, add assertion with defined header tokens and those read from file
 * Numerical argument checking for python scripts
 * Subsampling approach is too slow when subsampling down to a large number
     - subsampling to 5 million reads takes ~10 minutes
@@ -88,14 +91,9 @@
     - this is a little messy tbh, hopefuly can do better
 * Need to check indexing here at bin/create\_coverage\_depth\_matrices.py#L62
 * MultiQC/FastQC seems to give wrong phred score for second isolate in read simulation run
-* Tests specifically for scripts
-    - not unit tests, just test against verified inputs-\>outputs
 * Add ingroup/outgroups test isolates to test spec
     - might be tricky as adding more later will have the stddev of the metric
     - nonetheless calculate and add both near pass/fail and clear pass/fail
-* I think read validation fails if format is correct but there are very short reads
-    - probably want to abort if reads are so short mapping is not useful
-    - accidentally gave nf reddog simulated reads with no sequence and it tried to run
 * Model memory usage and wall time ~ readsets file size
     - the is a strongly relationship (but other factors are important)
     - will generally provide very good of run time in read alignment, SNP calling
@@ -105,12 +103,6 @@
 * Scaling job resources on file size may be more appropriate
     - use the `size()` method, returns file size in bytes
 * Add option to send email of nextflow fail (pipeline failure, not task failure)
-* Add position correction for INDELs in dataset simulator
-    - having multiple INDELs or INDELs and other variants simulated in one isolate is not a priority
-    - easiest approach seems to be modifying reads as they appear
-    - modify from highest to lowest position
-    - no need to correct offsets
-    - assuming only single nucleotide INDELs
 * For `get_snp_sites.awk`, check that the input ref and alt allele can be the same (i.e. not use of '.')
 
 
@@ -134,7 +126,6 @@
 
 ## Items to be closely tested
 * Merged outputs
-    - duplicate ingroup/outgroup calling code, must check
 * Ingroup/output calling, large dataset with many unknown SNPs
     - ratio calculation and equality comparison
 * Output of gene\_coverage\_depth process
