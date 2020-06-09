@@ -62,44 +62,6 @@ class AlleleRecord:
         self.feature_intervals = list()
 
 
-class Consequence:
-
-    # Mapping ordered header fields to class attributes
-    # header name -> attribute
-    fields = {
-            'position': 'position',
-            'ref': 'reference',
-            'alt': 'allele',
-            'change_type': 'change_type',
-            'gene': 'gene_id',
-            'ref_codon': 'sequence',
-            'alt_codon': 'sequence_allele',
-            'ref_aa': 'codon',
-            'alt_aa': 'codon_allele',
-            'gene_product': 'gene_product',
-            'gene_nucleotide_position': 'gene_nucleotide_position',
-            'gene_codon_position': 'gene_codon_position',
-            'codon_nucleotide_position': 'codon_nucleotide_position',
-            'isolates': 'isolate_str',
-            'notes': 'notes',
-            }
-
-    def __init__(self):
-        for field in self.fields.values():
-            setattr(self, field, str())
-
-    def __str__(self):
-        data_gen = (getattr(self, field) for field in self.fields.values())
-        return '\t'.join(str(d) for d in data_gen)
-
-    @classmethod
-    def from_allele_record(cls, record):
-        consequence = Consequence()
-        consequence.position = record.position
-        consequence.reference = record.reference
-        return consequence
-
-
 def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--reference_fp', required=True, type=pathlib.Path,
@@ -139,7 +101,12 @@ def main():
     interval_tree = create_interval_tree(intervals)
 
     # Determine consequences
-    print(*Consequence.fields, sep='\t')
+    header_tokens = (
+        'position', 'ref', 'alt', 'change_type', 'gene', 'ref_codon', 'alt_codon', 'ref_aa', 'alt_aa',
+        'gene_product', 'gene_nucleotide_position', 'gene_codon_position', 'codon_nucleotide_position',
+        'isolates', 'notes'
+    )
+    print(*header_tokens, sep='\t')
     with args.allele_fp.open('r') as fh:
         line_token_gen = (line.rstrip().split('\t') for line in fh)
         header_tokens = next(line_token_gen)
@@ -152,11 +119,11 @@ def main():
             # Process intergenic
             if not record.feature_intervals:
                 for allele, allele_isolates in isolates_by_allele(record).items():
-                    # Create new consequence object to hold output data for nicer printing imo
-                    consequence = Consequence.from_allele_record(record)
-                    consequence.allele = allele
-                    consequence.change_type = 'intergenic'
-                    print(consequence)
+                    print(
+                        record.position, record.reference, allele, 'intergenic',
+                        '-', '-', '-', '-', '-', '-', '-', '-', '-',
+                        ','.join(allele_isolates), '-', sep='\t'
+                    )
                 continue
             # Process genic
             for interval in record.feature_intervals:
@@ -180,47 +147,37 @@ def main():
                 codon = codon_sequence.translate()
                 # Get consequences for each allele
                 for allele, allele_isolates in isolates_by_allele(record).items():
-                    # Create new consequence object to hold output data for nicer printing imo
-                    # Doubles to makes intergenic block much cleaner
-                    consequence = Consequence.from_allele_record(record)
-                    consequence.allele = allele
-
-                    # Must complement allele if on reverse strand
-                    # The ref and alt alleles relative to coding strand
-                    # Both codon and amino acid details are reported on the appropriate strand
-                    if strand == -1:
-                        allele = allele.translate(nucleotide_complement)
-
                     # Skip alleles that fall within compound locations
                     if isinstance(interval.feature.location, Bio.SeqFeature.CompoundLocation):
                         [locus_tag] = interval.feature.qualifiers['locus_tag']
                         msg = (f'warning: skipping position {record.position} in gene {locus_tag} '
                                 'as the gene has a compound location')
                         print(msg, file=sys.stderr)
-                        consequence.change_type = 'not assessed'
-                        consequence.notes = f'allele falls within compound location of {locus_tag}'
-                        print(consequence)
+                        print(
+                            record.position, record.reference, allele, 'not assessed',
+                            '-', '-', '-', '-', '-', '-', '-', '-', '-',
+                            ','.join(allele_isolates), f'allele falls within compound location of {locus_tag}',
+                            sep='\t'
+                        )
                     else:
+                        # Must complement allele if on reverse strand
+                        # The ref and alt alleles relative to coding strand
+                        # Both codon and amino acid details are reported on the appropriate strand
                         # Get consequence
-                        sequence_allele, codon_allele = get_consequence(codon_sequence, allele, position_codon)
-                        consequence.codon = codon
-                        consequence.codon_allele = codon_allele
-                        consequence.sequence = codon_sequence
-                        consequence.sequence_allele = sequence_allele
-                        consequence.gene_nucleotide_position = position_gene
-                        consequence.gene_codon_position = codon_number
-                        consequence.codon_nucleotide_position = position_codon
+                        allele_cns = allele if strand == 1 else allele.translate(nucleotide_complement)
+                        sequence_allele, codon_allele = get_consequence(codon_sequence, allele_cns, position_codon)
                         if codon == codon_allele:
-                            consequence.change_type = 'synonymous'
+                            change_type = 'synonymous'
                         elif codon in ambiguous_amino_acids or codon_allele in ambiguous_amino_acids:
-                            consequence.change_type = 'ambiguous'
+                            change_type = 'ambiguous'
                         else:
-                            consequence.change_type = 'non-synonymous'
-                        consequence.isolate_str = ','.join(allele_isolates)
-                        [consequence.gene_id] = interval.feature.qualifiers['locus_tag']
-                        [consequence.gene_product] = interval.feature.qualifiers['product']
-                        # Print data
-                        print(consequence)
+                            change_type = 'non-synonymous'
+                        print(
+                            record.position, record.reference, allele, change_type,
+                            interval.feature.qualifiers['locus_tag'][0], codon_sequence, sequence_allele, codon,
+                            codon_allele, interval.feature.qualifiers['product'][0], position_gene, codon_number,
+                            position_codon, ','.join(allele_isolates), '-', sep='\t'
+                        )
 
 
 def isolates_by_allele(record):
