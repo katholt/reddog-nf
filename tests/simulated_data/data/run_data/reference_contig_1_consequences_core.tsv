@@ -1,0 +1,25 @@
+position	ref	alt	change_type	gene	ref_codon	alt_codon	ref_aa	alt_aa	gene_product	gene_nucleotide_position	gene_codon_position	codon_nucleotide_position	isolates	notes
+1158	G	A	non-synonymous	sul1	GGG	AGG	G	R	not_implemented	4	2	1	isolate_1,isolate_2	
+1644	A	G	non-synonymous	sul1	ACC	GCC	T	A	not_implemented	490	164	1	isolate_1	
+2081	G	T	non-synonymous	sul1	TAG	TAT	*	Y	not_implemented	927	309	3	isolate_1	
+2086	T	A	intergenic											
+2092	A	T	non-synonymous	secA	ATG	TTG	M	L	not_implemented	1	1	1	isolate_1	
+4807	G	A	intergenic											
+4818	T	C	non-synonymous	secD	ATT	ACT	I	T	not_implemented	11	4	2	isolate_1	
+4820	T	G	non-synonymous	secD	TCG	GCG	S	A	not_implemented	13	5	1	isolate_18	
+6268	G	A	synonymous	secD	AAG	AAA	K	K	not_implemented	1461	487	3	isolate_1	
+6473	A	C	intergenic											
+6484	T	A	non-synonymous	mukB	ATG	AAG	M	K	not_implemented	2	1	2	isolate_1	
+6485	G	C	non-synonymous	mukB	ATG	ATC	M	I	not_implemented	3	1	3	isolate_1	
+6506	C	A	synonymous	mukB	CGC	CGA	R	R	not_implemented	24	8	3	isolate_1	
+6525	T	A	non-synonymous	mukB	TGG	AGG	W	R	not_implemented	43	15	1	isolate_1	
+6525	T	G	non-synonymous	mukB	TGG	GGG	W	G	not_implemented	43	15	1	isolate_2	
+8001	G	C	non-synonymous	mukB	GAT	CAT	D	H	not_implemented	1519	507	1	isolate_18,isolate_23,isolate_37,isolate_20,isolate_22,isolate_32,isolate_30,isolate_25,isolate_29,isolate_28,isolate_33,isolate_19,isolate_21,isolate_27,isolate_24,isolate_26,isolate_36,isolate_35,isolate_34,isolate_31	
+10954	T	G	non-synonymous	plsB	TAA	TAC	*	Y	not_implemented	2424	808	3	isolate_2	
+10955	T	G	non-synonymous	plsB	TAA	TCA	*	S	not_implemented	2423	808	2	isolate_1	
+12053	G	C	non-synonymous	plsB	GCC	GGC	A	G	not_implemented	1325	442	2	isolate_1	
+13373	G	A	non-synonymous	plsB	TCC	TTC	S	F	not_implemented	5	2	2	isolate_1	
+13377	T	G	non-synonymous	plsB	ATG	CTG	M	L	not_implemented	1	1	1	isolate_1	
+13377	T	C	non-synonymous	plsB	ATG	GTG	M	V	not_implemented	1	1	1	isolate_2	
+13392	A	G	non-synonymous	dmsA	CTG	CCG	L	P	not_implemented	2435	812	2	isolate_1	
+14636	G	T	synonymous	dmsA	CGC	CGA	R	R	not_implemented	1191	397	3	isolate_1	
