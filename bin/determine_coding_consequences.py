@@ -82,10 +82,8 @@ def main():
     # Get command line arguments
     args = get_arguments()
 
-    # Read in reference
+    # Read in replicon from reference
     ref_gbk = {record.id: record for record in Bio.SeqIO.parse(args.reference_fp, 'genbank')}
-
-    # Process for replicon
     if args.replicon not in ref_gbk:
         print(f'error: could not find {args.replicon} in {args.reference_fp}', file=sys.stderr)
         sys.exit(1)
@@ -216,7 +214,7 @@ def add_intervals(node, intervals):
     intervals_left = list()
     intervals_right = list()
     for interval in intervals:
-        if interval.end <= node.center_start:
+        if interval.end < node.center_start:
             intervals_left.append(interval)
         elif interval.start > node.center_start:
             intervals_right.append(interval)

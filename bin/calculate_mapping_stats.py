@@ -24,7 +24,7 @@ def get_arguments():
     parser.add_argument('--coverage_depth_fp', required=True, type=pathlib.Path,
             help='Coverage depth metrics filepath', action=CheckInput)
     parser.add_argument('--bam_unmapped_fp', required=True, type=pathlib.Path,
-            help='unmapped reads BAM filepath', action=CheckInput)
+            help='Unmapped reads BAM filepath', action=CheckInput)
 
     parser.add_argument('--min_depth', type=float, default=10,
             help='Minimum depth to pass')

@@ -103,6 +103,9 @@ reads_se = reads_se.map {
 }
 
 
+// TODO: check we have correct number of reads in output
+
+
 // Create file object for reference and check it exists
 reference_fp = file(params.reference)
 if (! reference_fp.exists()) {
@@ -115,6 +118,7 @@ write_reference_data_to_run_config()
 write_param_data_to_run_config()
 
 
+// Prepare for a merge run if requested
 if (run_merge) {
   // Validate data to be merged
   if (params.previous_run_dir.isEmpty()) {
@@ -182,7 +186,7 @@ workflow {
 
     // Merge previous run data if requested
     if (run_merge) {
-      // NOTE: reference_fp.simpleName is used over reference_data.name we need it immediately in some functions
+      // NOTE: reference_fp.simpleName is used over reference_data.name as we need it immediately in some functions
       merge_data = merge(
         merge_source_bams,
         merge_source_vcfs,
