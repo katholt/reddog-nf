@@ -49,6 +49,7 @@
 * Add code to shared 'library' in bin
     - when could move this to ./lib/?
     - some snp filtering logic?
+    - subprocess command execution
     - or we could place code that calculates metrics in here for unit testing
 * Refuse to run if user specifies certain arguments on commandline
     - specify output current causes issues with run\_info
@@ -65,12 +66,6 @@
             - looking at code just now, some classes presume header tokens
             - for these, add assertion with defined header tokens and those read from file
 * Numerical argument checking for python scripts
-* Subsampling approach is too slow when subsampling down to a large number
-    - subsampling to 5 million reads takes ~10 minutes
-    - likely a result of hash collisons during set operations
-    - different approach could be to use a probability function at each read iteration
-        - output read counts will not be exact but will scale much better
-        - may or may not be quicker at lower numbers
 * Set output files to be copied or moved rather than symlinked
     - move is preferable, particularly for large runs producing many BAMs
     - could do this through nextflow publishDir interface
