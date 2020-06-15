@@ -1,29 +1,30 @@
-// Subsample reads
+// Subsample se reads
 process subsample_reads_se {
   input:
   tuple isolate_id, path(reads_fp)
 
   output:
-  tuple isolate_id, path('*subsampled*'), emit: output
+  tuple isolate_id, path('*subsampled.fastq.gz'), emit: output
 
   script:
   """
-  subsample_reads.py --single_fp ${reads_fp} --subsample_reads ${params.subsample_read_count} --output ./
+  seqtk sample -s0 ${reads_fp} ${params.subsample_read_count} | gzip > ${isolate_id}_subsampled.fastq.gz
   """
 }
 
 
-// Subsample reads
+// Subsample pe reads
 process subsample_reads_pe {
   input:
   tuple isolate_id, path(reads_fwd), path(reads_rev)
 
   output:
-  tuple isolate_id, path('*1_subsampled*'), path('*2_subsampled*'), emit: output
+  tuple isolate_id, path('*_subsampled_1.fastq.gz'), path('*_subsampled_2.fastq.gz'), emit: output
 
   script:
   """
-  subsample_reads.py --forward_fp ${reads_fwd} --reverse_fp ${reads_rev} --subsample_reads ${params.subsample_read_count} --output ./
+  seqtk sample -s0 ${reads_fwd} ${params.subsample_read_count} | gzip > ${isolate_id}_subsampled_1.fastq.gz
+  seqtk sample -s0 ${reads_rev} ${params.subsample_read_count} | gzip > ${isolate_id}_subsampled_2.fastq.gz
   """
 }
 
