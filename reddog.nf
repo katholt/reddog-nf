@@ -25,7 +25,7 @@ include filter_allele_matrix from './src/processes/allele_matrix.nf'
 include prepare_reference from './src/processes/misc.nf'
 include subsample_reads_se from './src/processes/misc.nf'
 include subsample_reads_pe from './src/processes/misc.nf'
-include create_read_quality_reports from './src/processes/misc.nf'
+include create_read_quality_report from './src/processes/misc.nf'
 include create_mpileups from './src/processes/misc.nf'
 include aggregate_snp_sites from './src/processes/misc.nf'
 include aggregate_read_quality_reports from './src/processes/misc.nf'
@@ -61,7 +61,7 @@ check_host(workflow)
 
 
 // Require some variables to be boolean
-// We must check and change values if needed. The global param variables are immutable so instead we declare new ones
+// We must check and change values if needed
 run_read_subsample = check_boolean_option(params.subsample_reads, 'subsample_reads')
 run_read_quality_report = check_boolean_option(params.read_quality_report, 'read_quality_report')
 run_phylogeny = check_boolean_option(params.force_tree, 'force_tree')
@@ -156,7 +156,7 @@ workflow {
     if (run_read_quality_report) {
       // Create flat channel containing only readset filepaths
       reads_all_fps = reads_pe.map { it[1..-1] }.mix(reads_se.map { it[1..-1] }).flatten()
-      ch_fastqc = create_read_quality_reports(reads_all_fps).output
+      ch_fastqc = create_read_quality_report(reads_all_fps).output
     }
 
     align_data_se = align_reads_se(reads_se, reference_data.fasta, reference_data.bt2_index)

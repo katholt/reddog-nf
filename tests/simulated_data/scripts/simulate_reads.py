@@ -25,11 +25,11 @@ def get_arguments():
             help='Output directory')
     args = parser.parse_args()
     if not args.reference_fp.exists():
-        parser.error('Input file {args.reference_fp} does not exist')
+        parser.error(f'Input file {args.reference_fp} does not exist')
     if not args.spec_fp.exists():
-        parser.error('Input file {args.spec_fp} does not exist')
+        parser.error(f'Input file {args.spec_fp} does not exist')
     if not args.output_dir.exists():
-        parser.error('Input file {args.output_dir} does not exist')
+        parser.error(f'Input file {args.output_dir} does not exist')
     return args
 
 

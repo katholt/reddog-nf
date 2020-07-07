@@ -1,4 +1,5 @@
 # Create reference
+mkdir -p reads/
 ./scripts/generate_reference.py > data/reference.gbk
 
 # Simulate datasets with known mutations
