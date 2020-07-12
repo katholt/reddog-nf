@@ -131,14 +131,14 @@ def validate_merge_data(merge_ignore_errors) {
 //       more than once of those channels, creating a race condition while checking if the file
 //       exists. I can't see how this is avoidable right now, so I just catch the exception and
 //       continue with execution.
-def symlink_merge_data(ch, target_dir) {
+def copy_merge_data(ch, target_dir) {
   if (! target_dir.exists()) {
     target_dir.mkdirs()
   }
   ch.map { filepath_src ->
     filepath_dst = target_dir / filepath_src.getName()
     try {
-      java.nio.file.Files.createSymbolicLink(filepath_dst, filepath_src)
+      java.nio.file.Files.copy(filepath_src, filepath_dst, java.nio.file.StandardCopyOption.REPLACE_EXISTING)
     } catch (java.nio.file.FileAlreadyExistsException ex) {
       // Ignore file exists exceptions
     }
