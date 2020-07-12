@@ -1,6 +1,6 @@
 // Get gene coverage and mean depth
 process calculate_gene_coverage_depth {
-  publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }
+  publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }, mode: 'copy'
 
   input:
   path mpileup_fps
@@ -51,7 +51,7 @@ process calculate_mapping_statistics {
 //   - get a list of replicons that have any passing isolate
 //     - determined by having pass status and more than one SNP
 process aggregate_mapping_statistics {
-  publishDir "${params.output_dir}", pattern: '*_mapping_stats.tsv', saveAs: { filename -> "${reference_name}_${filename}" }
+  publishDir "${params.output_dir}", pattern: '*_mapping_stats.tsv', saveAs: { filename -> "${reference_name}_${filename}" }, mode: 'copy'
 
   input:
   path(mapping_stats_fps)

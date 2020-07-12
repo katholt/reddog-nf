@@ -13,7 +13,7 @@ process index_bam {
 }
 
 process gene_depth {
-  publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }
+  publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }, mode: 'copy'
 
   input:
   path file1, stageAs: 'file_1.tsv'
@@ -31,7 +31,7 @@ process gene_depth {
 
 
 process gene_coverage {
-  publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }
+  publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }, mode: 'copy'
 
   input:
   path file1, stageAs: 'file_1.tsv'
@@ -51,7 +51,7 @@ process gene_coverage {
 process mapping_stats {
   executor 'local'
 
-  publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${replicon_id}_mapping_stats.tsv" }
+  publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${replicon_id}_mapping_stats.tsv" }, mode: 'copy'
 
   input:
   tuple replicon_id, path(files)

@@ -66,12 +66,6 @@
             - looking at code just now, some classes presume header tokens
             - for these, add assertion with defined header tokens and those read from file
 * Numerical argument checking for python scripts
-* Set output files to be copied or moved rather than symlinked
-    - move is preferable, particularly for large runs producing many BAMs
-    - could do this through nextflow publishDir interface
-        - if moving files this will cause problems unless they're not used downstream
-    - or through a final stage to run some BASH to move files
-        - for file in $(find . -type l); do mv $(readlink ${file}) ${file}; done
 * Coding consequences for hets
     - create matrix of hets in the same way we do for homs
     - this should be done conditionally

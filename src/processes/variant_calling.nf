@@ -11,7 +11,7 @@
 //     - homozygous if allele frequency of 1 or a genotype different to reference, else heterozygous if not an INDEL
 //   - get high quality SNP sites
 process call_snps {
-  publishDir "${params.output_dir}/vcfs/", pattern: '*.vcf'
+  publishDir "${params.output_dir}/vcfs/", pattern: '*.vcf', mode: 'copy'
 
   input:
   tuple isolate_id, path(bam_fp), path(bam_index_fp), path(mpileup_fp)

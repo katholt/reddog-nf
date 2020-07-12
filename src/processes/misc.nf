@@ -31,7 +31,7 @@ process subsample_reads_pe {
 
 // Run read quality assessment
 process create_read_quality_report {
-  publishDir "${params.output_dir}/fastqc/individual_reports/"
+  publishDir "${params.output_dir}/fastqc/individual_reports/", mode: 'copy'
 
   input:
   path reads_fp
@@ -49,7 +49,7 @@ process create_read_quality_report {
 
 // Aggregate reports with multiqc
 process aggregate_read_quality_reports {
-  publishDir "${params.output_dir}/fastqc/"
+  publishDir "${params.output_dir}/fastqc/", mode: 'copy'
 
   input:
   path fastqc_report_fps
@@ -136,7 +136,7 @@ process aggregate_snp_sites {
 
 // Create SNP alignment
 process create_snp_alignment {
-  publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }
+  publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }, mode: 'copy'
 
   input:
   tuple replicon_id, path(allele_matrix_fp)
@@ -157,7 +157,7 @@ process create_snp_alignment {
 //   - for each site find genes that it falls within
 //   - infer codon change and amino acid change
 process determine_coding_consequences {
-  publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }
+  publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }, mode: 'copy'
 
   input:
   tuple replicon_id, path(allele_matrix_fp)
@@ -176,7 +176,7 @@ process determine_coding_consequences {
 
 // Infer phylogeny
 process infer_phylogeny {
-  publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }
+  publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }, mode: 'copy'
 
   input:
   tuple replicon_id, path(alignment_fp)

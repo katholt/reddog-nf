@@ -25,7 +25,7 @@ process create_allele_matrix {
 //   - group matrices by replicon id
 //   - merge into single allele matrix
 process aggregate_allele_matrices {
-  publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }
+  publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }, mode: 'copy'
 
   input:
   tuple replicon_id, path(allele_fps)
@@ -48,7 +48,7 @@ process aggregate_allele_matrices {
 //   - remove site if more than n% of alleles are unknown (indicated by '-')
 //     - n% value specified by user in config
 process filter_allele_matrix {
-  publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }
+  publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }, mode: 'copy'
 
   input:
   tuple replicon_id, path(allele_fp)
