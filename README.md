@@ -37,16 +37,9 @@
 
 
 ## TODO
-* Use proper testing suite
-    - use to create tests for all scripts
-    - possibly unit tests (see point about a 'library' file)
-        - including awk scripts
-    - also integrate simulation test
-* Add code to shared 'library' in bin
-    - when could move this to ./lib/?
-    - some snp filtering logic?
-    - subprocess command execution
-    - or we could place code that calculates metrics in here for unit testing
+* Complete unittests
+    - add many more tests for other code
+    - integrate simulation test
 * Investigate use of async non-nf process code so we can:
     * Validate some input readsets
     * Warn when read quality assessment is requested on merge run but merge has fastqc data
