@@ -73,6 +73,18 @@ def check_output_dir(params) {
 }
 
 
+def check_disallowed_arguments(workflow) {
+  // Certain options cause issues when specified on the commandline. Prevent user to setting them this way.
+  disallowed_args = ['--reads', '--output_dir', '--run_info_dir', '--previous_run_dir']
+  commandline_args = workflow.commandLine.tokenize(' ')
+  bad_args = []
+  disallowed_args.each { if (commandline_args.contains(it)) { bad_args.add(it) } }
+  if (bad_args.size() > 0) {
+    exit 1, 'ERROR: disallowed argument(s) ' + bad_args.join(', ') + ' were specified on the command line.'
+  }
+}
+
+
 def check_host(workflow) {
   // Do not run on MASSIVE unless user specifies profile to use to avoid inadvertently using a local executor
   massive_hostnames = ['m3-login1', 'm3-login2']

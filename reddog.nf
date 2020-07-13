@@ -43,6 +43,7 @@ include remove_empty_allele_matrices from './src/channel_helpers.nf'
 include print_splash from './src/utilities.nf'
 include check_arguments from './src/utilities.nf'
 include check_output_dir from './src/utilities.nf'
+include check_disallowed_arguments from './src/utilities.nf'
 include check_host from './src/utilities.nf'
 include check_boolean_option from './src/utilities.nf'
 include write_reference_data_to_run_config from './src/utilities.nf'
@@ -55,6 +56,7 @@ include merge from './src/merge_workflow.nf'
 
 // Check configuration
 print_splash()
+check_disallowed_arguments(workflow)
 check_arguments(params)
 check_output_dir(params)
 check_host(workflow)
