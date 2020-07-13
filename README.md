@@ -43,6 +43,10 @@
 * Investigate use of async non-nf process code so we can:
     * Validate some input readsets
     * Warn when read quality assessment is requested on merge run but merge has fastqc data
+* Currently copying merge data outside of nextflow execution
+    - for very large datasets, the script may appear to hang during this operation
+    - we could notify user of the operation w progress?
+    - or perhaps create a process just to perform the copy w the 'local' executor
 * Mapping stats column rename for total\_reads?
     * I think this should read replicon\_total\_reads or equivalent
     * change average depth to mean depth
