@@ -1,4 +1,6 @@
+import subprocess
 import statistics
+import sys
 
 
 def assign_ingroup_outgroup(records, stddev_mod):
@@ -25,3 +27,13 @@ def assign_ingroup_outgroup(records, stddev_mod):
         elif record.ratio > ratio_max:
             record.phylogeny_group = 'o'
     return records
+
+
+def execute_command(command):
+    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, encoding='utf-8')
+    if result.returncode != 0:
+        print('Failed to run command:', result.args, file=sys.stderr)
+        print('stdout:', result.stdout, file=sys.stderr)
+        print('stderr:', result.stderr, file=sys.stderr)
+        sys.exit(1)
+    return result

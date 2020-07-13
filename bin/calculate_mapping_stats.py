@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import argparse
 import pathlib
-import subprocess
 import sys
+
+
+import utility
 
 
 class CheckInput(argparse.Action):
@@ -40,7 +42,7 @@ def main():
     args = get_arguments()
 
     # Get unmapped total reads
-    total_unmapped = unmapped_read_count(args.bam_unmapped_fp)
+    total_unmapped = get_unmapped_read_count(args.bam_unmapped_fp)
 
     # Get coverage and depth, and mapped read counts
     print('Calculating coverage and average depth', file=sys.stderr)
@@ -113,10 +115,10 @@ def main():
         print(replicon, *stats.values(), sep='\t')
 
 
-def unmapped_read_count(bam_fp):
+def get_unmapped_read_count(bam_fp):
     # Execute command
     command = f'samtools view {bam_fp} | wc -l'
-    result = execute_command(command)
+    result = utility.execute_command(command)
     return int(result.stdout.rstrip())
 
 
@@ -144,7 +146,7 @@ def get_depth_coverage_and_sizes(coverage_depth_fp):
 def get_read_counts(bam_fp):
     # Execute command
     command = f'samtools view {bam_fp} | get_reads_mapped.awk'
-    result = execute_command(command)
+    result = utility.execute_command(command)
     # Parse output
     line_token_gen = (line.rstrip().split('\t') for line in result.stdout.split('\n') if line)
     mapped_replicons = dict()
@@ -165,7 +167,7 @@ def get_read_counts(bam_fp):
 def get_snp_indel_counts(vcf_q30_fp):
     # Execute command
     command = f'get_snp_indels.awk {vcf_q30_fp}'
-    result = execute_command(command)
+    result = utility.execute_command(command)
     # Parse results
     line_token_gen = (line.rstrip().split('\t') for line in result.stdout.split('\n') if line)
     replicon_snps = dict()
@@ -187,20 +189,10 @@ def get_snp_indel_counts(vcf_q30_fp):
 def get_het_counts(vcf_hets_fp):
     # Execute command
     command = f'get_het_counts.awk {vcf_hets_fp}'
-    result = execute_command(command)
+    result = utility.execute_command(command)
     line_token_gen = (line.rstrip().split('\t') for line in result.stdout.split('\n') if line)
     replicon_hets = {rep: int(hets) for rep, hets in line_token_gen}
     return replicon_hets
-
-
-def execute_command(command):
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, encoding='utf-8')
-    if result.returncode != 0:
-        print('Failed to run command:', result.args, file=sys.stderr)
-        print('stdout:', result.stdout, file=sys.stderr)
-        print('stderr:', result.stderr, file=sys.stderr)
-        sys.exit(1)
-    return result
 
 
 if __name__ == '__main__':
