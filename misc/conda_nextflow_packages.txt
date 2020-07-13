@@ -7,5 +7,6 @@ fastqc=0.11.9
 fasttree=2.1.10
 multiqc=1.7
 nextflow=20.04.1
+openjdk=8.0.192
 samtools=1.9
 seqtk=1.3
