@@ -37,10 +37,6 @@
 
 
 ## TODO
-* Create slides detailing approach
-* Clean up merge validation python code
-    - it's spaghetti rn
-    - making more procedural and compartmentalizing will help
 * Use proper testing suite
     - use to create tests for all scripts
     - possibly unit tests (see point about a 'library' file)
@@ -51,10 +47,6 @@
     - some snp filtering logic?
     - subprocess command execution
     - or we could place code that calculates metrics in here for unit testing
-* Refuse to run if user specifies certain arguments on commandline
-    - specify output current causes issues with run\_info
-    - there could be a work around to correctly set this
-    - otherwise, just check command string for arguments and abort if present
 * Investigate use of async non-nf process code so we can:
     * Validate some input readsets
     * Warn when read quality assessment is requested on merge run but merge has fastqc data
@@ -76,23 +68,13 @@
         - reads het and q30 vcfs
         - plot %mapped to alt, coloured by hets or homs
 * Investigate scope access of processes for purpose of variable passing
+    - I would also like to use variables or value channels set within workflows in process closures
+        - e.g. for process resources: time = { (isolates_passing.val * 0.5).MB * task.attempt }
+        - this was possible in DSL1 but I'm yet to find an equivalent in DSL2
     - rn we're passing reference name by argument very often
     - this is a little messy tbh, hopefuly can do better
 * Need to check indexing here at bin/create\_coverage\_depth\_matrices.py#L62
 * MultiQC/FastQC seems to give wrong phred score for second isolate in read simulation run
-* Add ingroup/outgroups test isolates to test spec
-    - might be tricky as adding more later will have the stddev of the metric
-    - nonetheless calculate and add both near pass/fail and clear pass/fail
-* Model memory usage and wall time ~ readsets file size
-    - the is a strongly relationship (but other factors are important)
-    - will generally provide very good of run time in read alignment, SNP calling
-    - use data from the nextflow run reports - very easy to extract
-    - also look at resource usage for jobs that aggregate
-        - model on Q30 SNPs, passing isolates, replicon size, etc
-* Scaling job resources on file size may be more appropriate
-    - use the `size()` method, returns file size in bytes
-* Add option to send email of nextflow fail (pipeline failure, not task failure)
-* For `get_snp_sites.awk`, check that the input ref and alt allele can be the same (i.e. not use of '.')
 
 
 ## Queries
@@ -114,8 +96,5 @@
 
 
 ## Items to be closely tested
-* Merged outputs
-* Ingroup/output calling, large dataset with many unknown SNPs
-    - ratio calculation and equality comparison
 * Output of gene\_coverage\_depth process
 * SNP alignment and phylogeny
