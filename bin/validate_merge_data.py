@@ -103,7 +103,7 @@ def main():
     missing_stats = allele_names.difference(stat_names)
     missing_allele = stat_names.difference(allele_names)
     if missing_stats:
-        missing_stats_str = ','.join(missing_stats)
+        missing_stats_str = ', '.join(missing_stats)
         status['messages'].append(f'error: missing mapping stats files for {missing_stats_str}')
         status['return_code'] = 1
     if missing_allele:
@@ -117,7 +117,7 @@ def main():
     for name in rep_names:
         missing_isolates = isolate_names_allele[name].difference(isolate_names_stats['pass'][name])
         if missing_isolates:
-            missing_isolates_str = ','.join(missing_isolates)
+            missing_isolates_str = ', '.join(missing_isolates)
             status['messages'].append(f'error: missing isolates {missing_isolates_str} in mapping stats for {name}')
             status['return_code'] = 1
 
@@ -125,7 +125,7 @@ def main():
     isolate_names_new = get_isolate_names_from_reads(args.read_globs)
     isolate_names_collisions = isolate_names_new & isolate_names_bam
     if isolate_names_collisions:
-        names_str = ','.join(isolate_names_collisions)
+        names_str = ', '.join(isolate_names_collisions)
         status['messages'].append(f'error: detected isolate name collision for {names_str}')
         status['return_code'] = 1
 
@@ -185,7 +185,7 @@ def collect_run_config_data(src_dir, status):
                 status['return_code'] = 1
     entries_missing = set(run_config) ^ entries_retain
     if entries_missing:
-        entries_missing_str = ','.join(entries_missing)
+        entries_missing_str = ', '.join(entries_missing)
         status['messages'].append(f'error: {run_config_fp} has missing entries: {entries_missing_str}')
         status['return_code'] = 1
     return run_config
@@ -205,8 +205,8 @@ def compare_references(src_dir, dst_dir, status):
     new_names = set(new_data['names'])
     merge_names = set(merge_data['names'])
     if new_names != merge_names:
-        new_missing = ','.join(merge_names.difference(new_names))
-        merge_missing = ','.join(new_names.difference(merge_names))
+        new_missing = ', '.join(merge_names.difference(new_names))
+        merge_missing = ', '.join(new_names.difference(merge_names))
         if new_missing:
             status['messages'].append(f'error: missing contigs in new reference {new_missing}')
         if merge_missing:
