@@ -29,7 +29,7 @@ def get_arguments():
     if not args.spec_fp.exists():
         parser.error(f'Input file {args.spec_fp} does not exist')
     if not args.output_dir.exists():
-        parser.error(f'Input file {args.output_dir} does not exist')
+        parser.error(f'Output directory {args.output_dir} does not exist')
     return args
 
 
