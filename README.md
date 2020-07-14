@@ -1,5 +1,51 @@
 # reddog-nf
 
+## Quickstart
+```bash
+# Clone the reddog-nf repository
+git clone https://github.com/scwatts/reddog-nf.git && cd reddog-nf
+
+# Install dependencies and activate conda environment
+dependencies='''bcftools=1.9
+                biopython=1.76
+                bowtie2=2.4.1
+                bwa=0.7.17
+                ea-utils=1.1.2.779
+                fastqc=0.11.9
+                fasttree=2.1.10
+                multiqc=1.7
+                nextflow=20.04.1
+                openjdk=8.0.192
+                samtools=1.9
+                seqtk=1.3'''
+conda create -p $(pwd -P)/conda_env --yes ${dependencies}
+conda activate $(pwd -P)/conda_env
+
+# Configure
+vim nextflow.config
+
+# Run
+./reddog.nf
+```
+
+## Running tests
+First clone repo, install dependencies, and activate environment as shown in [Quickstart](#quickstart)
+```bash
+# Unit tests and functional tests
+python3 -m unittest
+
+# End-to-end test
+cd tests/simulated_data/
+mkdir -p reads/
+# Create reference and simulate reads with known mutations
+./scripts/generate_reference.py > data/reference.gbk
+./scripts/simulate_reads.py --reference_fp data/reference.gbk --spec_fp data/dataset_specification.tsv --output_dir reads/
+# Run tests
+../../reddog.nf
+# Check outputs
+./scripts/compare_data.py --run_dir output/ --spec_fp data/dataset_specification.tsv --test_data_dir data/run_data/
+```
+
 
 ## Processing differences
 * Most stages have been rearranged and combined in some way
