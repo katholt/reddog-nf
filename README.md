@@ -37,14 +37,6 @@
 
 
 ## TODO
-* Mapping stats column rename for total\_reads?
-    * I think this should read replicon\_total\_reads or equivalent
-    * change average depth to mean depth
-        - thoroughly check all scripts that this affects
-        - most should raise an error. if there are that do not, change so they will in the future
-            - looking at code just now, some classes presume header tokens
-            - for these, add assertion with defined header tokens and those read from file
-* Numerical argument checking for python scripts
 * Currently copying merge data outside of nextflow execution
     - for very large datasets, the script may appear to hang during this operation
     - we could notify user of the operation w progress?
