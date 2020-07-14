@@ -1,4 +1,5 @@
 import pathlib
+import tempfile
 import unittest
 
 
@@ -117,11 +118,11 @@ class MappingStatsFull(unittest.TestCase):
             self.expected_lines = [line.rstrip() for line in fh.readlines()]
         program = 'calculate_mapping_stats.py'
         command_args = {
-            '--bam_fp':  tests_directory / 'data/other/isolate_1.bam',
-            '--vcf_q30_fp':  tests_directory / 'data/other/isolate_1_q30.vcf',
-            '--vcf_hets_fp':  tests_directory / 'data/other/isolate_1_hets.vcf',
-            '--coverage_depth_fp':  tests_directory / 'data/other/isolate_1_coverage_depth.tsv',
-            '--bam_unmapped_fp':  tests_directory / 'data/other/isolate_1_unmapped.bam'
+            '--bam_fp': tests_directory / 'data/other/isolate_1.bam',
+            '--vcf_q30_fp': tests_directory / 'data/other/isolate_1_q30.vcf',
+            '--vcf_hets_fp': tests_directory / 'data/other/isolate_1_hets.vcf',
+            '--coverage_depth_fp': tests_directory / 'data/other/isolate_1_coverage_depth.tsv',
+            '--bam_unmapped_fp': tests_directory / 'data/other/isolate_1_unmapped.bam'
         }
         command = '%s %s' % (program, ' '.join(f'{name} {val}' for name, val in command_args.items()))
         results = bin.utility.execute_command(command)
@@ -132,3 +133,66 @@ class MappingStatsFull(unittest.TestCase):
         self.assertEqual(self.result_lines[0], self.expected_lines[0])
         self.assertEqual(self.result_lines[1], self.expected_lines[1])
         self.assertEqual(self.result_lines[2], self.expected_lines[2])
+
+
+class AggregateMappingStatsFull(unittest.TestCase):
+
+    def setUp(self):
+        # Set expected outputs
+        with (tests_directory / 'data/expected_outputs/contig_1_mapping_stats.tsv').open('r') as fh:
+            line_token_gen = (line.rstrip().split('\t') for line in fh)
+            self.expected_1 = parse_mapping_stats(line_token_gen)
+        with (tests_directory / 'data/expected_outputs/contig_2_mapping_stats.tsv').open('r') as fh:
+            line_token_gen = (line.rstrip().split('\t') for line in fh)
+            self.expected_2 = parse_mapping_stats(line_token_gen)
+        # Run full script
+        temp_dir = tempfile.TemporaryDirectory()
+        program = 'aggregate_mapping_stats.py'
+        input_fps = [str(fp) for fp in tests_directory.glob('data/mapping_stats/*tsv')]
+        command_args = {
+            '--rep_stats_fps': ' '.join(input_fps),
+            '--output_dir': temp_dir.name,
+        }
+        command = '%s %s' % (program, ' '.join(f'{name} {val}' for name, val in command_args.items()))
+        bin.utility.execute_command(command)
+        # Read data from output directory and explicitly remove temporary directory
+        results_1_fp = pathlib.Path(temp_dir.name, 'contig_1_mapping_stats.tsv')
+        results_2_fp = pathlib.Path(temp_dir.name, 'contig_2_mapping_stats.tsv')
+        with results_1_fp.open('r') as fh:
+            line_token_gen = (line.rstrip().split('\t') for line in fh)
+            self.results_1 = parse_mapping_stats(line_token_gen)
+        with results_2_fp.open('r') as fh:
+            line_token_gen = (line.rstrip().split('\t') for line in fh)
+            self.results_2 = parse_mapping_stats(line_token_gen)
+        temp_dir.cleanup()
+
+    def test_full(self):
+        self.assertEqual(self.results_1, self.expected_1)
+        self.assertEqual(self.results_2, self.expected_2)
+
+
+class MergeMappingStatsFull(unittest.TestCase):
+
+    def setUp(self):
+        with (tests_directory / 'data/expected_outputs/contig_1_mapping_stats_merged.tsv').open('r') as fh:
+            line_token_gen = (line.rstrip().split('\t') for line in fh)
+            self.expected = parse_mapping_stats(line_token_gen)
+        program = 'merge_mapping_stats.py'
+        command_args = {
+            '--fp_1': tests_directory / 'data/other/contig_1_mapping_stats_premerge_1.tsv',
+            '--fp_2': tests_directory / 'data/other/contig_1_mapping_stats_premerge_2.tsv',
+        }
+        command = '%s %s' % (program, ' '.join(f'{name} {val}' for name, val in command_args.items()))
+        result = bin.utility.execute_command(command)
+        line_token_gen = (line.rstrip().split('\t') for line in result.stdout.rstrip().split('\n'))
+        self.results = parse_mapping_stats(line_token_gen)
+
+
+    def test_full(self):
+        self.assertEqual(self.results, self.expected)
+
+
+def parse_mapping_stats(line_token_gen):
+    # Skip header and return data as dict
+    next(line_token_gen)
+    return {isolate: data for isolate, *data in line_token_gen}
