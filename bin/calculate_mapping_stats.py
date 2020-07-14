@@ -91,7 +91,7 @@ def main():
                 'isolate': isolate,
                 'replicon_coverage': round(coverage[replicon], 4),
                 'replicon_average_depth': round(depth_average[replicon], 4),
-                'replicon_reads_mapped': round(replicon_mapped[replicon] / total_mapped * 100, 4),
+                'replicon_reads_mapped': round(replicon_mapped[replicon] / total_reads * 100, 4),
                 'total_mapped_reads': round(total_mapped / total_reads * 100, 4),
                 'total_reads': total_reads,
                 'snps': replicon_snps[replicon],
