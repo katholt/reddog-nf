@@ -12,6 +12,27 @@ import bin.utility
 from . import tests_directory
 
 
+# TODO: need to first check this is correctly calculated. have concern
+#       regarding 1-off index error for gene bounds
+class CreateCoverageDepthMatrix(unittest.TestCase):
+
+    def setUp(self):
+        pass
+
+    def test_full(self):
+        pass
+
+
+# TODO: see above re CreateCoverageDepthMatrix
+class MergeGeneStatMatrix(unittest.TestCase):
+
+    def setUp(self):
+        pass
+
+    def test_full(self):
+        pass
+
+
 class AggregateSnpSites(unittest.TestCase):
 
     def setUp(self):
@@ -57,17 +78,6 @@ class CollectReferenceData(unittest.TestCase):
         self.assertEqual(len(self.results), len(expected))
         for rline, eline in zip(self.results, expected):
             self.assertEqual(rline, eline)
-
-
-# TODO: need to first check this is correctly calculated. have concern
-#       regarding 1-off index error for gene bounds
-class CreateCoverageDepthMatrix(unittest.TestCase):
-
-    def setUp(self):
-        pass
-
-    def test_full(self):
-        pass
 
 
 class CreateSnpAlignment(unittest.TestCase):
@@ -215,16 +225,6 @@ class GetPassingRepliconIsolates(unittest.TestCase):
             isolate, contig = line.rstrip().split('\t')
             results[isolate] = contig
         return results
-
-
-# TODO: see above re CreateCoverageDepthMatrix
-class MergeGeneStatMatrix(unittest.TestCase):
-
-    def setUp(self):
-        pass
-
-    def test_full(self):
-        pass
 
 
 class SplitMappedUnmappedReads(unittest.TestCase):
