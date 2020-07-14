@@ -58,17 +58,17 @@ class AssignIngroupOutgroup(unittest.TestCase):
 class MappingStats(unittest.TestCase):
 
     def test_unmapped_read_count_1(self):
-        filepath = tests_directory / 'data/isolate_1_unmapped.bam'
+        filepath = tests_directory / 'data/other/isolate_1_unmapped.bam'
         unmapped_count = bin.calculate_mapping_stats.get_unmapped_read_count(filepath)
         self.assertEqual(unmapped_count, 0)
 
     def test_unmapped_read_count_2(self):
-        filepath = tests_directory / 'data/isolate_17_unmapped.bam'
+        filepath = tests_directory / 'data/other/isolate_17_unmapped.bam'
         unmapped_count = bin.calculate_mapping_stats.get_unmapped_read_count(filepath)
         self.assertEqual(unmapped_count, 2436)
 
     def test_depth_cov_size(self):
-        filepath = tests_directory / 'data/isolate_1_coverage_depth.tsv'
+        filepath = tests_directory / 'data/other/isolate_1_coverage_depth.tsv'
         depth_averages, coverages, sizes = bin.calculate_mapping_stats.get_depth_coverage_and_sizes(filepath)
         self.assertEqual(depth_averages['contig_1'], 14.49)
         self.assertEqual(depth_averages['contig_2'], 14.46)
@@ -78,7 +78,7 @@ class MappingStats(unittest.TestCase):
         self.assertEqual(sizes['contig_2'], 15017)
 
     def test_read_counts(self):
-        filepath = tests_directory / 'data/isolate_1.bam'
+        filepath = tests_directory / 'data/other/isolate_1.bam'
         mapped_total, mapped_replicons = bin.calculate_mapping_stats.get_read_counts(filepath)
         self.assertEqual(mapped_total, 1786)
         self.assertEqual(mapped_replicons['contig_1'], 918)
@@ -86,7 +86,7 @@ class MappingStats(unittest.TestCase):
         self.assertEqual(sum(mapped_replicons.values()), 1786)
 
     def test_snp_indel_counts_1(self):
-        filepath = tests_directory / 'data/isolate_1_q30.vcf'
+        filepath = tests_directory / 'data/other/isolate_1_q30.vcf'
         replicon_snps, replicon_indels = bin.calculate_mapping_stats.get_snp_indel_counts(filepath)
         self.assertEqual(replicon_snps['contig_1'], 19)
         self.assertEqual(replicon_snps['contig_2'], 2)
@@ -94,18 +94,18 @@ class MappingStats(unittest.TestCase):
         self.assertEqual(replicon_indels['contig_2'], 0)
 
     def test_snp_indel_counts_2(self):
-        filepath = tests_directory / 'data/isolate_4_q30.vcf'
+        filepath = tests_directory / 'data/other/isolate_4_q30.vcf'
         replicon_snps, replicon_indels = bin.calculate_mapping_stats.get_snp_indel_counts(filepath)
         self.assertEqual(replicon_snps['contig_1'], 0)
         self.assertEqual(replicon_indels['contig_1'], 1)
 
     def test_het_counts_1(self):
-        filepath = tests_directory / 'data/isolate_1_hets.vcf'
+        filepath = tests_directory / 'data/other/isolate_1_hets.vcf'
         replicon_hets = bin.calculate_mapping_stats.get_het_counts(filepath)
         self.assertEqual(replicon_hets, dict())
 
     def test_het_counts_2(self):
-        filepath = tests_directory / 'data/isolate_3_hets.vcf'
+        filepath = tests_directory / 'data/other/isolate_3_hets.vcf'
         replicon_hets = bin.calculate_mapping_stats.get_het_counts(filepath)
         self.assertEqual(replicon_hets['contig_1'], 3)
 
@@ -113,21 +113,15 @@ class MappingStats(unittest.TestCase):
 class MappingStatsFull(unittest.TestCase):
 
     def setUp(self):
-        self.expected_lines= (
-            (
-                'replicon\tisolate\treplicon_coverage\treplicon_average_depth\treplicon_reads_mapped\ttotal_mapped_reads'
-                '\ttotal_reads\tsnps\tsnps_heterozygous\tindels\tpass_fail'
-            ),
-            'contig_1\tisolate_1\t99.94\t14.49\t51.3998\t100.0\t1786\t0\t0\t1\tp',
-            'contig_2\tisolate_1\t99.93\t14.46\t48.6002\t100.0\t1786\t0\t0\t0\tp'
-        )
+        with (tests_directory / 'data/expected_outputs/isolate_1_mapping_stats.tsv').open('r') as fh:
+            self.expected_lines = [line.rstrip() for line in fh.readlines()]
         program = 'calculate_mapping_stats.py'
         command_args = {
-            '--bam_fp':  tests_directory / 'data/isolate_1.bam',
-            '--vcf_q30_fp':  tests_directory / 'data/isolate_4_q30.vcf',
-            '--vcf_hets_fp':  tests_directory / 'data/isolate_1_hets.vcf',
-            '--coverage_depth_fp':  tests_directory / 'data/isolate_1_coverage_depth.tsv',
-            '--bam_unmapped_fp':  tests_directory / 'data/isolate_1_unmapped.bam'
+            '--bam_fp':  tests_directory / 'data/other/isolate_1.bam',
+            '--vcf_q30_fp':  tests_directory / 'data/other/isolate_1_q30.vcf',
+            '--vcf_hets_fp':  tests_directory / 'data/other/isolate_1_hets.vcf',
+            '--coverage_depth_fp':  tests_directory / 'data/other/isolate_1_coverage_depth.tsv',
+            '--bam_unmapped_fp':  tests_directory / 'data/other/isolate_1_unmapped.bam'
         }
         command = '%s %s' % (program, ' '.join(f'{name} {val}' for name, val in command_args.items()))
         results = bin.utility.execute_command(command)
