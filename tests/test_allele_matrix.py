@@ -43,10 +43,10 @@ class AlleleMatrixFull(unittest.TestCase):
         # Run full script
         program = 'create_allele_matrix.py'
         command_args = {
-            '--bam_fp':  tests_directory / f'{temp_dir.name}/isolate_1.bam',
-            '--sites_fp':  tests_directory / 'data/other/snp_sites.tsv',
-            '--reference_fp':  tests_directory / 'data/other/reference.fasta',
-            '--output_dir':  temp_dir.name
+            '--bam_fp': tests_directory / f'{temp_dir.name}/isolate_1.bam',
+            '--sites_fp': tests_directory / 'data/other/snp_sites.tsv',
+            '--reference_fp': tests_directory / 'data/other/reference.fasta',
+            '--output_dir': temp_dir.name
         }
         command = '%s %s' % (program, ' '.join(f'{name} {val}' for name, val in command_args.items()))
         bin.utility.execute_command(command)
@@ -77,8 +77,8 @@ class AlleleMatrixAggregateFull(unittest.TestCase):
         program = 'aggregate_allele_matrices.py'
         input_fps = [str(fp) for fp in tests_directory.glob('data/allele_matrices/*tsv')]
         command_args = {
-            '--allele_fps':  ' '.join(input_fps),
-            '--sites_fp':  tests_directory / 'data/other/replicon_sites.tsv',
+            '--allele_fps': ' '.join(input_fps),
+            '--sites_fp': tests_directory / 'data/other/replicon_sites.tsv',
         }
         command = '%s %s' % (program, ' '.join(f'{name} {val}' for name, val in command_args.items()))
         result = bin.utility.execute_command(command)
@@ -99,7 +99,7 @@ class FilterAlleleMatrixFull(unittest.TestCase):
         # Run full script
         program = 'filter_allele_matrix.py'
         command_args = {
-            '--allele_fp':  tests_directory / 'data/other/contig_1_alleles.tsv',
+            '--allele_fp': tests_directory / 'data/other/contig_1_alleles.tsv',
         }
         command = '%s %s' % (program, ' '.join(f'{name} {val}' for name, val in command_args.items()))
         result = bin.utility.execute_command(command)
