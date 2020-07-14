@@ -114,25 +114,33 @@ class MappingStats(unittest.TestCase):
 class MappingStatsFull(unittest.TestCase):
 
     def setUp(self):
-        with (tests_directory / 'data/expected_outputs/isolate_1_mapping_stats.tsv').open('r') as fh:
-            self.expected_lines = [line.rstrip() for line in fh.readlines()]
+        with (tests_directory / 'data/expected_outputs/isolate_12_mapping_stats.tsv').open('r') as fh:
+            self.expected = self.parse_data(fh)
         program = 'calculate_mapping_stats.py'
         command_args = {
-            '--bam_fp': tests_directory / 'data/other/isolate_1.bam',
-            '--vcf_q30_fp': tests_directory / 'data/other/isolate_1_q30.vcf',
-            '--vcf_hets_fp': tests_directory / 'data/other/isolate_1_hets.vcf',
-            '--coverage_depth_fp': tests_directory / 'data/other/isolate_1_coverage_depth.tsv',
-            '--bam_unmapped_fp': tests_directory / 'data/other/isolate_1_unmapped.bam'
+            '--bam_fp': tests_directory / 'data/other/isolate_12.bam',
+            '--vcf_q30_fp': tests_directory / 'data/other/isolate_12_q30.vcf',
+            '--vcf_hets_fp': tests_directory / 'data/other/isolate_12_hets.vcf',
+            '--coverage_depth_fp': tests_directory / 'data/other/isolate_12_coverage_depth.tsv',
+            '--bam_unmapped_fp': tests_directory / 'data/other/isolate_12_unmapped.bam'
         }
         command = '%s %s' % (program, ' '.join(f'{name} {val}' for name, val in command_args.items()))
         results = bin.utility.execute_command(command)
-        self.result_lines = results.stdout.rstrip().split('\n')
+        line_iter = iter(results.stdout.rstrip().split('\n'))
+        self.results = self.parse_data(line_iter)
 
     def test_full(self):
-        self.assertEqual(len(self.result_lines), 3)
-        self.assertEqual(self.result_lines[0], self.expected_lines[0])
-        self.assertEqual(self.result_lines[1], self.expected_lines[1])
-        self.assertEqual(self.result_lines[2], self.expected_lines[2])
+        self.assertEqual(self.results, self.expected)
+
+    @staticmethod
+    def parse_data(line_iter):
+        results = dict()
+        header_tokens = next(line_iter).rstrip().split('\t')
+        for line in line_iter:
+            isolate, *data = line.rstrip().split('\t')
+            results[isolate] = data
+        return results
+
 
 
 class AggregateMappingStatsFull(unittest.TestCase):
