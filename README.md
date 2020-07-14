@@ -37,9 +37,6 @@
 
 
 ## TODO
-* Finish unittests for gene coverage/ depth
-    - must first check validity of output
-    - need to check indexing here at bin/create\_coverage\_depth\_matrices.py#L62
 * Mapping stats column rename for total\_reads?
     * I think this should read replicon\_total\_reads or equivalent
     * change average depth to mean depth
