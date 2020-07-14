@@ -174,6 +174,7 @@ class AggregateMappingStatsFull(unittest.TestCase):
 class MergeMappingStatsFull(unittest.TestCase):
 
     def setUp(self):
+        # Set expected
         with (tests_directory / 'data/expected_outputs/contig_1_mapping_stats_merged.tsv').open('r') as fh:
             line_token_gen = (line.rstrip().split('\t') for line in fh)
             self.expected = parse_mapping_stats(line_token_gen)
@@ -182,11 +183,11 @@ class MergeMappingStatsFull(unittest.TestCase):
             '--fp_1': tests_directory / 'data/other/contig_1_mapping_stats_premerge_1.tsv',
             '--fp_2': tests_directory / 'data/other/contig_1_mapping_stats_premerge_2.tsv',
         }
+        # Run script
         command = '%s %s' % (program, ' '.join(f'{name} {val}' for name, val in command_args.items()))
         result = bin.utility.execute_command(command)
         line_token_gen = (line.rstrip().split('\t') for line in result.stdout.rstrip().split('\n'))
         self.results = parse_mapping_stats(line_token_gen)
-
 
     def test_full(self):
         self.assertEqual(self.results, self.expected)
