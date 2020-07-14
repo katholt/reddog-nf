@@ -35,11 +35,9 @@ class AlleleMatrixFull(unittest.TestCase):
         bin.utility.execute_command(f'samtools index {temp_dir.name}/isolate_1.bam')
         # Set expected outputs
         with (tests_directory / 'data/expected_outputs/contig_1_isolate_1_alleles.tsv').open('r') as fh:
-            line_token_gen = (line.rstrip().split('\t') for line in fh)
-            self.expected_1 = parse_allele_matrix(line_token_gen)
+            self.expected_1 = parse_allele_matrix(fh)
         with (tests_directory / 'data/expected_outputs/contig_2_isolate_1_alleles.tsv').open('r') as fh:
-            line_token_gen = (line.rstrip().split('\t') for line in fh)
-            self.expected_2 = parse_allele_matrix(line_token_gen)
+            self.expected_2 = parse_allele_matrix(fh)
         # Run full script
         program = 'create_allele_matrix.py'
         command_args = {
@@ -54,11 +52,9 @@ class AlleleMatrixFull(unittest.TestCase):
         results_1_fp = pathlib.Path(temp_dir.name, 'contig_1_isolate_1_alleles.tsv')
         results_2_fp = pathlib.Path(temp_dir.name, 'contig_2_isolate_1_alleles.tsv')
         with results_1_fp.open('r') as fh:
-            line_token_gen = (line.rstrip().split('\t') for line in fh)
-            self.results_1 = parse_allele_matrix(line_token_gen)
+            self.results_1 = parse_allele_matrix(fh)
         with results_2_fp.open('r') as fh:
-            line_token_gen = (line.rstrip().split('\t') for line in fh)
-            self.results_2 = parse_allele_matrix(line_token_gen)
+            self.results_2 = parse_allele_matrix(fh)
         temp_dir.cleanup()
 
     def test_full(self):
@@ -71,8 +67,7 @@ class AlleleMatrixAggregateFull(unittest.TestCase):
     def setUp(self):
         # Set expected outputs
         with (tests_directory / 'data/expected_outputs/contig_1_alleles.tsv').open('r') as fh:
-            line_token_gen = (line.rstrip().split('\t') for line in fh)
-            self.expected = parse_allele_matrix(line_token_gen)
+            self.expected = parse_allele_matrix(fh)
         # Run full script
         program = 'aggregate_allele_matrices.py'
         input_fps = [str(fp) for fp in tests_directory.glob('data/allele_matrices/*tsv')]
@@ -82,8 +77,8 @@ class AlleleMatrixAggregateFull(unittest.TestCase):
         }
         command = '%s %s' % (program, ' '.join(f'{name} {val}' for name, val in command_args.items()))
         result = bin.utility.execute_command(command)
-        line_token_gen = (line.rstrip().split('\t') for line in result.stdout.rstrip().split('\n'))
-        self.results = parse_allele_matrix(line_token_gen)
+        line_iter = iter(result.stdout.rstrip().split('\n'))
+        self.results = parse_allele_matrix(line_iter)
 
     def test_full(self):
         self.assertEqual(self.results, self.expected)
@@ -94,8 +89,7 @@ class FilterAlleleMatrixFull(unittest.TestCase):
     def setUp(self):
         # Set expected outputs
         with (tests_directory / 'data/expected_outputs/contig_1_alleles_core.tsv').open('r') as fh:
-            line_token_gen = (line.rstrip().split('\t') for line in fh)
-            self.expected = parse_allele_matrix(line_token_gen)
+            self.expected = parse_allele_matrix(fh)
         # Run full script
         program = 'filter_allele_matrix.py'
         command_args = {
@@ -103,18 +97,19 @@ class FilterAlleleMatrixFull(unittest.TestCase):
         }
         command = '%s %s' % (program, ' '.join(f'{name} {val}' for name, val in command_args.items()))
         result = bin.utility.execute_command(command)
-        line_token_gen = (line.rstrip().split('\t') for line in result.stdout.rstrip().split('\n'))
-        self.results = parse_allele_matrix(line_token_gen)
+        line_iter = iter(result.stdout.rstrip().split('\n'))
+        self.results = parse_allele_matrix(line_iter)
 
     def test_full(self):
         self.assertEqual(self.results, self.expected)
 
 
-def parse_allele_matrix(line_token_gen):
-    header_tokens = next(line_token_gen)
+def parse_allele_matrix(line_iter):
+    header_tokens = next(line_iter).rstrip().split('\t')
     isolates = header_tokens[1:]
     isolate_alleles = {isolate: list() for isolate in isolates}
-    for position, *alleles in line_token_gen:
+    for line in line_iter:
+        position, *alleles = line.rstrip().split('\t')
         for isolate, allele in zip(isolates, alleles):
             isolate_alleles[isolate].append((position, allele))
     return isolate_alleles
