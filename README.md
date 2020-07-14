@@ -37,16 +37,9 @@
 
 
 ## TODO
-* Complete unittests
-    - add many more tests for other code
-    - integrate simulation test
-* Investigate use of async non-nf process code so we can:
-    * Validate some input readsets
-    * Warn when read quality assessment is requested on merge run but merge has fastqc data
-* Currently copying merge data outside of nextflow execution
-    - for very large datasets, the script may appear to hang during this operation
-    - we could notify user of the operation w progress?
-    - or perhaps create a process just to perform the copy w the 'local' executor
+* Finish unittests for gene coverage/ depth
+    - must first check validity of output
+    - need to check indexing here at bin/create\_coverage\_depth\_matrices.py#L62
 * Mapping stats column rename for total\_reads?
     * I think this should read replicon\_total\_reads or equivalent
     * change average depth to mean depth
@@ -55,6 +48,13 @@
             - looking at code just now, some classes presume header tokens
             - for these, add assertion with defined header tokens and those read from file
 * Numerical argument checking for python scripts
+* Currently copying merge data outside of nextflow execution
+    - for very large datasets, the script may appear to hang during this operation
+    - we could notify user of the operation w progress?
+    - or perhaps create a process just to perform the copy w the 'local' executor
+* Investigate use of async non-nf process code so we can:
+    * Validate some input readsets
+    * Warn when read quality assessment is requested on merge run but merge has fastqc data
 * Coding consequences for hets
     - create matrix of hets in the same way we do for homs
     - this should be done conditionally
@@ -70,7 +70,6 @@
         - this was possible in DSL1 but I'm yet to find an equivalent in DSL2
     - rn we're passing reference name by argument very often
     - this is a little messy tbh, hopefuly can do better
-* Need to check indexing here at bin/create\_coverage\_depth\_matrices.py#L62
 * MultiQC/FastQC seems to give wrong phred score for second isolate in read simulation run
 
 
