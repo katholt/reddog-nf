@@ -4,16 +4,6 @@ import pathlib
 import sys
 
 
-class CheckInput(argparse.Action):
-
-    def __call__(self, parser, namespace, value, option_string=None):
-        value_check = value if isinstance(value, list) else [value]
-        for filepath in value_check:
-            if not filepath.exists():
-                parser.error(f'Filepath {filepath} for {option_string} does not exist')
-        setattr(namespace, self.dest, value)
-
-
 def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--allele_fps', required=True, type=pathlib.Path,
