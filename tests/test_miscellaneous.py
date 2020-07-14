@@ -12,27 +12,6 @@ import bin.utility
 from . import tests_directory
 
 
-# TODO: need to first check this is correctly calculated. have concern
-#       regarding 1-off index error for gene bounds
-class CreateCoverageDepthMatrix(unittest.TestCase):
-
-    def setUp(self):
-        pass
-
-    def test_full(self):
-        pass
-
-
-# TODO: see above re CreateCoverageDepthMatrix
-class MergeGeneStatMatrix(unittest.TestCase):
-
-    def setUp(self):
-        pass
-
-    def test_full(self):
-        pass
-
-
 class AggregateSnpSites(unittest.TestCase):
 
     def setUp(self):
@@ -78,6 +57,48 @@ class CollectReferenceData(unittest.TestCase):
         self.assertEqual(len(self.results), len(expected))
         for rline, eline in zip(self.results, expected):
             self.assertEqual(rline, eline)
+
+
+class CreateCoverageDepthMatrix(unittest.TestCase):
+
+    def setUp(self):
+        # Get expected
+        self.expected_coverage = self.parse_data(tests_directory / 'data/expected_outputs/gene_coverage.tsv')
+        self.expected_depth = self.parse_data(tests_directory / 'data/expected_outputs/gene_depth.tsv')
+        # Create temporary directory and define output filepaths
+        temp_dir = tempfile.TemporaryDirectory()
+        coverage_fp = pathlib.Path(temp_dir.name, 'gene_coverage.tsv')
+        depth_fp = pathlib.Path(temp_dir.name, 'gene_depth.tsv')
+        # Run full script
+        program = 'create_coverage_depth_matrices.py'
+        input_fps = [str(fp) for fp in tests_directory.glob('data/multiway_pileups/*tsv')]
+        command_args = {
+            '--mpileup_fps': ' '.join(input_fps),
+            '--reference_fp': tests_directory / 'data/other/reference.gbk',
+            '--output_dir': temp_dir.name,
+        }
+        command = '%s %s' % (program, ' '.join(f'{name} {val}' for name, val in command_args.items()))
+        bin.utility.execute_command(command)
+        # Read data from output directory and explicitly remove temporary directory
+        self.results_coverage = self.parse_data(coverage_fp)
+        self.results_depth = self.parse_data(depth_fp)
+        temp_dir.cleanup()
+
+    def test_full(self):
+        self.assertEqual(self.results_coverage, self.expected_coverage)
+        self.assertEqual(self.results_depth, self.expected_depth)
+
+    @staticmethod
+    def parse_data(filepath):
+        with filepath.open('r') as fh:
+            line_token_gen = (line.rstrip().split('\t') for line in fh)
+            header_tokens = next(line_token_gen)
+            isolates = header_tokens[2:]
+            results = {isolate: list() for isolate in isolates}
+            for replicon, gene, *values in line_token_gen:
+                for isolate, value in zip(isolates, values):
+                    results[isolate].append((gene, value))
+        return results
 
 
 class CreateSnpAlignment(unittest.TestCase):
@@ -224,6 +245,48 @@ class GetPassingRepliconIsolates(unittest.TestCase):
         for line in line_iter:
             isolate, contig = line.rstrip().split('\t')
             results[isolate] = contig
+        return results
+
+
+class MergeGeneStatMatrix(unittest.TestCase):
+
+    def setUp(self):
+        # Set expected
+        with (tests_directory / 'data/expected_outputs/gene_coverage_merged.tsv').open('r') as fh:
+            self.expected_coverage = self.parse_data(fh)
+        with (tests_directory / 'data/expected_outputs/gene_depth_merged.tsv').open('r') as fh:
+            self.expected_depth = self.parse_data(fh)
+        self.results_coverage = self.execute_script('coverage')
+        self.results_depth = self.execute_script('depth')
+
+    def execute_script(self, name):
+        program = 'merge_gene_stat_matrix.py'
+        command_args = {
+            '--fp_1': tests_directory / f'data/other/gene_{name}_premerge_1.tsv',
+            '--fp_2': tests_directory / f'data/other/gene_{name}_premerge_2.tsv',
+        }
+        # Run script
+        command = '%s %s' % (program, ' '.join(f'{name} {val}' for name, val in command_args.items()))
+        result = bin.utility.execute_command(command)
+        line_iter = iter(result.stdout.rstrip().split('\n'))
+        return self.parse_data(line_iter)
+
+    def test_full(self):
+        self.assertEqual(self.results_coverage, self.expected_coverage)
+        self.assertEqual(self.results_depth, self.expected_depth)
+
+    @staticmethod
+    def parse_data(line_iter):
+        header_tokens = next(line_iter).rstrip().split('\t')
+        isolates = header_tokens[2:]
+        results = {isolate: list() for isolate in isolates}
+        for line in line_iter:
+            replicon, gene, *values = line.rstrip().split('\t')
+            for isolate, value in zip(isolates, values):
+                results[isolate].append((gene, value))
+        # Order gene, stat tuples
+        for isolate, gene_data in results.items():
+            results[isolate] = sorted(gene_data)
         return results
 
 
