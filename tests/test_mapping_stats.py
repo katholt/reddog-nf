@@ -55,7 +55,7 @@ class AssignIngroupOutgroup(unittest.TestCase):
         self.assertEqual([r.phylogeny_group for r in records_assigned], ['i'] * 11)
 
 
-class MappingData(unittest.TestCase):
+class MappingStats(unittest.TestCase):
 
     def test_unmapped_read_count_1(self):
         filepath = tests_directory / 'data/isolate_1_unmapped.bam'
@@ -109,7 +109,18 @@ class MappingData(unittest.TestCase):
         replicon_hets = bin.calculate_mapping_stats.get_het_counts(filepath)
         self.assertEqual(replicon_hets['contig_1'], 3)
 
-    def test_full(self):
+
+class MappingStatsFull(unittest.TestCase):
+
+    def setUp(self):
+        self.expected_lines= (
+            (
+                'replicon\tisolate\treplicon_coverage\treplicon_average_depth\treplicon_reads_mapped\ttotal_mapped_reads'
+                '\ttotal_reads\tsnps\tsnps_heterozygous\tindels\tpass_fail'
+            ),
+            'contig_1\tisolate_1\t99.94\t14.49\t51.3998\t100.0\t1786\t0\t0\t1\tp',
+            'contig_2\tisolate_1\t99.93\t14.46\t48.6002\t100.0\t1786\t0\t0\t0\tp'
+        )
         program = 'calculate_mapping_stats.py'
         command_args = {
             '--bam_fp':  tests_directory / 'data/isolate_1.bam',
@@ -119,17 +130,11 @@ class MappingData(unittest.TestCase):
             '--bam_unmapped_fp':  tests_directory / 'data/isolate_1_unmapped.bam'
         }
         command = '%s %s' % (program, ' '.join(f'{name} {val}' for name, val in command_args.items()))
-        expected_lines= (
-            (
-                'replicon\tisolate\treplicon_coverage\treplicon_average_depth\treplicon_reads_mapped\ttotal_mapped_reads'
-                '\ttotal_reads\tsnps\tsnps_heterozygous\tindels\tpass_fail'
-            ),
-            'contig_1\tisolate_1\t99.94\t14.49\t51.3998\t100.0\t1786\t0\t0\t1\tp',
-            'contig_2\tisolate_1\t99.93\t14.46\t48.6002\t100.0\t1786\t0\t0\t0\tp'
-        )
         results = bin.utility.execute_command(command)
-        result_lines = results.stdout.rstrip().split('\n')
-        self.assertEqual(len(result_lines), 3)
-        self.assertEqual(result_lines[0], expected_lines[0])
-        self.assertEqual(result_lines[1], expected_lines[1])
-        self.assertEqual(result_lines[2], expected_lines[2])
+        self.result_lines = results.stdout.rstrip().split('\n')
+
+    def test_full(self):
+        self.assertEqual(len(self.result_lines), 3)
+        self.assertEqual(self.result_lines[0], self.expected_lines[0])
+        self.assertEqual(self.result_lines[1], self.expected_lines[1])
+        self.assertEqual(self.result_lines[2], self.expected_lines[2])
