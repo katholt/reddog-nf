@@ -31,22 +31,21 @@ class AlleleMatrixFull(unittest.TestCase):
     def setUp(self):
         # Create temporary directory, copy BAM and index
         temp_dir = tempfile.TemporaryDirectory()
-        bin.utility.execute_command(f'cp {tests_directory / "data/isolate_1.bam"} {temp_dir.name}/')
+        bin.utility.execute_command(f'cp {tests_directory / "data/other/isolate_1.bam"} {temp_dir.name}/')
         bin.utility.execute_command(f'samtools index {temp_dir.name}/isolate_1.bam')
         # Set expected outputs
-        self.expected_1 = (
-            'Position\tReference\tisolate_1\n1158\tG\tA\n1644\tA\tG\n2081\tG\tT\n2086\tT\tA\n2092\tA'
-            '\tT\n4807\tG\tA\n4818\tT\tC\n4820\tT\tT\n4850\tC\tC\n6268\tG\tA\n6473\tA\tC\n6484\tT\tA'
-            '\n6485\tG\tC\n6506\tC\tA\n6525\tT\tA\n8001\tG\tG\n10954\tT\tT\n10955\tT\tG\n12053\tG\tC'
-            '\n13373\tG\tA\n13377\tT\tG\n13392\tA\tG\n14636\tG\tT\n'
-        )
-        self.expected_2 = 'Position\tReference\tisolate_1\n157\tC\tG\n560\tG\tG\n561\tC\tC\n779\tC\tG\n'
+        with (tests_directory / 'data/expected_outputs/contig_1_isolate_1_alleles.tsv').open('r') as fh:
+            line_token_gen = (line.rstrip().split('\t') for line in fh)
+            self.expected_1 = parse_allele_matrix(line_token_gen)
+        with (tests_directory / 'data/expected_outputs/contig_2_isolate_1_alleles.tsv').open('r') as fh:
+            line_token_gen = (line.rstrip().split('\t') for line in fh)
+            self.expected_2 = parse_allele_matrix(line_token_gen)
         # Run full script
         program = 'create_allele_matrix.py'
         command_args = {
             '--bam_fp':  tests_directory / f'{temp_dir.name}/isolate_1.bam',
-            '--sites_fp':  tests_directory / 'data/snp_sites.tsv',
-            '--reference_fp':  tests_directory / 'data/reference.fasta',
+            '--sites_fp':  tests_directory / 'data/other/snp_sites.tsv',
+            '--reference_fp':  tests_directory / 'data/other/reference.fasta',
             '--output_dir':  temp_dir.name
         }
         command = '%s %s' % (program, ' '.join(f'{name} {val}' for name, val in command_args.items()))
@@ -55,11 +54,67 @@ class AlleleMatrixFull(unittest.TestCase):
         results_1_fp = pathlib.Path(temp_dir.name, 'contig_1_isolate_1_alleles.tsv')
         results_2_fp = pathlib.Path(temp_dir.name, 'contig_2_isolate_1_alleles.tsv')
         with results_1_fp.open('r') as fh:
-            self.results_1 = fh.read()
+            line_token_gen = (line.rstrip().split('\t') for line in fh)
+            self.results_1 = parse_allele_matrix(line_token_gen)
         with results_2_fp.open('r') as fh:
-            self.results_2 = fh.read()
+            line_token_gen = (line.rstrip().split('\t') for line in fh)
+            self.results_2 = parse_allele_matrix(line_token_gen)
         temp_dir.cleanup()
 
     def test_full(self):
         self.assertEqual(self.results_1, self.expected_1)
         self.assertEqual(self.results_2, self.expected_2)
+
+
+class AlleleMatrixAggregateFull(unittest.TestCase):
+
+    def setUp(self):
+        # Set expected outputs
+        with (tests_directory / 'data/expected_outputs/contig_1_alleles.tsv').open('r') as fh:
+            line_token_gen = (line.rstrip().split('\t') for line in fh)
+            self.expected = parse_allele_matrix(line_token_gen)
+        # Run full script
+        program = 'aggregate_allele_matrices.py'
+        input_fps = [str(fp) for fp in tests_directory.glob('data/allele_matrices/*tsv')]
+        command_args = {
+            '--allele_fps':  ' '.join(input_fps),
+            '--sites_fp':  tests_directory / 'data/other/replicon_sites.tsv',
+        }
+        command = '%s %s' % (program, ' '.join(f'{name} {val}' for name, val in command_args.items()))
+        result = bin.utility.execute_command(command)
+        line_token_gen = (line.rstrip().split('\t') for line in result.stdout.rstrip().split('\n'))
+        self.results = parse_allele_matrix(line_token_gen)
+
+    def test_full(self):
+        self.assertEqual(self.results, self.expected)
+
+
+class FilterAlleleMatrixFull(unittest.TestCase):
+
+    def setUp(self):
+        # Set expected outputs
+        with (tests_directory / 'data/expected_outputs/contig_1_alleles_core.tsv').open('r') as fh:
+            line_token_gen = (line.rstrip().split('\t') for line in fh)
+            self.expected = parse_allele_matrix(line_token_gen)
+        # Run full script
+        program = 'filter_allele_matrix.py'
+        command_args = {
+            '--allele_fp':  tests_directory / 'data/other/contig_1_alleles.tsv',
+        }
+        command = '%s %s' % (program, ' '.join(f'{name} {val}' for name, val in command_args.items()))
+        result = bin.utility.execute_command(command)
+        line_token_gen = (line.rstrip().split('\t') for line in result.stdout.rstrip().split('\n'))
+        self.results = parse_allele_matrix(line_token_gen)
+
+    def test_full(self):
+        self.assertEqual(self.results, self.expected)
+
+
+def parse_allele_matrix(line_token_gen):
+    header_tokens = next(line_token_gen)
+    isolates = header_tokens[1:]
+    isolate_alleles = {isolate: list() for isolate in isolates}
+    for position, *alleles in line_token_gen:
+        for isolate, allele in zip(isolates, alleles):
+            isolate_alleles[isolate].append((position, allele))
+    return isolate_alleles
