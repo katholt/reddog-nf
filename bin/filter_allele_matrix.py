@@ -12,6 +12,10 @@ def get_arguments():
     args = parser.parse_args()
     if not args.allele_fp.exists():
         parser.error(f'Input file {args.allele_fp} does not exist')
+    if args.conservation <= 0:
+        parser.error('--conservation must be greater than 0, got {args.conversation}')
+    if args.conservation > 100:
+        parser.error('--conservation must be less than 100, got {args.conversation}')
     return args
 
 

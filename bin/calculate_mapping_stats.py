@@ -34,7 +34,19 @@ def get_arguments():
             help='Minimum coverage to pass')
     parser.add_argument('--min_mapped_reads', type=float, default=50,
             help='Minimum reads mapped (applies only to largest replicon)')
-    return parser.parse_args()
+
+    args = parser.parse_args()
+    if args.min_depth <= 0:
+        parser.error('--min_depth must be greater than 0, got {args.min_depth}')
+    if args.min_coverage <= 0:
+        parser.error('--min_coverage must be greater than 0, got {args.min_coverage}')
+    if args.min_coverage > 100:
+        parser.error('--min_coverage must be less than 100, got {args.min_coverage}')
+    if args.min_mapped_reads <= 0:
+        parser.error('--min_mapped_reads must be greater than 0, got {args.min_mapped_reads}')
+    if args.min_mapped_reads > 100:
+        parser.error('--min_mapped_reads must be less than 0, got {args.min_mapped_reads}')
+    return args
 
 
 def main():

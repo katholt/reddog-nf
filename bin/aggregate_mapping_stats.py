@@ -52,6 +52,8 @@ def get_arguments():
             parser.error(f'Input file {rep_stats_fp} does not exist')
     if not args.output_dir.exists():
         parser.error(f'Output directory {args.output_dir} does not exist')
+    if args.stddev_mod <= 0:
+        parser.error(f'--stddev_mod must be greater than 0, got {args.stddev_mod}')
     return args
 
 

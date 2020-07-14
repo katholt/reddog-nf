@@ -49,6 +49,8 @@ def get_arguments():
         parser.error(f'Input file {args.fp_1} does not exist')
     if not args.fp_1.exists():
         parser.error(f'Input file {args.fp_2} does not exist')
+    if args.stddev_mod <= 0:
+        parser.error(f'--stddev_mod must be greater than 0, got {args.stddev_mod}')
     return args
 
 

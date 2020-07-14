@@ -58,6 +58,10 @@ def get_arguments():
         parser.error(f'Input file {args.reference_fp} does not exist')
     if not args.output_dir.exists():
         parser.error(f'Output directory {args.output_dir} does not exist')
+    if args.min_quality <= 0:
+        parser.error('--min_quality must be greater than 0, got {args.min_quality}')
+    if args.min_support > 1:
+        parser.error('--min_support must be less than 1, got {args.min_support}')
     return args
 
 
