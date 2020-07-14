@@ -6,6 +6,9 @@ import subprocess
 import sys
 
 
+import utility
+
+
 dp4_regex = re.compile(r'DP4=([0-9,]+)')
 
 
@@ -32,20 +35,12 @@ class VcfRecord:
         return '\t'.join(self._data)
 
 
-class CheckInput(argparse.Action):
-
-    def __call__(self, parser, namespace, filepath, option_string=None):
-        if not filepath.exists():
-            parser.error(f'Filepath {filepath} for {option_string} does not exist')
-        setattr(namespace, self.dest, filepath)
-
-
 def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--bam_fp', required=True, type=pathlib.Path,
-            help='Sample BAM filepath', action=CheckInput)
+            help='Sample BAM filepath')
     parser.add_argument('--sites_fp', required=True, type=pathlib.Path,
-            help='Replicon sites filepaths', action=CheckInput)
+            help='Replicon sites filepaths')
     parser.add_argument('--reference_fp', required=True, type=pathlib.Path,
             help='Output directory')
     parser.add_argument('--output_dir', required=True, type=pathlib.Path,
@@ -57,6 +52,10 @@ def get_arguments():
             help='Minimum proportion of reads support reference allele call')
 
     args = parser.parse_args()
+    if not args.bam_fp.exists():
+        parser.error(f'Input file {args.bam_fp} does not exist')
+    if not args.reference_fp.exists():
+        parser.error(f'Input file {args.reference_fp} does not exist')
     if not args.output_dir.exists():
         parser.error(f'Output directory {args.output_dir} does not exist')
     return args
@@ -74,7 +73,7 @@ def main():
     command_mpileup_inputs = f'-f {args.reference_fp} -R {args.sites_fp} {args.bam_fp}'
     command_call = 'bcftools call -V indels -c --ploidy 1 -Ov'
     command = f'{command_mpileup_base} {command_mpileup_inputs} | {command_call}'
-    result = execute_command(command)
+    result = utility.execute_command(command)
 
     # Check we have data to process
     lines = result.stdout.rstrip().split('\n')
@@ -122,16 +121,6 @@ def get_position_support(record_info):
     support_ref = reads_ref / reads_sum if reads_sum else 0
     support_alt = reads_alt / reads_sum if reads_sum else 0
     return (support_ref, support_alt)
-
-
-def execute_command(command):
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, encoding='utf-8')
-    if result.returncode != 0:
-        print('Failed to run command:', result.args, file=sys.stderr)
-        print('stdout:', result.stdout, file=sys.stderr)
-        print('stderr:', result.stderr, file=sys.stderr)
-        sys.exit(1)
-    return result
 
 
 if __name__ == '__main__':
