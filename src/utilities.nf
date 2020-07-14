@@ -150,7 +150,7 @@ def copy_merge_data(ch, target_dir) {
   ch.map { filepath_src ->
     filepath_dst = target_dir / filepath_src.getName()
     try {
-      java.nio.file.Files.copy(filepath_src, filepath_dst, java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+      java.nio.file.Files.copy(filepath_src, filepath_dst)
     } catch (java.nio.file.FileAlreadyExistsException ex) {
       // Ignore file exists exceptions
     }
