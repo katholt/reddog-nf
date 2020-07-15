@@ -83,6 +83,8 @@ mkdir -p reads/
 
 
 ## TODO
+* Set errorStrategy dynamically
+    - use `retry` until we reach maximum allowed, then switch to `ignore`
 * Currently copying merge data outside of nextflow execution
     - for very large datasets, the script may appear to hang during this operation
     - we could notify user of the operation w progress?
