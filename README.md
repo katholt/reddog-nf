@@ -89,6 +89,10 @@ mkdir -p reads/
     - for very large datasets, the script may appear to hang during this operation
     - we could notify user of the operation w progress?
     - or perhaps create a process just to perform the copy w the 'local' executor
+* Use nextflow builtin conda functionality
+* Table for comparison of differences
+* Rewrite gene coverage/depth process to be more efficient
+    - determine if more time or memory was required in JH runs
 * Investigate use of async non-nf process code so we can:
     * Validate some input readsets
     * Warn when read quality assessment is requested on merge run but merge has fastqc data
