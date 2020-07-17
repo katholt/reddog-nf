@@ -37,3 +37,12 @@ def execute_command(command):
         print('stderr:', result.stderr, file=sys.stderr)
         sys.exit(1)
     return result
+
+
+def get_locus_tag(feature):
+    if 'locus_tag' in feature.qualifiers:
+        return feature.qualifiers['locus_tag'][0]
+    else:
+        start = feature.location.nofuzzy_start + 1
+        end = feature.location.nofuzzy_end
+        return f'nolocustag_{start}_{end}'

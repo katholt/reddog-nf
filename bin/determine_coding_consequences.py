@@ -9,6 +9,9 @@ import Bio.SeqFeature
 import Bio.SeqIO
 
 
+import utility
+
+
 nucleotide_complement = str.maketrans('atgcATGC', 'tacgTACG')
 ambiguous_amino_acids = {'B', 'J', 'X', 'Z'}
 
@@ -147,7 +150,7 @@ def main():
                 for allele, allele_isolates in isolates_by_allele(record).items():
                     # Skip alleles that fall within compound locations
                     if isinstance(interval.feature.location, Bio.SeqFeature.CompoundLocation):
-                        [locus_tag] = interval.feature.qualifiers['locus_tag']
+                        locus_tag = utility.get_locus_tag(interval.feature)
                         msg = (f'warning: skipping position {record.position} in gene {locus_tag} '
                                 'as the gene has a compound location')
                         print(msg, file=sys.stderr)
@@ -170,10 +173,15 @@ def main():
                             change_type = 'ambiguous'
                         else:
                             change_type = 'non-synonymous'
+                        # Get feature info
+                        if 'product' in interval.feature.qualifiers:
+                            [gene_product] = interval.feature.qualifiers['product']
+                        else:
+                            gene_product = '-'
+                        locus_tag = utility.get_locus_tag(interval.feature)
                         print(
-                            record.position, record.reference, allele, change_type,
-                            interval.feature.qualifiers['locus_tag'][0], codon_sequence, sequence_allele, codon,
-                            codon_allele, interval.feature.qualifiers['product'][0], position_gene, codon_number,
+                            record.position, record.reference, allele, change_type, locus_tag, codon_sequence,
+                            sequence_allele, codon, codon_allele, gene_product, position_gene, codon_number,
                             position_codon, ','.join(allele_isolates), '-', sep='\t'
                         )
 

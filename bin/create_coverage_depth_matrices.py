@@ -8,6 +8,9 @@ import sys
 import Bio.SeqIO
 
 
+import utility
+
+
 def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--mpileup_fps', required=True, type=pathlib.Path,
@@ -62,7 +65,7 @@ def main():
                 feature_depths = replicon_depths[replicon][start:end]
                 depth_mean = sum(feature_depths) / len(feature_depths)
                 coverage = len([d for d in feature_depths if d > 0]) / len(feature_depths) * 100
-                [locus_tag] = feature.qualifiers['locus_tag']
+                locus_tag = utility.get_locus_tag(feature)
                 replicon_gene_stats[replicon][locus_tag] = (coverage, depth_mean)
         # Record results
         isolate_id = mpileup_fp.stem.replace('_mpileup', '')
@@ -80,7 +83,7 @@ def main():
         print('replicon', 'locus_tag', *gene_stats, sep='\t', file=depth_fh)
         for replicon, features in replicon_genes.items():
             for feature in features:
-                [locus_tag] = feature.qualifiers['locus_tag']
+                locus_tag = utility.get_locus_tag(feature)
                 print(replicon, locus_tag, sep='\t', end='', file=coverage_fh)
                 print(replicon, locus_tag, sep='\t', end='', file=depth_fh)
                 for isolate_id in gene_stats:
