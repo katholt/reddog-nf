@@ -5,12 +5,6 @@
     - it may be that runType should be replaced with readType in rr
 
 # TODO
-* LM had mismatched reads that caused no reads to be mapped concordantly but the pipeline continued
-    - we need to detect when an mpileup output has no positions
-        - could check the output itself or check the BAM has reads mapped with pair, not jsut mapped
-    - best option is probably to include these reads in mpileup but detect when mpileup is empty
-        - just count lines in output and compare to reference_data.size (or equivalent)
-    - leave to user to input good data
 * Currently copying merge data outside of nextflow execution
     - for very large datasets, the script may appear to hang during this operation
     - we could notify user of the operation w progress?
@@ -59,4 +53,3 @@
 ## Items to be closely tested
 * Output of gene\_coverage\_depth process
 * SNP alignment and phylogeny
-
