@@ -1,0 +1,12 @@
+bcftools=1.9
+biopython=1.76
+bowtie2=2.4.1
+bwa=0.7.17
+ea-utils=1.1.2.779
+fastqc=0.11.9
+fasttree=2.1.10
+multiqc=1.7
+nextflow=20.04.1
+openjdk=8.0.192
+samtools=1.9
+seqtk=1.3
