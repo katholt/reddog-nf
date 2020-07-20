@@ -70,6 +70,8 @@ process aggregate_read_quality_reports {
 //   - index FASTA with bowtie2 and samtools
 //   - get list of replicon names and check they're unique
 process prepare_reference {
+  executor 'local'
+
   input:
   file reference_gbk_fp
 
