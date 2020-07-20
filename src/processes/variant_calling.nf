@@ -28,8 +28,13 @@ process call_snps {
   # Call variants and index
   bcftools mpileup -Ou -f ${reference_fp} ${bam_fp} | bcftools call -Oz -c -v > ${isolate_id}_raw.bcf
   bcftools index ${isolate_id}_raw.bcf
-  # Get depths for filtering purposes
-  get_coverage_depth.awk ${mpileup_fp} > ${isolate_id}_coverage_depth.tsv
+  # Get coverage and depth for filtering purposes
+  # In cases where no reads mapped set all metrics to zero
+  if [[ -s ${mpileup_fp} ]]; then
+    get_coverage_depth.awk ${mpileup_fp} > ${isolate_id}_coverage_depth.tsv
+  else
+    grep '^>' reference.fasta | sed 's/^>\\([^ ]\\+\\).*\$/\\1\\t0\\t0\\t0/' > ${isolate_id}_coverage_depth.tsv
+  fi;
   # Filter SNPs for each replicon with appropriate max depth
   while read -a data; do
     replicon_id=\${data[0]};

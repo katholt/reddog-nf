@@ -164,6 +164,9 @@ def get_read_counts(bam_fp):
     mapped_replicons = dict()
     token_types = (str, int)
     for line_tokens in line_token_gen:
+        # If no reads were mapped, skip
+        if len(line_tokens) != 2:
+            continue
         # Cast strings to appropriate types
         data = list()
         for token, token_type in zip(line_tokens, token_types):
@@ -172,7 +175,11 @@ def get_read_counts(bam_fp):
         # Sort
         replicon, mapped = data
         mapped_replicons[replicon] = mapped
-    mapped_total = mapped_replicons.pop('total_mapped')
+    # The 'total_mapped' key only exists with we have reads mapping
+    if 'total_mapped' in mapped_replicons:
+        mapped_total = mapped_replicons.pop('total_mapped')
+    else:
+        mapped_total = 0
     return mapped_total, mapped_replicons
 
 

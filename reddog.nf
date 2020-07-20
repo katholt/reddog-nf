@@ -219,7 +219,7 @@ workflow {
     sites_data = aggregate_snp_sites(ch_snp_sites.collect(), isolate_replicon_data.output)
 
     // For each isolate get replicons that passing mapping stats criteria and have at least one SNP
-    // This list is used to filter downstream channels so we don't pointless execute processes
+    // Filter isolates that do not pass
     isolate_replicons_passing = collect_passing_isolate_replicons(isolate_replicon_data.output)
 
     bams_and_sites = ch_bams.join(isolate_replicons_passing).combine(sites_data.output)
