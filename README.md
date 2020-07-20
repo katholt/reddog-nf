@@ -1,5 +1,6 @@
 # reddog-nf
-A nextflow reimplementation of the microbial variant calling pipeline [RedDog](https://github.com/katholt/RedDog).
+A nextflow reimplementation of the microbial variant calling pipeline [RedDog](https://github.com/katholt/RedDog). A
+diagrammatic overview of the pipeline can be seen [here](assets/pipeline_overview.pdf).
 
 
 ## Table of contents
