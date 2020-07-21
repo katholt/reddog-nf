@@ -1,4 +1,7 @@
 // Processes
+include copy_bams from './processes/merge.nf'
+include copy_vcfs from './processes/merge.nf'
+include copy_fastqc from './processes/merge.nf'
 include index_bam from './processes/merge.nf'
 include gene_depth from './processes/merge.nf'
 include gene_coverage from './processes/merge.nf'
@@ -7,9 +10,6 @@ include collect_snp_sites from './processes/merge.nf'
 
 // Channel helper functions
 include get_replicon_id from './channel_helpers.nf'
-
-// Utility functions
-include copy_merge_data from './utilities.nf'
 
 
 workflow merge {
@@ -29,16 +29,13 @@ workflow merge {
     reference_name
 
   main:
-    // Symlink BAMs and VCFs
-    bam_output_dir = file(params.output_dir) / 'bams/'
-    vcf_output_dir = file(params.output_dir) / 'vcfs/'
-    copy_merge_data(merge_source_bams, bam_output_dir)
-    copy_merge_data(merge_source_vcfs, vcf_output_dir)
+    // Copy BAMs and VCFs
+    copy_vcfs(merge_source_vcfs)
+    copy_bams(merge_source_bams)
 
-    // Symlink FastQC reports, then add zip output to existing channel
+    // Copy FastQC reports, then add zip output to existing channel
     if (run_read_quality_report) {
-      fastqc_individual_output_dir = file(params.output_dir) / 'fastqc/individual_reports/'
-      copy_merge_data(merge_source_fastqc, fastqc_individual_output_dir)
+      copy_fastqc(merge_source_fastqc)
       ch_fastqc = ch_fastqc.flatten().mix(merge_source_fastqc.filter { it.getName().endsWith('zip') })
     }
 

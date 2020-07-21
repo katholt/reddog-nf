@@ -1,3 +1,51 @@
+process copy_bams {
+  publishDir "${params.output_dir}/bams/", mode: 'copy'
+
+  executor 'local'
+
+  input:
+  path src_fn
+
+  output:
+  path src_fn
+
+  script:
+  """
+  """
+}
+
+process copy_vcfs {
+  publishDir "${params.output_dir}/vcfs/", mode: 'copy'
+
+  executor 'local'
+
+  input:
+  path src_fn
+
+  output:
+  path src_fn
+
+  script:
+  """
+  """
+}
+
+process copy_fastqc {
+  publishDir "${params.output_dir}/fastqc/individual_reports/", mode: 'copy'
+
+  executor 'local'
+
+  input:
+  path src_fn
+
+  output:
+  path src_fn
+
+  script:
+  """
+  """
+}
+
 process index_bam {
   input:
   path bam_fp

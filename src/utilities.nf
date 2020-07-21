@@ -137,22 +137,3 @@ def validate_merge_data(merge_ignore_errors) {
     }
   }
 }
-
-
-// NOTE: there is some issue where DSL2 creates duplicates of channels and executes this function
-//       more than once of those channels, creating a race condition while checking if the file
-//       exists. I can't see how this is avoidable right now, so I just catch the exception and
-//       continue with execution.
-def copy_merge_data(ch, target_dir) {
-  if (! target_dir.exists()) {
-    target_dir.mkdirs()
-  }
-  ch.map { filepath_src ->
-    filepath_dst = target_dir / filepath_src.getName()
-    try {
-      java.nio.file.Files.copy(filepath_src, filepath_dst)
-    } catch (java.nio.file.FileAlreadyExistsException ex) {
-      // Ignore file exists exceptions
-    }
-  }
-}
