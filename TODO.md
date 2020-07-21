@@ -5,10 +5,8 @@
     - it may be that runType should be replaced with readType in rr
 
 # TODO
-* Currently copying merge data outside of nextflow execution
-    - for very large datasets, the script may appear to hang during this operation
-    - we could notify user of the operation w progress?
-    - or perhaps create a process just to perform the copy w the 'local' executor
+* Should we include paired reads that map discordantly in multiway pileups?
+    - this would be done by adding option -A
 * Rewrite gene coverage/depth process to be more efficient
     - see report.html for flexneri
 * Investigate use of async non-nf process code so we can:
@@ -29,6 +27,9 @@
         - this was possible in DSL1 but I'm yet to find an equivalent in DSL2
     - rn we're passing reference name by argument very often
     - this is a little messy tbh, hopefuly can do better
+* Should we symlink all outputs and then in final process copy data?
+    - current approach to copying merge data isn't perfectly efficient
+    - each copy task consumes a CPU slot but only uses disk i/o
 * MultiQC/FastQC seems to give wrong phred score for second isolate in read simulation run
 
 
