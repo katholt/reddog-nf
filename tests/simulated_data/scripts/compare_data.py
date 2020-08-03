@@ -13,10 +13,10 @@ import utility
 
 file_patterns = {
     'allele_table': 'alleles.tsv',
-    'allele_core_table': 'alleles_core.tsv',
-    'consequences': 'consequences_core.tsv',
+    'allele_cons_table': 'alleles_cons.tsv',
+    'consequences': 'consequences_cons.tsv',
     'mapping_stats': 'mapping_stats.tsv',
-    'snp_alignment': 'core.mfasta',
+    'snp_alignment': 'cons.mfasta',
     'gene_coverage': 'coverage.tsv',
     'gene_depth': 'depth.tsv'
 }
@@ -86,7 +86,7 @@ def read_file_data(filepath, filetype, suffix, run_data):
     replicon_id = re_result.group(1)
     if filetype not in {'gene_coverage', 'gene_depth'}:
         assert replicon_id not in run_data[filetype]
-    if filetype in {'allele_table', 'allele_core_table'}:
+    if filetype in {'allele_table', 'allele_cons_table'}:
         run_data[filetype][replicon_id] = read_allele_table(filepath)
     elif filetype == 'consequences':
         run_data[filetype][replicon_id] = read_consequences(filepath)

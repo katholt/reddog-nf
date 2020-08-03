@@ -229,10 +229,10 @@ workflow {
     allele_matrix_aggregate_data = aggregate_allele_matrices(allele_matrices_by_replicon, sites_data.output, reference_data.name)
     allele_matrix_aggregate_data = remove_empty_allele_matrices(allele_matrix_aggregate_data.output)
 
-    allele_matrices_core = filter_allele_matrix(allele_matrix_aggregate_data, reference_data.name)
+    allele_matrices_cons = filter_allele_matrix(allele_matrix_aggregate_data, reference_data.name)
 
-    determine_coding_consequences(allele_matrices_core, reference_fp)
+    determine_coding_consequences(allele_matrices_cons, reference_fp)
 
-    snp_alignment = create_snp_alignment(allele_matrices_core, reference_data.name)
+    snp_alignment = create_snp_alignment(allele_matrices_cons, reference_data.name)
     infer_phylogeny(snp_alignment, reference_data.name, isolate_replicons_passing.count(), run_phylogeny)
 }

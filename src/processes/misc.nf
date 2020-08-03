@@ -149,7 +149,7 @@ process create_snp_alignment {
 
   script:
   """
-  create_snp_alignment.py --allele_fp ${allele_matrix_fp} > ${replicon_id}_core.mfasta
+  create_snp_alignment.py --allele_fp ${allele_matrix_fp} > ${replicon_id}_cons.mfasta
   """
 }
 
@@ -166,12 +166,12 @@ process determine_coding_consequences {
   path reference_gbk_fp
 
   output:
-  path '*consequences_core.tsv'
+  path '*consequences_cons.tsv'
 
   script:
   reference_name = reference_gbk_fp.simpleName
   """
-  determine_coding_consequences.py --allele_fp ${allele_matrix_fp} --reference_fp ${reference_gbk_fp} --replicon ${replicon_id} > ${replicon_id}_consequences_core.tsv
+  determine_coding_consequences.py --allele_fp ${allele_matrix_fp} --reference_fp ${reference_gbk_fp} --replicon ${replicon_id} > ${replicon_id}_consequences_cons.tsv
   """
 }
 
@@ -194,6 +194,6 @@ process infer_phylogeny {
 
   script:
   """
-  FastTree -gtr -gamma -nt ${alignment_fp} > ${replicon_id}_core.tree
+  FastTree -gtr -gamma -nt ${alignment_fp} > ${replicon_id}_cons.tree
   """
 }

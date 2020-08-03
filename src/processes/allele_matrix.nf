@@ -55,10 +55,10 @@ process filter_allele_matrix {
   val reference_name
 
   output:
-  tuple val(replicon_id), path('*_alleles_core.tsv'), emit: output
+  tuple val(replicon_id), path('*_alleles_cons.tsv'), emit: output
 
   script:
   """
-  filter_allele_matrix.py --allele_fp ${allele_fp} --conservation ${params.allele_matrix_cons} > ${replicon_id}_alleles_core.tsv
+  filter_allele_matrix.py --allele_fp ${allele_fp} --conservation ${params.allele_matrix_cons} > ${replicon_id}_alleles_cons.tsv
   """
 }
