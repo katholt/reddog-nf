@@ -25,12 +25,12 @@ def read_spec_file(filepath):
     with filepath.open('r') as fh:
         # Get defaults
         default_metrics = {'mean_depth', 'outer_length', 'read_length'}
-        assert fh.readline().rstrip() == '# Defaults'
+        assert fh.readline().rstrip() == '## Defaults'
         assert fh.readline().rstrip() == 'metric\tvalue\ttype'
         for line in fh:
-            if line.startswith('##'):
+            if line.startswith('#') and line[1] != '#':
                 continue
-            if line.startswith('# Readsets'):
+            if line.startswith('## Readsets'):
                 break
             line_tokens = line.rstrip().split('\t')
             assert len(line_tokens) == 3
@@ -47,9 +47,9 @@ def read_spec_file(filepath):
         # Get readsets to simulate
         assert fh.readline().rstrip() == 'isolate_name\tdata'
         for line in fh:
-            if line.startswith('##'):
+            if line.startswith('#') and line[1] != '#':
                 continue
-            if line.startswith('# Variants'):
+            if line.startswith('## Variants'):
                 break
             line_tokens = line.rstrip().split('\t')
             assert len(line_tokens) == 2
@@ -77,7 +77,7 @@ def read_spec_file(filepath):
         info['replicons'] = set()
         assert fh.readline().rstrip() == 'isolate_name\treplicon\ttype\tdata'
         for line in fh:
-            if line.startswith('##'):
+            if line.startswith('#') and line[1] != '#':
                 continue
             line_tokens = line.rstrip().split('\t')
             assert len(line_tokens) == 4

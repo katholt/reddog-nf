@@ -1,28 +1,28 @@
-# Defaults
+## Defaults
 metric	value	type
 mean_depth	15	int
 outer_length	750	int
 read_length	250	int
-# Readsets
+## Readsets
 isolate_name	data
-## Coding consequences test isolate
+# Coding consequences test isolate
 isolate_1	read_type:pe
 isolate_2	read_type:pe
-## Heterozygous call test isolate
+# Heterozygous call test isolate
 isolate_3	read_type:pe
-## INDEL call test isolate
+# INDEL call test isolate
 isolate_4	read_type:pe
 isolate_5	read_type:pe
-## Mapping stats pass/ fail test isolates
-## Pass
+# Mapping stats pass/ fail test isolates
+# Pass
 isolate_6	unmapped:0.5;read_type:pe
 isolate_7	unmapped:0.45;read_type:pe
 isolate_8	mean_depth:11;read_type:pe
 isolate_9	mean_depth:25;read_type:pe
 isolate_10	mean_depth:11;unmapped:0.45;read_type:pe
-## Fail
-## Read simulator slightly underestimates number of reads required to achieve coverage
-## This means that isolate_13 ends up with a mean read depth <10 and thus fails
+# Fail
+# Read simulator slightly underestimates number of reads required to achieve coverage
+# This means that isolate_13 ends up with a mean read depth <10 and thus fails
 isolate_11	unmapped:0.80;read_type:pe
 isolate_12	unmapped:0.65;read_type:pe
 isolate_13	mean_depth:9;read_type:pe
@@ -30,7 +30,7 @@ isolate_14	mean_depth:10;read_type:pe
 isolate_15	mean_depth:9;unmapped:0.45;read_type:pe
 isolate_16	mean_depth:9;unmapped:0.65;read_type:pe
 isolate_17	mean_depth:11;unmapped:0.65;read_type:pe
-## SNP filtering test isolates
+# SNP filtering test isolates
 isolate_18	read_type:pe
 isolate_19	read_type:pe
 isolate_20	read_type:pe
@@ -51,10 +51,10 @@ isolate_34	read_type:pe
 isolate_35	read_type:pe
 isolate_36	read_type:pe
 isolate_37	read_type:pe
-# Variants
+## Variants
 isolate_name	replicon	type	data
-## SNPs to testing coding consequences - start and stop codons, and various others
-## Non-synonymous
+# SNPs to testing coding consequences - start and stop codons, and various others
+# Non-synonymous
 isolate_1	contig_1	hom	position:1158;alt:a;note:sul1_G2R
 isolate_1	contig_1	hom	position:1644;alt:g;note:sul1_T164A
 isolate_1	contig_1	hom	position:2081;alt:t;note:sul1_*309Y
@@ -68,46 +68,46 @@ isolate_1	contig_1	hom	position:13377;alt:g;note:plsB_M1L
 isolate_1	contig_1	hom	position:13392;alt:g;note:dmsA_L812P
 isolate_1	contig_2	hom	position:157;alt:g;note:mrkC_D781H
 isolate_2	contig_1	hom	position:10954;alt:g;note:plsB_*808Y
-## Synonymous
+# Synonymous
 isolate_1	contig_1	hom	position:6268;alt:a;note:secD_K487K
 isolate_1	contig_1	hom	position:6506;alt:a;note:mukB_R8R
 isolate_1	contig_1	hom	position:14636;alt:t;note:dmsA_R397R
 isolate_1	contig_2	hom	position:779;alt:g;note:mrkC_P573P
-## Intergenic
+# Intergenic
 isolate_1	contig_1	hom	position:2086;alt:a;note:intergenic
 isolate_1	contig_1	hom	position:4807;alt:a;note:intergenic
 isolate_1	contig_1	hom	position:6473;alt:c;note:intergenic
-## Two SNPs in each codon
+# Two SNPs in each codon
 isolate_1	contig_1	hom	position:6484;alt:a;note:mukB_M1K, first of two homs in codon
 isolate_1	contig_1	hom	position:6485;alt:c;note:mukB_M1I, second of two homs in codon
 isolate_2	contig_2	hom	position:560;alt:c;note:mrkC_S646R, second of two homs in codon
 isolate_2	contig_2	hom	position:561;alt:t;note:mrkC_S646N, first of two homs in codon
-## Same variants in different isolate
+# Same variants in different isolate
 isolate_2	contig_1	hom	position:1158;alt:a;note:sul1_G2R
 isolate_2	contig_1	hom	position:6473;alt:c;note:intergenic
 isolate_2	contig_2	hom	position:157;alt:g;note:mrkC_D781H
-## Same position different consequence in second isolate - expect two enteries in coding consequences
+# Same position different consequence in second isolate - expect two enteries in coding consequences
 isolate_2	contig_1	hom	position:6525;alt:g;note:mukB_W15G
 isolate_2	contig_1	hom	position:13377;alt:c;note:plsB_M1V
-## Heterozgyous SNPs
-## Both different toreference allele
+# Heterozgyous SNPs
+# Both different toreference allele
 isolate_3	contig_1	het	position:672;alt_1:t;alt_2:c;ratio:0.5
 isolate_3	contig_1	het	position:3181;alt_1:t;alt_2:c;ratio:0.4
-## One different to reference allele
+# One different to reference allele
 isolate_3	contig_1	het	position:1501;alt_1:a;alt_2:t;ratio:0.5
-## INDELs
-## WARNING: do NOT place an INDEL with ANY other variant in a single isolate, not even another INDEL
-## Still need to account for positioning offsets created by INDELs during read simulation
+# INDELs
+# WARNING: do NOT place an INDEL with ANY other variant in a single isolate, not even another INDEL
+# Still need to account for positioning offsets created by INDELs during read simulation
 isolate_4	contig_1	indel	position:709;op:del
 isolate_5	contig_1	indel	position:721;op:ins;alt:g
-## Site with <5% unknown - retained (1/22 unknown (4.5%))
+# Site with <5% unknown - retained (1/22 unknown (4.5%))
 isolate_18	contig_1	hom	position:4820;alt:g;note:secD_S5A
 isolate_19	contig_1	low_quality	position:4820
-## Site with >5% unknown - filtered (2/22 unknown (9.1%))
+# Site with >5% unknown - filtered (2/22 unknown (9.1%))
 isolate_20	contig_1	hom	position:4850;alt:a;note:secD_L15M filtered
 isolate_21	contig_1	low_quality	position:4850
 isolate_22	contig_1	low_quality	position:4850
-## Add one SNP to each of the core SNP test isolates - force allele matrix generation
+# Add one SNP to each of the core SNP test isolates - force allele matrix generation
 isolate_18	contig_1	hom	position:8001;alt:c;note:mukB_D507H
 isolate_19	contig_1	hom	position:8001;alt:c;note:mukB_D507H
 isolate_20	contig_1	hom	position:8001;alt:c;note:mukB_D507H
