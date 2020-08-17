@@ -49,14 +49,16 @@ mkdir -p reads/
 
 ## Outputs
 For each replicon in the provided reference, the following outputs are generated:
-| File                      | Name                                                  |
-| ----                      | ----                                                  |
-| Mapping statistics        | `reference_name`_`replicon`\_mapping\_stats.tsv       |
-| All SNP alleles           | `reference_name`_`replicon`\_alleles.tsv              |
-| Conserved SNP alleles     | `reference_name`_`replicon`\_alleles\_cons.tsv        |
-| Conserved SNP alignment   | `reference_name`_`replicon`\_cons.mfasta              |
-| Conserved SNP phylogeny   | `reference_name`_`replicon`\_cons.tree                |
-| SNP consequences          | `reference_name`_`replicon`\_consequences\_cons.tsv   |
+| File                          | Name                                                  |
+| ----                          | ----                                                  |
+| Mapping statistics            | `reference_name`\_`replicon`\_mapping\_stats.tsv      |
+| All SNP alleles               | `reference_name`\_`replicon`\_alleles.tsv             |
+| Conserved SNP alleles         | `reference_name`\_`replicon`\_alleles\_cons.tsv       |
+| Conserved SNP alignment       | `reference_name`\_`replicon`\_cons.mfasta             |
+| Conserved SNP phylogeny       | `reference_name`\_`replicon`\_cons.tree               |
+| Conserved SNP consequences    | `reference_name`\_`replicon`\_consequences\_cons.tsv  |
+| Gene depth                    | `reference_name`\_gene\_depth.tsv                     |
+| Gene coverage                 | `reference_name`\_gene\_coverage.tsv                  |
 
 Additionally several directory outputs are created:
 | Directory                         | Location and name         |
