@@ -53,17 +53,18 @@ For each replicon in the provided reference, the following outputs are generated
 | ----                      | ----                                                  |
 | Mapping statistics        | `reference_name`_`replicon`\_mapping\_stats.tsv       |
 | All SNP alleles           | `reference_name`_`replicon`\_alleles.tsv              |
-| Conserved SNP alleles     | `reference_name`_`replicon`\_alleles\_core.tsv        |
-| Conserved SNP alignment   | `reference_name`_`replicon`\_core.mfasta              |
-| Conserved SNP phylogeny   | `reference_name`_`replicon`\_core.tree                |
-| SNP consequences          | `reference_name`_`replicon`\_consequences\_core.tsv   |
+| Conserved SNP alleles     | `reference_name`_`replicon`\_alleles\_cons.tsv        |
+| Conserved SNP alignment   | `reference_name`_`replicon`\_cons.mfasta              |
+| Conserved SNP phylogeny   | `reference_name`_`replicon`\_cons.tree                |
+| SNP consequences          | `reference_name`_`replicon`\_consequences\_cons.tsv   |
 
 Additionally several directory outputs are created:
-| Directory                 | Location and name     |
-| ----                      | ----                  |
-| Filtered isolate BAMs     | `output_dir`/bams/        |
-| Filtered isolate VCFs     | `output_dir`/vcfs/        |
-| Run information           | `output_dir`/run\_info/   |
+| Directory                         | Location and name         |
+| ----                              | ----                      |
+| Filtered isolate BAMs             | `output_dir`/bams/        |
+| Filtered isolate VCFs             | `output_dir`/vcfs/        |
+| Run information                   | `output_dir`/run\_info/   |
+| Read quality reports (optional)   | `output_dir`/fastqc/      |
 
 
 ## License
