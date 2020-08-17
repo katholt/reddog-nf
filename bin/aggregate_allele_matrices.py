@@ -44,7 +44,7 @@ def main():
         sites_seen = set()
         # Record site alleles
         with allele_fp.open('r') as fh:
-            line_token_gen = (line.rstrip().split('\t') for line in fh)
+            line_token_gen = (line.rstrip().split(',') for line in fh)
             isolate = next(line_token_gen)[2]
             isolates.append(isolate)
             for position_str, ref_snp, isolate_snp in line_token_gen:
@@ -58,9 +58,9 @@ def main():
             alleles[position].append('-')
 
     # Print aggregated matrix
-    print('Position', 'Reference', *isolates, sep='\t')
+    print('Pos', 'Reference', *isolates, sep=',')
     for position in sorted(sites_all):
-        print(position, ref_alleles[position], *alleles[position], sep='\t')
+        print(position, ref_alleles[position], *alleles[position], sep=',')
 
 
 if __name__ == '__main__':

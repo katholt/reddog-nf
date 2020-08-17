@@ -41,11 +41,11 @@ def collect_passing_isolate_replicons(ch) {
 def sort_allele_matrices(ch) {
   return ch.flatMap { isolate_id, filepaths ->
     if (! (filepaths instanceof List)) {
-      replicon_id = filepaths.getName().minus("_${isolate_id}_alleles.tsv")
+      replicon_id = filepaths.getName().minus("_${isolate_id}_alleles.csv")
       return [[replicon_id, filepaths]]
     } else {
       return filepaths.collect { filepath ->
-        replicon_id = filepath.getName().minus("_${isolate_id}_alleles.tsv")
+        replicon_id = filepath.getName().minus("_${isolate_id}_alleles.csv")
         [replicon_id, filepath]
       }
     }

@@ -79,21 +79,21 @@ def main():
         coverage_fh = stack.enter_context(coverage_fp.open('w'))
         depth_fh = stack.enter_context(depth_fp.open('w'))
         # Write results
-        print('replicon', 'locus_tag', *gene_stats, sep='\t', file=coverage_fh)
-        print('replicon', 'locus_tag', *gene_stats, sep='\t', file=depth_fh)
+        print('replicon', 'locus_tag', *gene_stats, sep=',', file=coverage_fh)
+        print('replicon', 'locus_tag', *gene_stats, sep=',', file=depth_fh)
         for replicon, features in replicon_genes.items():
             for feature in features:
                 locus_tag = utility.get_locus_tag(feature)
-                print(replicon, locus_tag, sep='\t', end='', file=coverage_fh)
-                print(replicon, locus_tag, sep='\t', end='', file=depth_fh)
+                print(replicon, locus_tag, sep=',', end='', file=coverage_fh)
+                print(replicon, locus_tag, sep=',', end='', file=depth_fh)
                 for isolate_id in gene_stats:
                     if replicon in gene_stats[isolate_id]:
                         coverage, depth_mean = gene_stats[isolate_id][replicon][locus_tag]
-                        print(f'\t{round(coverage, 2)}', end='', file=coverage_fh)
-                        print(f'\t{round(depth_mean, 2)}', end='', file=depth_fh)
+                        print(f',{round(coverage, 2)}', end='', file=coverage_fh)
+                        print(f',{round(depth_mean, 2)}', end='', file=depth_fh)
                     else:
-                        print(f'\t0.00', end='', file=coverage_fh)
-                        print(f'\t0.00', end='', file=depth_fh)
+                        print(f',0.00', end='', file=coverage_fh)
+                        print(f',0.00', end='', file=depth_fh)
                 print(file=coverage_fh)
                 print(file=depth_fh)
 

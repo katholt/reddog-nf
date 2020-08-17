@@ -135,10 +135,10 @@ if (run_merge) {
   merge_source_bams = Channel.fromPath(merge_source_dir / 'bams/*.bam')
   merge_source_vcfs = Channel.fromPath(merge_source_dir / 'vcfs/*.vcf')
   merge_source_fastqc = Channel.fromPath(merge_source_dir / 'fastqc/individual_reports/*{zip,html}')
-  merge_source_gene_depth = Channel.fromPath(merge_source_dir / '*gene_depth.tsv')
-  merge_source_gene_coverage = Channel.fromPath(merge_source_dir / '*gene_coverage.tsv')
+  merge_source_gene_depth = Channel.fromPath(merge_source_dir / '*gene_depth.csv')
+  merge_source_gene_coverage = Channel.fromPath(merge_source_dir / '*gene_coverage.csv')
   merge_source_mapping_stats = Channel.fromPath(merge_source_dir / '*mapping_stats.tsv')
-  merge_source_allele_matrices = Channel.fromPath(merge_source_dir / '*alleles.tsv')
+  merge_source_allele_matrices = Channel.fromPath(merge_source_dir / '*alleles.csv')
 }
 
 

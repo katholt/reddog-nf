@@ -59,7 +59,7 @@ workflow merge {
     stats_data.mix(ch_mapping_stats_merge.no_merge)
 
     // Collect SNP sites identified in previous run from the allele matrix
-    merge_source_allele_matrices = get_replicon_id(merge_source_allele_matrices, '_alleles.tsv', reference_name)
+    merge_source_allele_matrices = get_replicon_id(merge_source_allele_matrices, '_alleles.csv', reference_name)
     merge_snp_sites = collect_snp_sites(merge_source_allele_matrices)
 
   emit:

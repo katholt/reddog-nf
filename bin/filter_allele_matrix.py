@@ -23,12 +23,12 @@ def main():
     # Get command line arguments
     args = get_arguments()
 
-    # Filter at 95% conservation
+    # Filter at n% conservation
     with args.allele_fp.open('r') as fh:
-        line_token_gen = (line.rstrip().split('\t') for line in fh)
+        line_token_gen = (line.rstrip().split(',') for line in fh)
         # Get and print header
         header_tokens = next(line_token_gen)
-        print(*header_tokens, sep='\t')
+        print(*header_tokens, sep=',')
         # Process alleles
         isolate_count = len(header_tokens) - 2
         for position, allele_ref, *allele_isolates in line_token_gen:
@@ -42,7 +42,7 @@ def main():
             if alleles_known_pct < args.conservation:
                 continue
             # Print passing alleles
-            print(position, allele_ref, *allele_isolates, sep='\t')
+            print(position, allele_ref, *allele_isolates, sep=',')
 
 
 if __name__ == '__main__':

@@ -64,16 +64,16 @@ process gene_depth {
   publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }, mode: 'copy'
 
   input:
-  path file1, stageAs: 'file_1.tsv'
-  path file2, stageAs: 'file_2.tsv'
+  path file1, stageAs: 'file_1.csv'
+  path file2, stageAs: 'file_2.csv'
   val reference_name
 
   output:
-  path 'gene_depth.tsv'
+  path 'gene_depth.csv'
 
   script:
   """
-  merge_gene_stat_matrix.py --fp_1 file_1.tsv --fp_2 file_2.tsv > gene_depth.tsv
+  merge_gene_stat_matrix.py --fp_1 file_1.csv --fp_2 file_2.csv > gene_depth.csv
   """
 }
 
@@ -82,16 +82,16 @@ process gene_coverage {
   publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }, mode: 'copy'
 
   input:
-  path file1, stageAs: 'file_1.tsv'
-  path file2, stageAs: 'file_2.tsv'
+  path file1, stageAs: 'file_1.csv'
+  path file2, stageAs: 'file_2.csv'
   val reference_name
 
   output:
-  path 'gene_coverage.tsv'
+  path 'gene_coverage.csv'
 
   script:
   """
-  merge_gene_stat_matrix.py --fp_1 file_1.tsv --fp_2 file_2.tsv > gene_coverage.tsv
+  merge_gene_stat_matrix.py --fp_1 file_1.csv --fp_2 file_2.csv > gene_coverage.csv
   """
 }
 

@@ -9,7 +9,7 @@ process create_allele_matrix {
   path reference_fp
 
   output:
-  tuple val(isolate_id), path('*_alleles.tsv'), emit: output
+  tuple val(isolate_id), path('*_alleles.csv'), emit: output
 
   script:
   """
@@ -33,12 +33,12 @@ process aggregate_allele_matrices {
   val reference_name
 
   output:
-  tuple val(replicon_id), path('*_alleles.tsv'), emit: output
+  tuple val(replicon_id), path('*_alleles.csv'), emit: output
 
   script:
   """
   { head -n1 ${snp_sites_fp}; grep -w "^${replicon_id}" snp_sites.tsv; } > replicon_sites.tsv
-  aggregate_allele_matrices.py --allele_fps ${allele_fps} --sites_fp replicon_sites.tsv > ${replicon_id}_alleles.tsv
+  aggregate_allele_matrices.py --allele_fps ${allele_fps} --sites_fp replicon_sites.tsv > ${replicon_id}_alleles.csv
   """
 }
 
@@ -55,10 +55,10 @@ process filter_allele_matrix {
   val reference_name
 
   output:
-  tuple val(replicon_id), path('*_alleles_cons.tsv'), emit: output
+  tuple val(replicon_id), path('*_alleles_cons.csv'), emit: output
 
   script:
   """
-  filter_allele_matrix.py --allele_fp ${allele_fp} --conservation ${params.allele_matrix_cons} > ${replicon_id}_alleles_cons.tsv
+  filter_allele_matrix.py --allele_fp ${allele_fp} --conservation ${params.allele_matrix_cons} > ${replicon_id}_alleles_cons.csv
   """
 }

@@ -109,7 +109,7 @@ def main():
     )
     print(*header_tokens, sep='\t')
     with args.allele_fp.open('r') as fh:
-        line_token_gen = (line.rstrip().split('\t') for line in fh)
+        line_token_gen = (line.rstrip().split(',') for line in fh)
         header_tokens = next(line_token_gen)
         isolates = header_tokens[2:]
         # Iterate through each entry via AlleleRecords

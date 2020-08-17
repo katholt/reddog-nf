@@ -99,19 +99,19 @@ def main():
             if replicon_current:
                 fh.close()
             replicon_current = record.chrom
-            output_fp = args.output_dir / f'{replicon_current}_{isolate_id}_alleles.tsv'
+            output_fp = args.output_dir / f'{replicon_current}_{isolate_id}_alleles.csv'
             fh = output_fp.open('w')
-            print('Position', 'Reference', isolate_id, sep='\t', file=fh)
+            print('Pos', 'Reference', isolate_id, sep=',', file=fh)
         # Check quality and support
         support_ref, support_alt = get_position_support(record.info)
         if record.qual < args.min_quality:
-            print(record.pos, record.ref, '-', sep='\t', file=fh)
+            print(record.pos, record.ref, '-', sep=',', file=fh)
         elif record.alt != '.' and support_alt >= args.min_support:
-            print(record.pos, record.ref, record.alt, sep='\t', file=fh)
+            print(record.pos, record.ref, record.alt, sep=',', file=fh)
         elif record.alt == '.' and support_ref >= args.min_support:
-            print(record.pos, record.ref, record.ref, sep='\t', file=fh)
+            print(record.pos, record.ref, record.ref, sep=',', file=fh)
         else:
-            print(record.pos, record.ref, '-', sep='\t', file=fh)
+            print(record.pos, record.ref, '-', sep=',', file=fh)
 
 
 def get_position_support(record_info):

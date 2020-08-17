@@ -74,14 +74,14 @@ def main():
         isolate_names_depth = set()
     else:
         with gene_depth_fp.open('r') as fh:
-            isolate_names_depth = set(fh.readline().rstrip().split('\t')[2:])
+            isolate_names_depth = set(fh.readline().rstrip().split(',')[2:])
     if not gene_coverage_fp.exists():
         status['messages'].append(f'error: gene coverage file {gene_coverage_fp} does not exist')
         status['return_code'] = 1
         isolate_names_coverage = set()
     else:
         with gene_coverage_fp.open('r') as fh:
-            isolate_names_coverage = set(fh.readline().rstrip().split('\t')[2:])
+            isolate_names_coverage = set(fh.readline().rstrip().split(',')[2:])
     if isolate_names_depth and isolate_names_depth != isolate_names_bam:
         status['messages'].append('error: isolate names in gene depth and BAMs differ')
         status['return_code'] = 1
@@ -319,7 +319,7 @@ def get_isolate_names_from_allele_matrices(src_dir, merge_rep_names, merge_ref_n
         assert name not in isolate_names
         # Get isolate names
         with fp.open('r') as fh:
-            isolates = set(fh.readline().rstrip().split('\t')[2:])
+            isolates = set(fh.readline().rstrip().split(',')[2:])
             isolate_names[name] = isolates
     if fps_count < 1:
         status['messages'].append('error: did not find any allele matrices file in merge directory')
