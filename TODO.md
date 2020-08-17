@@ -1,10 +1,17 @@
-# Important note
-* Not currently using a strand bias cutoff
-    - this is only used in reddog when the runType is set to PE
-    - though runType is only ever set to phylogeny or pangenome
-    - it may be that runType should be replaced with readType in rr
-
 # TODO
+* Ingroup/outgroup designation should use SNPs not reads mapped
+* Filenames using conversed data should have level of conservation encoded in them
+* Convert to CSV
+    - gene coverage and depth
+    - allele table (also Position to Pos)
+* Multiple directories as input
+* Expose SNP support parameter for allele calling in nextflow config
+* Use parseSNPTable (python3)
+* Consider removing read subsampling
+* Documentation
+    - user manual
+    - technical manual
+        - specific commands and parameters
 * Should we include paired reads that map discordantly in multiway pileups?
     - this would be done by adding option -A
 * Rewrite gene coverage/depth process to be more efficient
@@ -38,10 +45,6 @@
     - vcfutils varFilter: >= 30 RMS mapping quaility
     - python script: >= 30 mapping quality
     - these are different statistics but is the raw mapping quality filter sufficient?
-* Ingroup defined as:
-    - m = total\_reads / replicon\_coverage / 100
-    - isolate's m <= (stddev all isolate's m) * 2
-    - should we also look at number of SNPs?
 * Hets are currently determined by looking at a diploid genotype bcftools call
     - specifically looking at GT fields of 1/1 or 0/0
     - what are the implications of callign in diploid mode rather than haploid?
@@ -49,6 +52,10 @@
     - also SNPs with ONE other non-reference allele are considered hets
         - e.g. ref: A; alt: T (50 reads), C (1 read)
         - should this be a hom of A->T rather than a het?
+* Not currently using a strand bias cutoff
+    - this is only used in reddog when the runType is set to PE
+    - though runType is only ever set to phylogeny or pangenome
+    - it may be that runType should be replaced with readType in rr
 
 
 ## Items to be closely tested
