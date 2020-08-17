@@ -9,7 +9,7 @@ def assign_ingroup_outgroup(records, stddev_mod):
     for record in records:
         if record.pass_fail != 'p':
             continue
-        record.ratio = int(record.total_reads) / float(record.replicon_coverage) / 100
+        record.ratio = int(record.snps) / float(record.replicon_coverage) / 100
         ratios.append(record.ratio)
     # If we have sufficient entries, calculate ingroup/outgroup threshold
     if len(ratios) > 1:
