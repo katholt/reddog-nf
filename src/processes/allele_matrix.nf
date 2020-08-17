@@ -55,10 +55,12 @@ process filter_allele_matrix {
   val reference_name
 
   output:
-  tuple val(replicon_id), path('*_alleles_cons.csv'), emit: output
+  tuple val(replicon_id), path('*_alleles_cons*.csv'), emit: output
 
   script:
+  cons_fn_token = params.allele_matrix_cons / 100
+  output_fp = "${replicon_id}_alleles_cons${cons_fn_token}.csv"
   """
-  filter_allele_matrix.py --allele_fp ${allele_fp} --conservation ${params.allele_matrix_cons} > ${replicon_id}_alleles_cons.csv
+  filter_allele_matrix.py --allele_fp ${allele_fp} --conservation ${params.allele_matrix_cons} > ${output_fp}
   """
 }

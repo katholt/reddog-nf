@@ -148,8 +148,10 @@ process create_snp_alignment {
   tuple val(replicon_id), path('*.mfasta'), emit: output
 
   script:
+  cons_fn_token = params.allele_matrix_cons / 100
+  output_fp = "${replicon_id}_cons${cons_fn_token}.mfasta"
   """
-  create_snp_alignment.py --allele_fp ${allele_matrix_fp} > ${replicon_id}_cons.mfasta
+  create_snp_alignment.py --allele_fp ${allele_matrix_fp} > ${output_fp}
   """
 }
 
@@ -166,12 +168,14 @@ process determine_coding_consequences {
   path reference_gbk_fp
 
   output:
-  path '*consequences_cons.tsv'
+  path '*consequences_cons*.tsv'
 
   script:
   reference_name = reference_gbk_fp.simpleName
+  cons_fn_token = params.allele_matrix_cons / 100
+  output_fp = "${replicon_id}_consequences_cons${cons_fn_token}.tsv"
   """
-  determine_coding_consequences.py --allele_fp ${allele_matrix_fp} --reference_fp ${reference_gbk_fp} --replicon ${replicon_id} > ${replicon_id}_consequences_cons.tsv
+  determine_coding_consequences.py --allele_fp ${allele_matrix_fp} --reference_fp ${reference_gbk_fp} --replicon ${replicon_id} > ${output_fp}
   """
 }
 
@@ -193,7 +197,9 @@ process infer_phylogeny {
   pass_count <= 1000 | run_phylogeny
 
   script:
+  cons_fn_token = params.allele_matrix_cons / 100
+  output_fp = "${replicon_id}_cons${cons_fn_token}.tree"
   """
-  FastTree -gtr -gamma -nt ${alignment_fp} > ${replicon_id}_cons.tree
+  FastTree -gtr -gamma -nt ${alignment_fp} > ${output_fp}
   """
 }
