@@ -1,0 +1,3 @@
+replicon	isolate	replicon_coverage	replicon_average_depth	replicon_reads_mapped	total_mapped_reads	total_reads	snps	snps_heterozygous	indels	pass_fail
+contig_1	isolate_9	99.94	23.88	51.3936	100.0	2942	0	0	0	p
+contig_2	isolate_9	99.93	23.82	48.6064	100.0	2942	0	0	0	p

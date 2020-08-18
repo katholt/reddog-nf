@@ -1,0 +1,12 @@
+reference_name	reference
+reference_replicon_names	contig_1,contig_2
+reference_replicon_sizes	contig_1:15836,contig_2:15017
+reference_replicon_md5hashes	contig_1:fcb0a625261a7572dce701aea09fa813,contig_2:62ab86f89a5c20dbbe7f8ec9d0e590e1
+bt2_max_frag_len	2000
+bt2_mode	--sensitive-local
+var_depth_min	5
+mapping_cover_min	50
+mapping_depth_min	10
+mapping_mapped_min	50
+outgroup_mod	2
+allele_matrix_cons	95
