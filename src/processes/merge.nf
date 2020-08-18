@@ -132,6 +132,6 @@ process collect_snp_sites {
   script:
   """
   echo -e "#CHROM\tPOS" > merge_${replicon_id}_sites.tsv
-  tail -n+2 ${allele_matrix} | cut -f1 -d\$'\t' | awk '{print "${replicon_id}\t"\$0 }' >> merge_${replicon_id}_sites.tsv
+  tail -n+2 ${allele_matrix} | cut -f1 -d, | awk '{print "${replicon_id}\t"\$0 }' >> merge_${replicon_id}_sites.tsv
   """
 }
