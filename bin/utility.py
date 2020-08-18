@@ -18,6 +18,8 @@ def assign_ingroup_outgroup(records, stddev_mod):
         ratio_max = ratio_mean + ratio_stddev * stddev_mod
     # Apply groups
     for record in records:
+        if record.pass_fail != 'p':
+            continue
         if len(ratios) <= 1:
             record.phylogeny_group = 'undetermined'
         elif record.ratio <= ratio_max:
