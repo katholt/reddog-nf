@@ -32,9 +32,9 @@ def get_arguments():
             help='Test data directory path')
     args = parser.parse_args()
     if not args.run_dir.exists():
-        parser.error('Input directory {args.run_dir} does not exist')
+        parser.error(f'Input directory {args.run_dir} does not exist')
     if not args.spec_fp.exists():
-        parser.error('Input file {args.spec_fp} does not exist')
+        parser.error(f'Input file {args.spec_fp} does not exist')
     return args
 
 
