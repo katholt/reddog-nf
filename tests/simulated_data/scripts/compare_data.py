@@ -12,13 +12,13 @@ import utility
 
 
 file_patterns = {
-    'allele_table': 'alleles.tsv',
-    'allele_cons_table': 'alleles_cons.tsv',
-    'consequences': 'consequences_cons.tsv',
+    'allele_table': 'alleles.csv',
+    'allele_cons_table': 'alleles_cons.+\.csv',
+    'consequences': 'consequences_cons.+\.tsv',
     'mapping_stats': 'mapping_stats.tsv',
-    'snp_alignment': 'cons.mfasta',
-    'gene_coverage': 'coverage.tsv',
-    'gene_depth': 'depth.tsv'
+    'snp_alignment': 'cons.+\.mfasta',
+    'gene_coverage': 'coverage.csv',
+    'gene_depth': 'depth.csv'
 }
 
 
@@ -66,7 +66,7 @@ def get_data(run_dir, test_data_dir):
     data_test = {filetype: dict() for filetype in file_patterns}
     for filepath_input in run_dir.iterdir():
         for filetype, file_suffix in file_patterns.items():
-            if filepath_input.name.endswith(file_suffix):
+            if re.search(file_suffix, filepath_input.name):
                 if test_data_dir:
                     filepath_test = test_data_dir / filepath_input.name
                     if not filepath_test.exists():
@@ -102,7 +102,7 @@ def read_file_data(filepath, filetype, suffix, run_data):
 
 def read_allele_table(filepath):
     with filepath.open('r') as fh:
-        line_token_gen = (line.rstrip().split('\t') for line in fh)
+        line_token_gen = (line.rstrip().split(',') for line in fh)
         header_tokens = next(line_token_gen)
         isolates = header_tokens[2:]
         allele_table = {isolate: dict() for isolate in isolates}
@@ -134,13 +134,8 @@ def read_consequences(filepath):
         for line_tokens in line_token_gen:
             data = {var: val for var, val in zip(header_tokens, line_tokens)}
             data['position'] = int(data['position'])
-            # Must order affected isolates
-            data['isolates'] = sorted(data['isolates'].split(','))
-            for isolate in data['isolates']:
-                if isolate not in consequences:
-                    consequences[isolate] = dict()
-                assert data['position'] not in consequences[isolate]
-                consequences[isolate][data['position']] = data
+            key = (data['position'], data['alt'].lower())
+            consequences[key] = data
     return consequences
 
 
@@ -152,7 +147,7 @@ def read_snp_alignment(filepath):
 def read_gene_coverage_depth(filepath):
     data = dict()
     with filepath.open('r') as fh:
-        line_token_gen = (line.rstrip().split('\t') for line in fh)
+        line_token_gen = (line.rstrip().split(',') for line in fh)
         header_tokens = next(line_token_gen)
         isolates = header_tokens[2:]
         for replicon_id, gene, *values in line_token_gen:
@@ -189,7 +184,7 @@ def run_spec_data_comparison(spec_isolates, spec_info, data_input):
                     continue
                 # Get consequence data
                 position = int(snp_data['position'])
-                cons_data = consequence_data[replicon_id][isolate_data.name][position]
+                cons_data = consequence_data[replicon_id][(position, snp_data['alt'])]
                 # Get mutation data from spec file
                 if snp_data['note'] == 'intergenic':
                     assert cons_data['change_type'] == 'intergenic'
