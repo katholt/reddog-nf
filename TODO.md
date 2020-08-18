@@ -8,8 +8,8 @@
 * Rewrite gene coverage/depth process to be more efficient
     - see report.html for flexneri
 * Investigate use of async non-nf process code so we can:
-    * Validate some input readsets
-    * Warn when read quality assessment is requested on merge run but merge has fastqc data
+    * validate some input readsets
+    * warn when read quality assessment is requested on merge run but merge has fastqc data
 * Coding consequences for hets
     - create matrix of hets in the same way we do for homs
     - this should be done conditionally
