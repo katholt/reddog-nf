@@ -12,8 +12,8 @@ from . import tests_directory
 
 class TestRecord:
 
-    def __init__(self, total_reads, replicon_coverage, pass_fail):
-        self.total_reads = total_reads
+    def __init__(self, snps, replicon_coverage, pass_fail):
+        self.snps = snps
         self.replicon_coverage = replicon_coverage
         self.pass_fail = pass_fail
 

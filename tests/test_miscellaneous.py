@@ -63,12 +63,12 @@ class CreateCoverageDepthMatrix(unittest.TestCase):
 
     def setUp(self):
         # Get expected
-        self.expected_coverage = self.parse_data(tests_directory / 'data/expected_outputs/gene_coverage.tsv')
-        self.expected_depth = self.parse_data(tests_directory / 'data/expected_outputs/gene_depth.tsv')
+        self.expected_coverage = self.parse_data(tests_directory / 'data/expected_outputs/gene_coverage.csv')
+        self.expected_depth = self.parse_data(tests_directory / 'data/expected_outputs/gene_depth.csv')
         # Create temporary directory and define output filepaths
         temp_dir = tempfile.TemporaryDirectory()
-        coverage_fp = pathlib.Path(temp_dir.name, 'gene_coverage.tsv')
-        depth_fp = pathlib.Path(temp_dir.name, 'gene_depth.tsv')
+        coverage_fp = pathlib.Path(temp_dir.name, 'gene_coverage.csv')
+        depth_fp = pathlib.Path(temp_dir.name, 'gene_depth.csv')
         # Run full script
         program = 'create_coverage_depth_matrices.py'
         input_fps = [str(fp) for fp in tests_directory.glob('data/multiway_pileups/*tsv')]
@@ -91,7 +91,7 @@ class CreateCoverageDepthMatrix(unittest.TestCase):
     @staticmethod
     def parse_data(filepath):
         with filepath.open('r') as fh:
-            line_token_gen = (line.rstrip().split('\t') for line in fh)
+            line_token_gen = (line.rstrip().split(',') for line in fh)
             header_tokens = next(line_token_gen)
             isolates = header_tokens[2:]
             results = {isolate: list() for isolate in isolates}
@@ -110,7 +110,7 @@ class CreateSnpAlignment(unittest.TestCase):
         # Run full script
         program = 'create_snp_alignment.py'
         command_args = {
-            '--allele_fp': tests_directory / 'data/other/contig_1_alleles_core.tsv',
+            '--allele_fp': tests_directory / 'data/other/contig_1_alleles_cons0.95.csv',
         }
         command = '%s %s' % (program, ' '.join(f'{name} {val}' for name, val in command_args.items()))
         result = bin.utility.execute_command(command)
@@ -125,13 +125,13 @@ class DetermineCodingConsequenes(unittest.TestCase):
 
     def setUp(self):
         # Set expected outputs
-        with (tests_directory / 'data/expected_outputs/contig_1_consequences_core.tsv').open('r') as fh:
+        with (tests_directory / 'data/expected_outputs/contig_1_consequences_cons0.95.tsv').open('r') as fh:
             self.expected = self.parse_consequences(fh)
         # Run full script
         program = 'determine_coding_consequences.py'
         command_args = {
             '--reference_fp': tests_directory / 'data/other/reference.gbk',
-            '--allele_fp': tests_directory / 'data/other/contig_1_alleles_core.tsv',
+            '--allele_fp': tests_directory / 'data/other/contig_1_alleles_cons0.95.csv',
             '--replicon': 'contig_1',
         }
         command = '%s %s' % (program, ' '.join(f'{name} {val}' for name, val in command_args.items()))
@@ -149,8 +149,6 @@ class DetermineCodingConsequenes(unittest.TestCase):
         for line in line_iter:
             line_tokens = line.rstrip().split('\t')
             record = {k: v for k, v in zip(header_tokens, line_tokens)}
-            # Order isolates
-            record['isolates'] = sorted(record['isolates'].split(','))
             key = (record['position'], record['alt'])
             assert key not in records
             records[key] = record
@@ -252,9 +250,9 @@ class MergeGeneStatMatrix(unittest.TestCase):
 
     def setUp(self):
         # Set expected
-        with (tests_directory / 'data/expected_outputs/gene_coverage_merged.tsv').open('r') as fh:
+        with (tests_directory / 'data/expected_outputs/gene_coverage_merged.csv').open('r') as fh:
             self.expected_coverage = self.parse_data(fh)
-        with (tests_directory / 'data/expected_outputs/gene_depth_merged.tsv').open('r') as fh:
+        with (tests_directory / 'data/expected_outputs/gene_depth_merged.csv').open('r') as fh:
             self.expected_depth = self.parse_data(fh)
         self.results_coverage = self.execute_script('coverage')
         self.results_depth = self.execute_script('depth')
@@ -262,8 +260,8 @@ class MergeGeneStatMatrix(unittest.TestCase):
     def execute_script(self, name):
         program = 'merge_gene_stat_matrix.py'
         command_args = {
-            '--fp_1': tests_directory / f'data/other/gene_{name}_premerge_1.tsv',
-            '--fp_2': tests_directory / f'data/other/gene_{name}_premerge_2.tsv',
+            '--fp_1': tests_directory / f'data/other/gene_{name}_premerge_1.csv',
+            '--fp_2': tests_directory / f'data/other/gene_{name}_premerge_2.csv',
         }
         # Run script
         command = '%s %s' % (program, ' '.join(f'{name} {val}' for name, val in command_args.items()))
@@ -277,11 +275,11 @@ class MergeGeneStatMatrix(unittest.TestCase):
 
     @staticmethod
     def parse_data(line_iter):
-        header_tokens = next(line_iter).rstrip().split('\t')
+        header_tokens = next(line_iter).rstrip().split(',')
         isolates = header_tokens[2:]
         results = {isolate: list() for isolate in isolates}
         for line in line_iter:
-            replicon, gene, *values = line.rstrip().split('\t')
+            replicon, gene, *values = line.rstrip().split(',')
             for isolate, value in zip(isolates, values):
                 results[isolate].append((gene, value))
         # Order gene, stat tuples
@@ -320,4 +318,3 @@ class SplitMappedUnmappedReads(unittest.TestCase):
     def get_read_count(filepath):
         result = bin.utility.execute_command(f'samtools view {filepath} | wc -l')
         return int(result.stdout)
-
