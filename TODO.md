@@ -1,7 +1,4 @@
 # TODO
-* Consider removing read subsampling
-* Update tests for ingroup/outgroup
-* Update tests with correct files names (now including %cons)
 * Documentation
     - user manual
     - technical manual
