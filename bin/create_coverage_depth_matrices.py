@@ -72,8 +72,8 @@ def main():
         gene_stats[isolate_id] = replicon_gene_stats
 
     # Output data
-    coverage_fp = args.output_dir / 'gene_coverage.tsv'
-    depth_fp = args.output_dir / 'gene_depth.tsv'
+    coverage_fp = args.output_dir / 'gene_coverage.csv'
+    depth_fp = args.output_dir / 'gene_depth.csv'
     with contextlib.ExitStack() as stack:
         # Get filehandles and allow exit stack to handle closing
         coverage_fh = stack.enter_context(coverage_fp.open('w'))

@@ -7,8 +7,8 @@ process calculate_gene_coverage_depth {
   path reference_gbk_fp
 
   output:
-  path 'gene_coverage.tsv', emit: coverage
-  path 'gene_depth.tsv', emit: depth
+  path 'gene_coverage.csv', emit: coverage
+  path 'gene_depth.csv', emit: depth
 
   script:
   reference_name = reference_gbk_fp.simpleName
