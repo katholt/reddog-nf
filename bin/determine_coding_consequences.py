@@ -105,7 +105,7 @@ def main():
     header_tokens = (
         'position', 'ref', 'alt', 'change_type', 'gene', 'ref_codon', 'alt_codon', 'ref_aa', 'alt_aa',
         'gene_product', 'gene_nucleotide_position', 'gene_codon_position', 'codon_nucleotide_position',
-        'isolates', 'notes'
+        'notes'
     )
     print(*header_tokens, sep='\t')
     with args.allele_fp.open('r') as fh:
@@ -119,11 +119,10 @@ def main():
             record.feature_intervals = interval_tree.search_position(record.position)
             # Process intergenic
             if not record.feature_intervals:
-                for allele, allele_isolates in isolates_by_allele(record).items():
+                for allele in get_alleles(record):
                     print(
                         record.position, record.reference, allele, 'intergenic',
-                        '-', '-', '-', '-', '-', '-', '-', '-', '-',
-                        ','.join(allele_isolates), '-', sep='\t'
+                        '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', sep='\t'
                     )
                 continue
             # Process genic
@@ -147,7 +146,7 @@ def main():
                 codon_sequence = gene_sequence[codon_start:codon_start+3]
                 codon = codon_sequence.translate()
                 # Get consequences for each allele
-                for allele, allele_isolates in isolates_by_allele(record).items():
+                for allele in get_alleles(record):
                     # Skip alleles that fall within compound locations
                     if isinstance(interval.feature.location, Bio.SeqFeature.CompoundLocation):
                         locus_tag = utility.get_locus_tag(interval.feature)
@@ -157,7 +156,7 @@ def main():
                         print(
                             record.position, record.reference, allele, 'not assessed',
                             '-', '-', '-', '-', '-', '-', '-', '-', '-',
-                            ','.join(allele_isolates), f'allele falls within compound location of {locus_tag}',
+                            f'allele falls within compound location of {locus_tag}',
                             sep='\t'
                         )
                     else:
@@ -182,23 +181,19 @@ def main():
                         print(
                             record.position, record.reference, allele, change_type, locus_tag, codon_sequence,
                             sequence_allele, codon, codon_allele, gene_product, position_gene, codon_number,
-                            position_codon, ','.join(allele_isolates), '-', sep='\t'
+                            position_codon, '-', sep='\t'
                         )
 
 
-def isolates_by_allele(record):
-    ret = dict()
-    for isolate, allele in zip(record.isolates, record.alleles):
-        # Skip alleles that are unknown
-        if allele == '-':
-            continue
-        # Skip alleles that match reference
-        if allele == record.reference:
-            continue
-        if allele not in ret:
-            ret[allele] = list()
-        ret[allele].append(isolate)
-    return ret
+def get_alleles(record):
+    alleles = set(record.alleles)
+    # Remove alleles that are unknown
+    if '-' in alleles:
+        alleles.remove('-')
+    # Remove alleles that match reference
+    if record.reference in alleles:
+        alleles.remove(record.reference)
+    return alleles
 
 
 def get_consequence(codon_sequence, allele, position_codon):
