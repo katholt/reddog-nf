@@ -48,7 +48,7 @@ def get_arguments():
 
     parser.add_argument('--min_quality', default=20, type=int,
             help='Minimum phread quality to call allele')
-    parser.add_argument('--min_support', default=0.9, type=float,
+    parser.add_argument('--min_support', default=90, type=float,
             help='Minimum proportion of reads support reference allele call')
 
     args = parser.parse_args()
@@ -60,8 +60,8 @@ def get_arguments():
         parser.error(f'Output directory {args.output_dir} does not exist')
     if args.min_quality <= 0:
         parser.error('--min_quality must be greater than 0, got {args.min_quality}')
-    if args.min_support > 1:
-        parser.error('--min_support must be less than 1, got {args.min_support}')
+    if args.min_support > 100:
+        parser.error('--min_support must be less than 100, got {args.min_support}')
     return args
 
 
@@ -122,8 +122,8 @@ def get_position_support(record_info):
     reads_alt = sum(dp4_counts[2:])
     # Get support proportions
     reads_sum = reads_ref + reads_alt
-    support_ref = reads_ref / reads_sum if reads_sum else 0
-    support_alt = reads_alt / reads_sum if reads_sum else 0
+    support_ref = reads_ref / reads_sum * 100 if reads_sum else 0
+    support_alt = reads_alt / reads_sum * 100 if reads_sum else 0
     return (support_ref, support_alt)
 
 

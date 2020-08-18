@@ -16,7 +16,7 @@ process create_allele_matrix {
   # Get sites only for replicons that pass mapping criteria
   { head -n1 ${sites_fp}; grep -wf <(echo ${replicons_pass} | tr ' ' '\n' | sed 's/^/^/') ${sites_fp}; } > isolate_sites.tsv
   # Create matrix
-  create_allele_matrix.py --bam_fp ${bam_fp} --sites_fp isolate_sites.tsv --reference_fp ${reference_fp} --output_dir ./
+  create_allele_matrix.py --bam_fp ${bam_fp} --sites_fp isolate_sites.tsv --reference_fp ${reference_fp} --min_support ${params.allele_matrix_support} --output_dir ./
   """
 }
 
