@@ -66,8 +66,8 @@ def main():
         status['return_code'] = 1
 
     # Check isolate names from gene coverage and depth
-    gene_depth_fp = args.src_dir / f'{merge_ref_name}_gene_depth.tsv'
-    gene_coverage_fp = args.src_dir / f'{merge_ref_name}_gene_coverage.tsv'
+    gene_depth_fp = args.src_dir / f'{merge_ref_name}_gene_depth.csv'
+    gene_coverage_fp = args.src_dir / f'{merge_ref_name}_gene_coverage.csv'
     if not gene_depth_fp.exists():
         status['messages'].append(f'error: gene depth file {gene_depth_fp} does not exist')
         status['return_code'] = 1
@@ -312,7 +312,7 @@ def get_isolate_names_from_allele_matrices(src_dir, merge_rep_names, merge_ref_n
     fps_count = 0
     isolate_names = dict()
     for name in merge_rep_names:
-        fp = src_dir / f'{merge_ref_name}_{name}_alleles.tsv'
+        fp = src_dir / f'{merge_ref_name}_{name}_alleles.csv'
         if not fp.exists():
             continue
         fps_count += 1
