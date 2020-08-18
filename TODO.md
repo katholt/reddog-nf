@@ -1,13 +1,7 @@
 # TODO
-* Ingroup/outgroup designation should use SNPs not reads mapped
-* Filenames using conversed data should have level of conservation encoded in them
-* Convert to CSV
-    - gene coverage and depth
-    - allele table (also Position to Pos)
-* Multiple directories as input
-* Expose SNP support parameter for allele calling in nextflow config
-* Use parseSNPTable (python3)
 * Consider removing read subsampling
+* Update tests for ingroup/outgroup
+* Update tests with correct files names (now including %cons)
 * Documentation
     - user manual
     - technical manual
