@@ -123,12 +123,12 @@ write_param_data_to_run_config()
 // Prepare for a merge run if requested
 if (run_merge) {
   // Validate data to be merged
-  if (params.previous_run_dir.isEmpty()) {
-    exit 1, "ERROR: a merge run requires previous_run_dir to be set"
+  if (params.existing_run_dir.isEmpty()) {
+    exit 1, "ERROR: a merge run requires existing_run_dir to be set"
   }
-  merge_source_dir = file(params.previous_run_dir)
+  merge_source_dir = file(params.existing_run_dir)
   if (! merge_source_dir.exists()) {
-    exit 1, "ERROR: directory for previous_run_dir (${params.previous_run_dir}) does not exist"
+    exit 1, "ERROR: directory for existing_run_dir (${params.existing_run_dir}) does not exist"
   }
   validate_merge_data(merge_ignore_errors)
   // Create channels for merge data
@@ -186,7 +186,7 @@ workflow {
     ch_snp_sites = snp_data.sites
     ch_bams = align_data_bams
 
-    // Merge previous run data if requested
+    // Merge existing run data if requested
     if (run_merge) {
       // NOTE: reference_fp.simpleName is used over reference_data.name as we need it immediately in some functions
       merge_data = merge(

@@ -75,7 +75,7 @@ def check_output_dir(params) {
 
 def check_disallowed_arguments(workflow) {
   // Certain options cause issues when specified on the commandline. Prevent user to setting them this way.
-  disallowed_args = ['--reads', '--output_dir', '--run_info_dir', '--previous_run_dir']
+  disallowed_args = ['--reads', '--output_dir', '--run_info_dir', '--existing_run_dir']
   commandline_args = workflow.commandLine.tokenize(' ')
   bad_args = []
   disallowed_args.each { if (commandline_args.contains(it)) { bad_args.add(it) } }
@@ -122,7 +122,7 @@ def write_param_data_to_run_config() {
 
 def validate_merge_data(merge_ignore_errors) {
   script = 'validate_merge_data.py'
-  command = "${workflow.projectDir}/bin/${script} --src_dir ${params.previous_run_dir} --dst_dir ${params.output_dir} --reference_fp ${params.reference} --read_globs ${params.reads}"
+  command = "${workflow.projectDir}/bin/${script} --src_dir ${params.existing_run_dir} --dst_dir ${params.output_dir} --reference_fp ${params.reference} --read_globs ${params.reads}"
   (return_code, stdout, stderr) = execute_command(command)
   if (return_code != 0) {
     if (! merge_ignore_errors) {
