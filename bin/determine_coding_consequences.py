@@ -103,9 +103,9 @@ def main():
 
     # Determine consequences
     header_tokens = (
-        'position', 'ref', 'alt', 'change_type', 'gene', 'ref_codon', 'alt_codon', 'ref_aa', 'alt_aa',
-        'gene_product', 'gene_nucleotide_position', 'gene_codon_position', 'codon_nucleotide_position',
-        'notes'
+        'position', 'ref', 'alt', 'strand', 'change_type', 'gene', 'ref_codon', 'alt_codon', 'ref_aa',
+        'alt_aa', 'gene_product', 'gene_nucleotide_position', 'gene_codon_position',
+        'codon_nucleotide_position', 'notes'
     )
     print(*header_tokens, sep='\t')
     with args.allele_fp.open('r') as fh:
@@ -121,7 +121,7 @@ def main():
             if not record.feature_intervals:
                 for allele in get_alleles(record):
                     print(
-                        record.position, record.reference, allele, 'intergenic',
+                        record.position, record.reference, allele, '-', 'intergenic',
                         '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', sep='\t'
                     )
                 continue
@@ -154,9 +154,9 @@ def main():
                                 'as the gene has a compound location')
                         print(msg, file=sys.stderr)
                         print(
-                            record.position, record.reference, allele, 'not assessed',
-                            '-', '-', '-', '-', '-', '-', '-', '-', '-',
-                            f'allele falls within compound location of {locus_tag}',
+                            record.position, record.reference, allele, strand, 'not assessed',
+                            locus_tag, '-', '-', '-', '-', '-', '-', '-', '-',
+                            f'{locus_tag} is defined by a compound location',
                             sep='\t'
                         )
                     else:
@@ -179,7 +179,7 @@ def main():
                             gene_product = '-'
                         locus_tag = utility.get_locus_tag(interval.feature)
                         print(
-                            record.position, record.reference, allele, change_type, locus_tag, codon_sequence,
+                            record.position, record.reference, allele, strand, change_type, locus_tag, codon_sequence,
                             sequence_allele, codon, codon_allele, gene_product, position_gene, codon_number,
                             position_codon, '-', sep='\t'
                         )
