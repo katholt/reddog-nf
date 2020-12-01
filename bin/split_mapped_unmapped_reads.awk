@@ -18,9 +18,10 @@ BEGIN {
 }
 
 # Header
-/^@(HD|SQ|RG|PG)(\t[A-Za-z][A-Za-z0-9]:[ -~]+)+$/ {
+/^@(HD|SQ|RG|PG)(\t[A-Za-z][A-Za-z0-9]:.+?)+$/ {
   print $0 | mapped_ps
   print $0 | unmapped_ps
+  next
 }
 
 # Alignment entries
