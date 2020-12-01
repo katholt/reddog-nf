@@ -1,5 +1,5 @@
-position	ref	alt	change_type	gene	ref_codon	alt_codon	ref_aa	alt_aa	gene_product	gene_nucleotide_position	gene_codon_position	codon_nucleotide_position	notes
-157	C	G	non-synonymous	mrkC	GAC	CAC	D	H	not_implemented	2341	781	1	-
-560	G	C	non-synonymous	mrkC	AGC	AGG	S	R	not_implemented	1938	646	3	-
-561	C	T	non-synonymous	mrkC	AGC	AAC	S	N	not_implemented	1937	646	2	-
-779	C	G	synonymous	mrkC	CCG	CCC	P	P	not_implemented	1719	573	3	-
+position	ref	alt	strand	change_type	gene	ref_codon	alt_codon	ref_aa	alt_aa	gene_product	gene_nucleotide_position	gene_codon_position	codon_nucleotide_position	notes
+157	C	G	-1	non-synonymous	mrkC	GAC	CAC	D	H	not_implemented	2341	781	1	-
+560	G	C	-1	non-synonymous	mrkC	AGC	AGG	S	R	not_implemented	1938	646	3	-
+561	C	T	-1	non-synonymous	mrkC	AGC	AAC	S	N	not_implemented	1937	646	2	-
+779	C	G	-1	synonymous	mrkC	CCG	CCC	P	P	not_implemented	1719	573	3	-
