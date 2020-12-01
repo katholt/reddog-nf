@@ -14,7 +14,7 @@ process call_snps {
   publishDir "${params.output_dir}/vcfs/", pattern: '*.vcf', mode: 'copy'
 
   input:
-  tuple isolate_id, path(bam_fp), path(bam_index_fp), path(mpileup_fp)
+  tuple val(isolate_id), path(bam_fp), path(bam_index_fp), path(mpileup_fp)
   path reference_fp
   path fasta_index
 

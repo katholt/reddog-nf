@@ -1,10 +1,10 @@
 // Subsample se reads
 process subsample_reads_se {
   input:
-  tuple isolate_id, path(reads_fp)
+  tuple val(isolate_id), path(reads_fp)
 
   output:
-  tuple isolate_id, path('*subsampled.fastq.gz'), emit: output
+  tuple val(isolate_id), path('*subsampled.fastq.gz'), emit: output
 
   script:
   """
@@ -16,10 +16,10 @@ process subsample_reads_se {
 // Subsample pe reads
 process subsample_reads_pe {
   input:
-  tuple isolate_id, path(reads_fwd), path(reads_rev)
+  tuple val(isolate_id), path(reads_fwd), path(reads_rev)
 
   output:
-  tuple isolate_id, path('*_subsampled_1.fastq.gz'), path('*_subsampled_2.fastq.gz'), emit: output
+  tuple val(isolate_id), path('*_subsampled_1.fastq.gz'), path('*_subsampled_2.fastq.gz'), emit: output
 
   script:
   """
@@ -105,7 +105,7 @@ process prepare_reference {
 // Create samtools multiway pileups
 process create_mpileups {
   input:
-  tuple isolate_id, path(bam_fp), path(bam_index_fp)
+  tuple val(isolate_id), path(bam_fp), path(bam_index_fp)
 
   output:
   tuple val(isolate_id), path('*mpileup.tsv'), emit: output
@@ -141,7 +141,7 @@ process create_snp_alignment {
   publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }, mode: 'copy'
 
   input:
-  tuple replicon_id, path(allele_matrix_fp)
+  tuple val(replicon_id), path(allele_matrix_fp)
   val reference_name
 
   output:
@@ -164,7 +164,7 @@ process determine_coding_consequences {
   publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }, mode: 'copy'
 
   input:
-  tuple replicon_id, path(allele_matrix_fp)
+  tuple val(replicon_id), path(allele_matrix_fp)
   path reference_gbk_fp
 
   output:
@@ -185,7 +185,7 @@ process infer_phylogeny {
   publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }, mode: 'copy'
 
   input:
-  tuple replicon_id, path(alignment_fp)
+  tuple val(replicon_id), path(alignment_fp)
   val reference_name
   val pass_count
   val run_phylogeny

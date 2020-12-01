@@ -1,57 +1,57 @@
 #!/usr/bin/env nextflow
 // Enable DSL2
-nextflow.preview.dsl=2
+nextflow.enable.dsl=2
 
 
 // Import processes, workflows, channel helpers, and utility functions
 // NOTE: imports separated for readability
 // Alignment and variant calling processes
-include align_reads_se from './src/processes/alignment.nf'
-include align_reads_pe from './src/processes/alignment.nf'
-include call_snps from './src/processes/variant_calling.nf'
+include { align_reads_se } from './src/processes/alignment.nf'
+include { align_reads_pe } from './src/processes/alignment.nf'
+include { call_snps } from './src/processes/variant_calling.nf'
 
 // Mapping stats processes
-include calculate_gene_coverage_depth from './src/processes/mapping_stats.nf'
-include calculate_mapping_statistics from './src/processes/mapping_stats.nf'
-include aggregate_mapping_statistics from './src/processes/mapping_stats.nf'
-include get_passing_replicons from './src/processes/mapping_stats.nf'
+include { calculate_gene_coverage_depth } from './src/processes/mapping_stats.nf'
+include { calculate_mapping_statistics } from './src/processes/mapping_stats.nf'
+include { aggregate_mapping_statistics } from './src/processes/mapping_stats.nf'
+include { get_passing_replicons } from './src/processes/mapping_stats.nf'
 
 // Allele matrix processes
-include create_allele_matrix from './src/processes/allele_matrix.nf'
-include aggregate_allele_matrices from './src/processes/allele_matrix.nf'
-include filter_allele_matrix from './src/processes/allele_matrix.nf'
+include { create_allele_matrix } from './src/processes/allele_matrix.nf'
+include { aggregate_allele_matrices } from './src/processes/allele_matrix.nf'
+include { filter_allele_matrix } from './src/processes/allele_matrix.nf'
 
 // Other processes
-include prepare_reference from './src/processes/misc.nf'
-include subsample_reads_se from './src/processes/misc.nf'
-include subsample_reads_pe from './src/processes/misc.nf'
-include create_read_quality_report from './src/processes/misc.nf'
-include create_mpileups from './src/processes/misc.nf'
-include aggregate_snp_sites from './src/processes/misc.nf'
-include aggregate_read_quality_reports from './src/processes/misc.nf'
-include determine_coding_consequences from './src/processes/misc.nf'
-include create_snp_alignment from './src/processes/misc.nf'
-include infer_phylogeny from './src/processes/misc.nf'
+include { prepare_reference } from './src/processes/misc.nf'
+include { subsample_reads_se } from './src/processes/misc.nf'
+include { subsample_reads_pe } from './src/processes/misc.nf'
+include { create_read_quality_report } from './src/processes/misc.nf'
+include { create_mpileups } from './src/processes/misc.nf'
+include { aggregate_snp_sites } from './src/processes/misc.nf'
+include { aggregate_read_quality_reports } from './src/processes/misc.nf'
+include { determine_coding_consequences } from './src/processes/misc.nf'
+include { create_snp_alignment } from './src/processes/misc.nf'
+include { infer_phylogeny } from './src/processes/misc.nf'
 
 // Channel helper functions
-include get_read_prefix_and_type from './src/channel_helpers.nf'
-include collect_passing_isolate_replicons from './src/channel_helpers.nf'
-include sort_allele_matrices from './src/channel_helpers.nf'
-include remove_empty_allele_matrices from './src/channel_helpers.nf'
+include { get_read_prefix_and_type } from './src/channel_helpers.nf'
+include { collect_passing_isolate_replicons } from './src/channel_helpers.nf'
+include { sort_allele_matrices } from './src/channel_helpers.nf'
+include { remove_empty_allele_matrices } from './src/channel_helpers.nf'
 
 // Utility functions
-include print_splash from './src/utilities.nf'
-include check_arguments from './src/utilities.nf'
-include check_output_dir from './src/utilities.nf'
-include check_disallowed_arguments from './src/utilities.nf'
-include check_host from './src/utilities.nf'
-include check_boolean_option from './src/utilities.nf'
-include write_reference_data_to_run_config from './src/utilities.nf'
-include write_param_data_to_run_config from './src/utilities.nf'
-include validate_merge_data from './src/utilities.nf'
+include { print_splash } from './src/utilities.nf'
+include { check_arguments } from './src/utilities.nf'
+include { check_output_dir } from './src/utilities.nf'
+include { check_disallowed_arguments } from './src/utilities.nf'
+include { check_host } from './src/utilities.nf'
+include { check_boolean_option } from './src/utilities.nf'
+include { write_reference_data_to_run_config } from './src/utilities.nf'
+include { write_param_data_to_run_config } from './src/utilities.nf'
+include { validate_merge_data } from './src/utilities.nf'
 
 // Workflows
-include merge from './src/merge_workflow.nf'
+include { merge } from './src/merge_workflow.nf'
 
 
 // Check configuration

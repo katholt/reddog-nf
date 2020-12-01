@@ -27,7 +27,7 @@ process calculate_gene_coverage_depth {
 //   - additionally for the largest replicon, require that at least some proportion of reads mapped
 process calculate_mapping_statistics {
   input:
-  tuple isolate_id, path(bam_fp), path(bam_index_fp), path(bam_unmapped_fp), path(vcf_q30_fp), path(vcf_hets_fp), path(coverage_depth_fp)
+  tuple val(isolate_id), path(bam_fp), path(bam_index_fp), path(bam_unmapped_fp), path(vcf_q30_fp), path(vcf_hets_fp), path(coverage_depth_fp)
 
   output:
   path "${isolate_id}_mapping_stats.tsv", emit: output

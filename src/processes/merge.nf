@@ -102,7 +102,7 @@ process mapping_stats {
   publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${replicon_id}_mapping_stats.tsv" }, mode: 'copy'
 
   input:
-  tuple replicon_id, path(files)
+  tuple val(replicon_id), path(files)
   val reference_name
 
   output:
@@ -124,7 +124,7 @@ process collect_snp_sites {
   executor 'local'
 
   input:
-  tuple replicon_id, path(allele_matrix)
+  tuple val(replicon_id), path(allele_matrix)
 
   output:
   path "merge_${replicon_id}_sites.tsv"

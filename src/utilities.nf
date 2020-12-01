@@ -91,7 +91,7 @@ def check_host(workflow) {
   on_massive = massive_hostnames.contains(InetAddress.getLocalHost().getHostName())
   profile_explicit = workflow.commandLine.tokenize(' ').contains('-profile')
   if (on_massive && ! profile_explicit) {
-    exit 1, "ERROR: to run on MASSIVE you must explicitly set -profile"
+    exit 1, "ERROR: to run on MASSIVE you must explicitly set -profile massive"
   }
 }
 

@@ -1,15 +1,15 @@
 // Processes
-include copy_bams from './processes/merge.nf'
-include copy_vcfs from './processes/merge.nf'
-include copy_fastqc from './processes/merge.nf'
-include index_bam from './processes/merge.nf'
-include gene_depth from './processes/merge.nf'
-include gene_coverage from './processes/merge.nf'
-include mapping_stats from './processes/merge.nf'
-include collect_snp_sites from './processes/merge.nf'
+include { copy_bams } from './processes/merge.nf'
+include { copy_vcfs } from './processes/merge.nf'
+include { copy_fastqc } from './processes/merge.nf'
+include { index_bam } from './processes/merge.nf'
+include { gene_depth } from './processes/merge.nf'
+include { gene_coverage } from './processes/merge.nf'
+include { mapping_stats } from './processes/merge.nf'
+include { collect_snp_sites } from './processes/merge.nf'
 
 // Channel helper functions
-include get_replicon_id from './channel_helpers.nf'
+include { get_replicon_id } from './channel_helpers.nf'
 
 
 workflow merge {

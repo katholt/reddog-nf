@@ -5,7 +5,7 @@
 //   - for each replicon, write alleles called at each site as separate file
 process create_allele_matrix {
   input:
-  tuple isolate_id, path(bam_fp), path(index_fp), val(replicons_pass), path(sites_fp)
+  tuple val(isolate_id), path(bam_fp), path(index_fp), val(replicons_pass), path(sites_fp)
   path reference_fp
 
   output:
@@ -28,7 +28,7 @@ process aggregate_allele_matrices {
   publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }, mode: 'copy'
 
   input:
-  tuple replicon_id, path(allele_fps)
+  tuple val(replicon_id), path(allele_fps)
   path snp_sites_fp
   val reference_name
 
@@ -51,7 +51,7 @@ process filter_allele_matrix {
   publishDir "${params.output_dir}", saveAs: { filename -> "${reference_name}_${filename}" }, mode: 'copy'
 
   input:
-  tuple replicon_id, path(allele_fp)
+  tuple val(replicon_id), path(allele_fp)
   val reference_name
 
   output:

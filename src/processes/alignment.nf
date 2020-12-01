@@ -8,7 +8,7 @@ process align_reads_pe {
   publishDir "${params.output_dir}/bams/", pattern: "${isolate_id}.bam", mode: 'copy'
 
   input:
-  tuple isolate_id, path(reads_fwd), path(reads_rev)
+  tuple val(isolate_id), path(reads_fwd), path(reads_rev)
   path reference_fp
   path reference_indices
 
@@ -35,7 +35,7 @@ process align_reads_se {
   publishDir "${params.output_dir}/bams/", pattern: "${isolate_id}.bam", mode: 'copy'
 
   input:
-  tuple isolate_id, path(reads_fp)
+  tuple val(isolate_id), path(reads_fp)
   path reference_fp
   path reference_indices
 
