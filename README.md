@@ -15,6 +15,7 @@ central goal of `RedDog` is to identify high-quality SNPs present in a set of is
 
 
 ## Quickstart
+### General
 For the `RedDog` veterans:
 ```bash
 # Clone the reddog-nf repository
@@ -32,9 +33,47 @@ vim nextflow.config
 ```
 
 
-## Full example
-* full worked example on M3
-* some example data?
+### M3 execution
+To run the pipeline on M3, there are additional steps that need to be taken and some important considerations. Software
+provision is similar to the general example above but you must first load `miniconda` into your path:
+```
+# Clone the reddog-nf repository
+git clone https://github.com/scwatts/reddog-nf.git && cd reddog-nf
+
+# Load the miniconda3 module and install dependencies
+module load miniconda3/4.1.11-python3.5
+conda create -c bioconda -c conda-forge -p $(pwd -P)/conda_env --yes --file config/conda_dependencies.txt
+```
+Note that this is the only version of `miniconda` that will work; other versions are currently broken and will not be fix for
+M3 users.
+
+`RedDog` should be run in a `screen` session so that it will persist between ssh sessions:
+```
+# Create and attach to a screen session, load conda environment
+screen -R reddog_example
+conda activate $(pwd -P)/conda_env
+```
+
+Configuration for input reads, reference, and output directory is done as usual. Once the pipeline has been configured you
+can execute the run, however the `-profile` argument must be provided explicitly. This is to prevent inadvertently running
+pipeline processes on the head node.
+```
+# Set input reads, reference, and output directory in configuration file
+vim nextflow.config
+
+# Launch pipeline with a specific execution profile
+./reddog.nf -profile massive
+```
+
+
+Lastly, the ability to resume pipeline execution is built into nextflow. To resume a run the `-resume` argument is used.
+Note that if the output directory already exists, you must confirm that `RedDog` can overwrite its contents by specifying
+`--force`.
+```
+# Reattached to the screen session and resume pipeline execution
+screen -R reddog_example
+./reddog.nf -profile massive -resume --force
+```
 
 
 ## Usage
@@ -66,7 +105,7 @@ The nextflow implementation of `RedDog` also handles input containing both paire
 
 
 #### Options and parameters
-General:
+*General*
 | Option                            | Description                                                       | Default           |
 | ----                              | ----                                                              | ----              |
 | `bt2_max_frag_len`                | Maximum fragment length that Bowtie 2 will consider               | 200               |
@@ -79,11 +118,12 @@ General:
 | `allele_matrix_support`           | Minimum ratio of read support to call a SNP in allele matrix      | 90                |
 | `allele_matrix_cons`              | Minimum % of isolates containing a SNP for it to pass filtering   | 95                |
 
-HPC:
+*HPC*
 | Option                            | Description                               | Default   |
 | ----                              | ----                                      | ----      |
-| `queue_size`                      | Number of jobs to submit to job scheduler | 200       |
-| `slurm_account`                   | SLURM account used for job submission     | js66      |
+| `max_retries`                     | Number of times to resubmit job, usually with more resources  | 3         |
+| `queue_size`                      | Number of jobs to submit to job scheduler                     | 200       |
+| `slurm_account`                   | SLURM account used for job submission                         | js66      |
 
 
 #### Merge run
@@ -127,7 +167,7 @@ ssh session and have the pipeline continue in the background. Here is a brief ex
 screen -R reddog_run
 ./reddog.nf
 
-# Deattach from the screen session with C-a (ctrl+a)
+# Detach from the screen session with C-a (ctrl+a)
 # List active screen sessions
 screen -ls
 
@@ -146,19 +186,29 @@ The nextflow framework stores intermediate files in a directory called `work/`. 
 should be deleted once the `RedDog` run has completed.
 
 
-#### HPC specific
-When running `RedDog` on M3 you must explicity set the executor. In the nextflow framework, the executor manages how jobs are
+#### M3 specific
+When running `RedDog` on M3 you must explicitly set the executor. In the nextflow framework, the executor manages how jobs are
 run and the default is to use the `standard` executor, which launches jobs locally. However on M3 jobs should never be run
 locally and instead submitted to the SLURM queue. This is done in `RedDog` by using the `massive` executor:
 ```bash
-./reddog.nf --profile massive
+./reddog.nf -profile massive
 ```
 
-* dynamic selection of partition and qos
-* job submission rate limits
-* job resource requests
-* SLURM account
-* queue size
+The pipeline is configured to dynamicly select the optimal partition and QoS for each submitted job. Selection is conditioned
+on the walltime of each job:
+| Walltime          | QoS       | Partition             |
+| ----              | ----      | ----                  |
+| 0-30 minutes      | genomics  | comp, genomics, short |
+| 31-120 minutes    | genomics  | comp, genomics        |
+| 121+ minutes      | normal    | comp                  |
+
+Additionally, resources requested for each task are defined in `config/slurm_job.config`. By default, when a job fails it is
+resubmitted two more times but with increased resources. Where a job fails three times due to insufficient resources, you can
+manually specify the required resources in `config/slurm_job.config`.
+
+The `genomics` queue limits the number of concurrently queued or running jobs and once this limit is reached, any further job
+that is submitted is rejected. To avoid job rejected in this context, the pipeline will only submit 200 tasks to the queue at
+any one time. This can be adjusted through the `queue_size` option in `nextflow.config`.
 
 
 ## Outputs
@@ -166,14 +216,14 @@ locally and instead submitted to the SLURM queue. This is done in `RedDog` by us
 For each replicon in the provided reference, the following outputs are generated:
 | File                              | Name                                                      |
 | ----                              | ----                                                      |
-| Mapping statistics                | `reference_name`\_`replicon`\_mapping\_stats.tsv          |
-| SNP alleles                       | `reference_name`\_`replicon`\_alleles.tsv                 |
-| Conserved SNP alleles             | `reference_name`\_`replicon`\_alleles\_cons0.95.tsv       |
-| Alignment of conserved SNPs       | `reference_name`\_`replicon`\_cons0.95.mfasta             |
-| Phylogeny of conserved SNPs       | `reference_name`\_`replicon`\_cons0.95.tree               |
-| Consequences of conserved SNPs    | `reference_name`\_`replicon`\_consequences\_cons0.95.tsv  |
-| Gene coverage                     | `reference_name`\_gene\_coverage.tsv                      |
-| Gene depth                        | `reference_name`\_gene\_depth.tsv                         |
+| Mapping statistics                | `reference-name`\_`replicon`\_mapping\_stats.tsv          |
+| SNP alleles                       | `reference-name`\_`replicon`\_alleles.csv                 |
+| Conserved SNP alleles             | `reference-name`\_`replicon`\_alleles\_cons0.95.csv       |
+| Alignment of conserved SNPs       | `reference-name`\_`replicon`\_cons0.95.mfasta             |
+| Phylogeny of conserved SNPs       | `reference-name`\_`replicon`\_cons0.95.tree               |
+| Consequences of conserved SNPs    | `reference-name`\_`replicon`\_consequences\_cons0.95.tsv  |
+| Gene coverage                     | `reference-name`\_gene\_coverage.csv                      |
+| Gene depth                        | `reference-name`\_gene\_depth.csv                         |
 
 Additionally several directory outputs are created:
 | Directory                         | Location and name         |
@@ -185,15 +235,53 @@ Additionally several directory outputs are created:
 
 
 ### File descriptions
-* Described general contents (maybe uses) and columns for each file type
-
 #### Mapping statistics
+| Column name               | Description                                               |
+| ----                      | ----                                                      |
+| isolate                   | Isolate name                                              |
+| replicon\_coverage        | Coverage of replicon for positions >=1 depth              |
+| replicon\_average\_depth  | Average depth for positions >=1 depth                     |
+| replicon\_reads\_mapped   | Proportion of all mapped reads belonging to this replicon |
+| total\_mapped\_reads      | Proportion of reads mapped to any replicon                |
+| total\_reads              | Count of total mapped reads                               |
+| snps                      | Number of homozygous SNPs                                 |
+| snps\_heterozygous        | Number of heterozygous SNPs                               |
+| indels                    | Number of indels                                          |
+| pass\_fail                | Pass or fail classification based on mapping statistics   |
+| phylogeny\_group          | Ingroup or outgroup designation                           |
 
 #### Allele matrix
+| Column name       | Description                       |
+| ----              | ----                              |
+| Pos               | Nucleotide position in reference  |
+| Reference         | Reference nucleotide (+ve strand) |
+| `isolate columns` | Isolate columns                   |
 
 #### Coding consequences
+| Column name                   | Description                               |
+| ----                          | ----                                      |
+| position                      | Nucleotide position in reference          |
+| ref                           | Reference nucleotide (+ve strand)         |
+| alt                           | Alternative nucleotide (+ve strand)       |
+| strand                        | Encoding strand of gene                   |
+| change\_type                  | Mutation type                             |
+| gene                          | Gene name                                 |
+| ref\_codon                    | Reference codon                           |
+| alt\_codon                    | Alternative codon                         |
+| ref\_aa                       | Reference amino acid                      |
+| alt\_aa                       | Alternative amino acid                    |
+| gene\_product                 | Description of encoded protein            |
+| gene\_nucleotide\_position    | Nucleotide position of mutation in gene   |
+| gene\_codon\_position         | Position of affected codon in gene        |
+| codon\_nucleotide\_position   | Nucleotide position of mutation in codon  |
+| notes                         | Misc. notes                               |
 
-#### Depth depth and coverage
+#### Depth and coverage
+| Column name       | Description               |
+| ----              | ----                      |
+| replicon          | Name of replicon          |
+| locus\_tag        | Gene locus tag            |
+| `isolate columns` | Isolate columns           |
 
 
 ## Requirements
@@ -201,18 +289,16 @@ The following software are required:
 * `bcftools`, version ≥1.9
 * `biopython`, version ≥1.76
 * `bowtie2`, version ≥2.4.1
-* `bwa`, version ≥0.7.17
-* `ea-utils`, version ≥1.1.2.779
 * `fastqc`, version ≥0.11.9
 * `fasttree`, version ≥2.1.10
 * `multiqc`, version ≥1.7
-* `nextflow`, version ≥20.04.1
+* `nextflow`, version ≥20.10.0
 * `openjdk`, version ≥8.0.192
 * `samtools`, version ≥1.9
 * `seqtk`, version ≥1.3
 
 
-This easiest way to satisfy these dependencies is to use `conda` and the list of dependencies in
+The easiest way to satisfy these dependencies is to use `conda` and the list of dependencies in
 `config/conda_dependencies.txt`:
 ```bash
 # First ensure you're in the top level directory of the git repo
@@ -223,7 +309,7 @@ conda activate $(pwd -P)/conda_env
 
 ## Tests
 I've written both end-to-end tests and unit/functional tests. These are designed to detect regressions, test effect of
-modifications, and check compatibility of install software. To run these tests first provision requirements as shown in
+modifications, and check compatibility of installed software. To run these tests first provision requirements as shown in
 [Requirements](#requirements).
 
 ```bash
