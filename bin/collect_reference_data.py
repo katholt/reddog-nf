@@ -22,6 +22,15 @@ def main():
     # Get commandline arguments
     args = get_arguments()
 
+    # Check we have genbank by file extension
+    reference_extension = args.reference_fp.suffix[1:]
+    if reference_extension == 'fasta':
+        print('error: reference provided as fasta format but must be in genbank format', file=sys.stderr)
+        sys.exit(1)
+    elif reference_extension not in {'gbk', 'gb', 'gbff', 'genbank'}:
+        print('error: reference does not appear to be in genbank format', file=sys.stderr)
+        sys.exit(1)
+
     # Parse reference
     with args.reference_fp.open('r') as fh:
         try:
