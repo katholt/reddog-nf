@@ -199,8 +199,8 @@ on the walltime of each job:
 | Walltime          | QoS       | Partition             |
 | ----              | ----      | ----                  |
 | 0-30 minutes      | genomics  | comp, genomics, short |
-| 31-120 minutes    | genomics  | comp, genomics        |
-| 121+ minutes      | normal    | comp                  |
+| 31-240 minutes    | genomics  | comp, genomics        |
+| 241+ minutes      | normal    | comp                  |
 
 Additionally, resources requested for each task are defined in `config/slurm_job.config`. By default, when a job fails it is
 resubmitted two more times but with increased resources. Where a job fails three times due to insufficient resources, you can
