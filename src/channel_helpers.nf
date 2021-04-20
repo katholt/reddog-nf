@@ -2,7 +2,7 @@
 def get_read_prefix_and_type(filepath) {
   // NOTE: nf requires escaping '$'
   regex_se = "^(.+?).fastq(?:.gz)?\$"
-  regex_pe = "^(.+?)_(?:_001_)?R?[12].fastq(?:.gz)?\$"
+  regex_pe = "^(.+?)_R?[12](?:_001)?.fastq(?:.gz)?\$"
 
   java.util.regex.Matcher matcher;
   String read_type;
