@@ -293,7 +293,7 @@ The following software are required:
 * `fasttree`, version ≥2.1.10
 * `multiqc`, version ≥1.7
 * `nextflow`, version ≥20.10.0
-* `openjdk`, version ≥8.0.192
+* `openjdk`, version ≥8.0
 * `samtools`, version ≥1.9
 * `seqtk`, version ≥1.3
 
