@@ -122,7 +122,7 @@ The nextflow implementation of `RedDog` also handles input containing both paire
 | Option                            | Description                               | Default   |
 | ----                              | ----                                      | ----      |
 | `max_retries`                     | Number of times to resubmit job, usually with more resources  | 3         |
-| `queue_size`                      | Number of jobs to submit to job scheduler                     | 200       |
+| `queue_size`                      | Number of jobs to submit to job scheduler                     | 1000      |
 | `slurm_account`                   | SLURM account used for job submission                         | js66      |
 
 
