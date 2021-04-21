@@ -19,7 +19,7 @@ central goal of `RedDog` is to identify high-quality SNPs present in a set of is
 For the `RedDog` veterans:
 ```bash
 # Clone the reddog-nf repository
-git clone https://github.com/scwatts/reddog-nf.git && cd reddog-nf
+git clone https://github.com/katholt/reddog-nf.git && cd reddog-nf
 
 # Install dependencies and activate conda environment
 conda create -c bioconda -c conda-forge -p $(pwd -P)/conda_env --yes --file config/conda_dependencies.txt
@@ -38,7 +38,7 @@ To run the pipeline on M3, there are additional steps that need to be taken and 
 provision is similar to the general example above but you must first load `miniconda` into your path:
 ```
 # Clone the reddog-nf repository
-git clone https://github.com/scwatts/reddog-nf.git && cd reddog-nf
+git clone https://github.com/katholt/reddog-nf.git && cd reddog-nf
 
 # Load the miniconda3 module and install dependencies
 module load miniconda3/4.1.11-python3.5
